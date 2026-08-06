@@ -30,7 +30,7 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
   onGenerateReportForPair,
   onReset,
 }) => {
-  const { pairs, unpairedNfos, unpairedNfds, summary } = batchResult;
+  const { pairs, summary } = batchResult;
 
   const [expandedPairId, setExpandedPairId] = useState<string | null>(
     pairs.length > 0 ? pairs[0].id : null
@@ -242,7 +242,7 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
             <p>Nenhum par encontrado com o filtro/busca selecionado.</p>
           </div>
         ) : (
-          filteredPairs.map((pair, idx) => {
+          filteredPairs.map((pair) => {
             const isExpanded = expandedPairId === pair.id;
             const rec = pair.reconciliation;
             const status = rec?.summary.overallStatus || 'REJECTED';

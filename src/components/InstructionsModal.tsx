@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle, CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft, Bot, FileText, X } from './Icons';
+import { HelpCircle, CheckCircle2, X } from './Icons';
 
 interface InstructionsModalProps {
   onClose: () => void;
