@@ -155,7 +155,7 @@ function parseTotals(totalEl: Element | null): NFeTotals {
 
 function extractMotivoDevolucao(infCpl: string): string | undefined {
   if (!infCpl) return undefined;
-  const match = infCpl.match(/MOTIVO:\s*(.+?)(?:\/\/|;|\n|$)/i);
+  const match = infCpl.match(/MOTIVO(?:\s+(?:DA|DE)\s+DEVOLU[ÇC][AÃ]O)?:\s*(.+?)(?:\/\/|;|\n|$)/i);
   if (match && match[1]) {
     return match[1].trim();
   }
@@ -164,7 +164,7 @@ function extractMotivoDevolucao(infCpl: string): string | undefined {
 
 function extractNfoRefNumber(infCpl: string): string | undefined {
   if (!infCpl) return undefined;
-  const match = infCpl.match(/NFO:\s*(\d+)/i);
+  const match = infCpl.match(/(?:NFO|NF\s+ORIGEM|NF\s+VENDA|REF):\s*(\d+)/i);
   if (match && match[1]) {
     return match[1].trim();
   }

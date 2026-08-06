@@ -66,6 +66,10 @@ export function executeBatchPairing(documents: NFeDocument[]): BatchReconciliati
       if (candidatesByCnpj.length === 1) {
         matchedNfos = candidatesByCnpj;
         pairMethod = 'CNPJ_NNF';
+      } else if (candidatesByCnpj.length > 1) {
+        const bestCandidate = candidatesByCnpj.find(nfo => nfo.items.length === nfd.items.length) || candidatesByCnpj[0];
+        matchedNfos = [bestCandidate];
+        pairMethod = 'CNPJ_NNF';
       }
     }
 
