@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Production builds
+dist/
+build/
+
+# Environment and sensitive data
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+
+# Internal test documents and real customer XML/PDFs
+docs/
+*.xml
+*.pdf
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Scratch & Temp
+.tempmediaStorage/

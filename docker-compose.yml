@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  validador-fiscal:
+    build: .
+    container_name: validador-fiscal-app
+    ports:
+      - "5002:80"
+    restart: always
