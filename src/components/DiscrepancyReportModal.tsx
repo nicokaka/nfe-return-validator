@@ -25,7 +25,7 @@ export const DiscrepancyReportModal: React.FC<DiscrepancyReportModalProps> = ({ 
 
   const handleDownloadCsv = () => {
     const csvRows: string[] = [
-      'Item;Status;Produto NFD;EAN;Qtd Devolvida;Preco NFD;Preco NFO;Lote NFD;Lote NFO;Inconsistencias',
+      'Item;Status;Produto NFD;EAN;Qtd Devolvida;Preco NFD;Preco NFO;Lote NFD;Lote NFO;Almoxarifado Piramide;Inconsistencias',
     ];
 
     result.itemComparisons.forEach(c => {
@@ -33,17 +33,19 @@ export const DiscrepancyReportModal: React.FC<DiscrepancyReportModalProps> = ({ 
       const nfoItem = c.nfoItem;
       const status = c.issues.some(i => i.severity === 'CRITICAL')
         ? 'REJEITADO'
-        : c.issues.length > 0
+        : c.issues.some(i => i.severity === 'WARNING')
         ? 'ATENCAO'
         : 'OK';
       const lotesNfd = nfdItem.batches.map(b => b.nLote).join('/') || 'SEM LOTE';
       const lotesNfo = nfoItem ? nfoItem.batches.map(b => b.nLote).join('/') || 'SEM LOTE' : 'N/A';
+      const almox = c.piramideResolution?.almoxarifado || result.piramideResolution?.almoxarifado || 'ALMOX';
       const issuesStr = c.issues.map(i => i.title).join(' | ') || 'Nenhuma';
 
       csvRows.push(
-        `${nfdItem.nItem};"${status}";"${nfdItem.xProd.replace(/"/g, '""')}";"${nfdItem.cEAN}";${nfdItem.qCom};${nfdItem.vUnCom.toFixed(2)};${nfoItem ? nfoItem.vUnCom.toFixed(2) : 0};"${lotesNfd}";"${lotesNfo}";"${issuesStr}"`
+        `${nfdItem.nItem};"${status}";"${nfdItem.xProd.replace(/"/g, '""')}";"${nfdItem.cEAN}";${nfdItem.qCom};${nfdItem.vUnCom.toFixed(2)};${nfoItem ? nfoItem.vUnCom.toFixed(2) : 0};"${lotesNfd}";"${lotesNfo}";"${almox}";"${issuesStr}"`
       );
     });
+
 
     const csvContent = '\uFEFF' + csvRows.join('\n'); // UTF-8 BOM for Excel
     const element = document.createElement('a');

@@ -102,11 +102,50 @@ export interface ValidationIssue {
   field?: string;
 }
 
+export type ReturnType = 'TOTAL' | 'PARTIAL' | 'EXCESS';
+
+export interface PiramideMotivo {
+  code: string;
+  description: string;
+  almoxarifado: string;
+  isAutomatic: boolean;
+  destinationType: 'AUTOMATIC' | 'PHYSICAL_INSPECTION';
+}
+
+export interface PiramideWarehouse {
+  code: string;
+  name: string;
+  description: string;
+}
+
+export interface PiramideResolution {
+  motivoCode: string;
+  motivoDesc: string;
+  almoxarifado: string;
+  isAutomatic: boolean;
+  destinationType: 'AUTOMATIC' | 'PHYSICAL_INSPECTION';
+  notes?: string;
+}
+
+export interface NDOSuggestion {
+  ndoCode: string;
+  ndoDescription: string;
+  cfop: string;
+  operationType: 'DEV_VENDA' | 'DEV_BONIFICACAO' | 'DEV_ST' | 'OUTROS';
+  isInterstate: boolean;
+  explanation: string;
+}
+
 export interface ItemComparison {
   nfdItem: NFeItem;
   nfoItem?: NFeItem;
   matchType: 'EAN_EXACT' | 'EAN_TRIB' | 'DESCRIPTION_SIMILARITY' | 'MANUAL' | 'NONE';
   matchConfidence: number; // 0 to 1
+  qFaturada?: number;
+  qDevolvida?: number;
+  percentageReturned?: number;
+  returnType?: ReturnType;
+  piramideResolution?: PiramideResolution;
   issues: ValidationIssue[];
   isMatchOk: boolean;
 }
@@ -125,9 +164,14 @@ export interface ReconciliationResult {
   itemComparisons: ItemComparison[];
   unmatchedNfoItems: NFeItem[];
   unmatchedNfdItems: NFeItem[];
+  ndoSuggestion?: NDOSuggestion;
+  piramideResolution?: PiramideResolution;
   summary: {
     totalItemsNfd: number;
     totalMatched: number;
+    totalQuantityNfd?: number;
+    totalQuantityNfo?: number;
+    overallReturnType?: ReturnType;
     totalCriticalErrors: number;
     totalWarnings: number;
     overallStatus: 'APPROVED' | 'HAS_WARNINGS' | 'REJECTED';
@@ -162,3 +206,4 @@ export interface BatchReconciliationResult {
   summary: BatchSummary;
   processedAt: string;
 }
+

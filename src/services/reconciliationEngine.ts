@@ -4,9 +4,12 @@ import {
   NFeDocument,
   NFeItem,
   ReconciliationResult,
+  ReturnType,
   ValidationIssue,
 } from '../types/nfe';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
+import { detectPiramideMotivo } from './piramideService';
+import { suggestNDO, validateTaxReformAndBonificacao } from './ndoTaxEngine';
 
 function isCleanEanValid(ean: string): boolean {
   if (!ean) return false;
@@ -137,6 +140,14 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     }
   }
 
+  // NDO and Tax Reform (CBS/IBS & Bonificação)
+  const ndoSuggestion = suggestNDO(nfd, nfo);
+  const taxReformIssues = validateTaxReformAndBonificacao(nfd, nfo);
+  headerIssues.push(...taxReformIssues);
+
+  // Pirâmide Reason & Warehouse resolution
+  const piramideResolution = detectPiramideMotivo(nfd.parsedMotivoDevolucao || nfd.infCpl || nfd.natOp) || undefined;
+
   const headerValidation: HeaderValidation = {
     isRefKeyMatching,
     isParticipantsMatching,
@@ -147,6 +158,7 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
   // 2. Item Matching & Reconciliation
   const matchedNfoItemsSet = new Set<number>();
   const itemComparisons: ItemComparison[] = [];
+
 
   for (const nfdItem of nfd.items) {
     let matchedNfoItem: NFeItem | undefined;
@@ -399,11 +411,36 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
 
     const isMatchOk = itemIssues.filter(i => i.severity === 'CRITICAL').length === 0;
 
+    const qDevolvida = nfdItem.qCom;
+    const qFaturada = matchedNfoItem ? matchedNfoItem.qCom : undefined;
+    let percentageReturned: number | undefined;
+    let returnType: ReturnType | undefined;
+
+    if (matchedNfoItem) {
+      percentageReturned = matchedNfoItem.qCom > 0 ? (nfdItem.qCom / matchedNfoItem.qCom) * 100 : 100;
+      if (nfdItem.qCom > matchedNfoItem.qCom + 0.0001) {
+        returnType = 'EXCESS';
+      } else if (Math.abs(nfdItem.qCom - matchedNfoItem.qCom) <= 0.0001) {
+        returnType = 'TOTAL';
+      } else {
+        returnType = 'PARTIAL';
+      }
+    }
+
+    const itemPiramideResolution = nfdItem.infAdProd
+      ? detectPiramideMotivo(nfdItem.infAdProd) || piramideResolution
+      : piramideResolution;
+
     itemComparisons.push({
       nfdItem,
       nfoItem: matchedNfoItem,
       matchType,
       matchConfidence,
+      qFaturada,
+      qDevolvida,
+      percentageReturned,
+      returnType,
+      piramideResolution: itemPiramideResolution,
       issues: itemIssues,
       isMatchOk,
     });
@@ -429,6 +466,15 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     overallStatus = 'HAS_WARNINGS';
   }
 
+  const totalQuantityNfd = nfd.items.reduce((acc, i) => acc + (i.qCom || 0), 0);
+  const totalQuantityNfo = nfo.items.reduce((acc, i) => acc + (i.qCom || 0), 0);
+  let overallReturnType: ReturnType = 'TOTAL';
+  if (itemComparisons.some(c => c.returnType === 'EXCESS')) {
+    overallReturnType = 'EXCESS';
+  } else if (itemComparisons.some(c => c.returnType === 'PARTIAL') || totalQuantityNfd < totalQuantityNfo - 0.0001) {
+    overallReturnType = 'PARTIAL';
+  }
+
   return {
     nfd,
     nfo,
@@ -436,16 +482,22 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     itemComparisons,
     unmatchedNfoItems,
     unmatchedNfdItems,
+    ndoSuggestion,
+    piramideResolution,
     summary: {
       totalItemsNfd: nfd.items.length,
       totalMatched: itemComparisons.filter(c => c.nfoItem).length,
+      totalQuantityNfd,
+      totalQuantityNfo,
+      overallReturnType,
       totalCriticalErrors,
       totalWarnings,
       overallStatus,
-      motivoDevolucao: nfd.parsedMotivoDevolucao,
+      motivoDevolucao: piramideResolution?.motivoDesc || nfd.parsedMotivoDevolucao,
     },
   };
 }
+
 
 export function reconcileNFdAgainstMultipleNfos(
   nfd: NFeDocument,

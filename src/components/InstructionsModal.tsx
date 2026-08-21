@@ -29,7 +29,7 @@ export const InstructionsModal: React.FC<InstructionsModalProps> = ({ onClose })
           <div className="guide-section">
             <h3 className="guide-section-title">🎯 Objetivo da Ferramenta</h3>
             <p className="guide-text">
-              O <strong>Validador Fiscal de Devoluções</strong> foi desenvolvido para eliminar digitação manual no ERP CIEG e impedir a entrada física/fiscal de notas de devolução emitidas incorretamente pelos clientes. O sistema cruza <strong>item a item</strong> a Nota de Devolução (NFD) contra a Nota de Origem de Venda (NFO).
+              O <strong>Validador Fiscal de Devoluções</strong> foi desenvolvido para eliminar digitação manual no <strong>ERP Pirâmide</strong> e impedir a entrada física/fiscal de notas de devolução emitidas incorretamente pelos clientes. O sistema cruza <strong>item a item</strong> a Nota de Devolução (NFD) contra a Nota de Origem de Venda (NFO), sugerindo automaticamente NDO, Motivos de Devolução e Almoxarifados de Destino.
             </p>
           </div>
 
@@ -71,9 +71,9 @@ export const InstructionsModal: React.FC<InstructionsModalProps> = ({ onClose })
               <div className="step-card">
                 <div className="step-number">4</div>
                 <div className="step-content">
-                  <h4>Lançamento Rápido no ERP (Copilot 1-Clique)</h4>
+                  <h4>Lançamento Rápido no ERP (Copilot Pirâmide 1-Clique)</h4>
                   <p>
-                    Utilize os botões da <strong>Ponte ERP CIEG</strong> ou atalhos de teclado (<code>Ctrl+1</code> a <code>Ctrl+5</code>) para copiar a Chave, Protocolo SEFAZ, Nº de Devolução e Lista de Itens diretamente para o sistema.
+                    Utilize os botões do <strong>Assistente Tático Pirâmide</strong> ou atalhos de teclado (<code>Ctrl+1</code> a <code>Ctrl+6</code>) para copiar Chave, Protocolo SEFAZ, Nº da NF, NDO de Entrada, Almoxarifado Destino e Valores diretamente para o sistema.
                   </p>
                 </div>
               </div>
@@ -122,8 +122,23 @@ export const InstructionsModal: React.FC<InstructionsModalProps> = ({ onClose })
                 </div>
                 <p>Valida alíquotas fiscais, reconhecendo variações normais de CST em devoluções.</p>
               </div>
+
+              <div className="rule-card">
+                <div className="rule-header">
+                  <CheckCircle2 className="icon-xs success" /> Direcionamento de Almoxarifados
+                </div>
+                <p>Mapeia os 51 motivos da planilha oficial para os 12 almoxarifados do ERP Pirâmide (GQ, AVARIA, VC, EXPEDI, etc.).</p>
+              </div>
+
+              <div className="rule-card">
+                <div className="rule-header">
+                  <CheckCircle2 className="icon-xs success" /> Quantidade Devolvida vs Faturada
+                </div>
+                <p>Calcula devoluções totais (100%), parciais (% com saldo remanescente) e bloqueia devoluções com quantidades excedentes.</p>
+              </div>
             </div>
           </div>
+
         </div>
 
         <div className="modal-footer">

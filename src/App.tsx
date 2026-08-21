@@ -69,7 +69,8 @@ export function App() {
           </div>
           <div>
             <h1 className="brand-title">Validador Fiscal de Devoluções</h1>
-            <p className="brand-subtitle">Auditoria em Lote NFO x NFD | Automação Operacional ERP CIEG</p>
+            <p className="brand-subtitle">Auditoria em Lote NFO x NFD | Automação Operacional ERP Pirâmide</p>
+
           </div>
         </div>
 

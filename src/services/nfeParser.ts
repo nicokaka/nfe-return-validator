@@ -36,7 +36,7 @@ function parseParticipant(partEl: Element | null): NFeParticipant {
 
 function parseBatches(prodEl: Element): NFeBatch[] {
   const batches: NFeBatch[] = [];
-  const rastroEls = Array.from(prodEl.getElementsByTagName('rastro'));
+  const rastroEls = Array.from(prodEl.getElementsByTagName('rastro')) as Element[];
 
   for (const rastro of rastroEls) {
     const nLote = getTagText(rastro, ['nLote']);
@@ -57,8 +57,9 @@ function parseICMS(impostoEl: Element): NFeTaxICMS | undefined {
   if (!icmsContainer) return undefined;
 
   // ICMS can have child like ICMS00, ICMS10, ICMS20, ICMS40, ICMS60, ICMS90, ICMSSN102, etc.
-  const childNodes = Array.from(icmsContainer.children);
+  const childNodes = Array.from(icmsContainer.children || []) as Element[];
   if (childNodes.length === 0) return undefined;
+
 
   const child = childNodes[0];
   const orig = getTagText(child, ['orig']);
@@ -171,14 +172,34 @@ function extractNfoRefNumber(infCpl: string): string | undefined {
   return undefined;
 }
 
+import { DOMParser as XMLDOMParser } from '@xmldom/xmldom';
+
+function getDOMParser(): any {
+  if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined') {
+    return new window.DOMParser();
+  }
+  if (typeof DOMParser !== 'undefined') {
+    return new DOMParser();
+  }
+  return new XMLDOMParser({
+    onError: (level: string, msg: string) => {
+      if (level === 'fatalError') {
+        throw new Error(msg);
+      }
+    },
+  });
+}
+
+
 export function parseNFeXml(xmlContent: string, fileName: string = 'NFe.xml'): NFeDocument {
-  const parser = new DOMParser();
+  const parser = getDOMParser();
   const doc = parser.parseFromString(xmlContent, 'application/xml');
 
   const parserError = doc.getElementsByTagName('parsererror')[0];
   if (parserError) {
     throw new Error(`Erro ao ler o arquivo XML: ${parserError.textContent}`);
   }
+
 
   const infNFe = doc.getElementsByTagName('infNFe')[0];
   if (!infNFe) {
@@ -213,7 +234,7 @@ export function parseNFeXml(xmlContent: string, fileName: string = 'NFe.xml'): N
 
   // Extract refNFe list from NFref
   const refNFeList: string[] = [];
-  const nfRefEls = Array.from(doc.getElementsByTagName('NFref'));
+  const nfRefEls = Array.from(doc.getElementsByTagName('NFref')) as Element[];
   for (const ref of nfRefEls) {
     const refKey = getTagText(ref, ['refNFe']);
     if (refKey) {
@@ -225,8 +246,9 @@ export function parseNFeXml(xmlContent: string, fileName: string = 'NFe.xml'): N
   const dest = parseParticipant(doc.getElementsByTagName('dest')[0] || null);
 
   // Extract items
-  const detEls = Array.from(doc.getElementsByTagName('det'));
+  const detEls = Array.from(doc.getElementsByTagName('det')) as Element[];
   const items: NFeItem[] = detEls.map((det, idx) => parseItem(det, idx));
+
 
   // Totals
   const totals = parseTotals(doc.getElementsByTagName('total')[0] || null);

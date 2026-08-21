@@ -77,7 +77,7 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
   // Batch CSV Export for all pairs
   const handleExportBatchCsv = () => {
     const csvRows: string[] = [
-      'ID Par;Status;Tipo Vinculo;NFD Numero;NFD Chave;NFO(s) Numero;Cliente Emitente;Qtd Itens NFD;Valor Devolvido R$;Erros Criticos;Alertas;Motivo Devolucao',
+      'ID Par;Status;Tipo Vinculo;NFD Numero;NFD Chave;NFO(s) Numero;Cliente Emitente;Qtd Itens NFD;Valor Devolvido R$;NDO Entrada;Almoxarifado;Erros Criticos;Alertas;Motivo Devolucao',
     ];
 
     pairs.forEach(p => {
@@ -87,14 +87,17 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
       const nfoNums = p.nfoList.map(n => n.nNF).join(' + ') || 'NENHUMA';
       const emitName = nfd.emit.xNome.replace(/"/g, '""');
       const valDev = nfd.totals.vNF.toFixed(2);
+      const ndo = rec?.ndoSuggestion?.cfop || 'N/A';
+      const almox = rec?.piramideResolution?.almoxarifado || 'ALMOX';
       const errCrit = rec?.summary.totalCriticalErrors || 0;
       const errWarn = rec?.summary.totalWarnings || 0;
       const motivo = rec?.summary.motivoDevolucao || nfd.parsedMotivoDevolucao || 'Nao informado';
 
       csvRows.push(
-        `"${p.id}";"${status}";"${p.nfoList.length > 1 ? '1:N' : p.nfoList.length === 1 ? '1:1' : 'SEM_VINCULO'}";"${nfd.nNF}";"${nfd.chNFe}";"${nfoNums}";"${emitName}";${nfd.items.length};${valDev};${errCrit};${errWarn};"${motivo.replace(/"/g, '""')}"`
+        `"${p.id}";"${status}";"${p.nfoList.length > 1 ? '1:N' : p.nfoList.length === 1 ? '1:1' : 'SEM_VINCULO'}";"${nfd.nNF}";"${nfd.chNFe}";"${nfoNums}";"${emitName}";${nfd.items.length};${valDev};"${ndo}";"${almox}";${errCrit};${errWarn};"${motivo.replace(/"/g, '""')}"`
       );
     });
+
 
     const csvContent = '\uFEFF' + csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });

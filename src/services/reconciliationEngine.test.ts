@@ -122,7 +122,7 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
 
     // Scenario 3.8: Expired Batch Detection (dVal < today)
     const tamperedExpiredBatchNfd = parseNFeXml(
-      sampleNfdXml.replace('<dVal>2027-10-31</dVal>', '<dVal>2020-01-01</dVal>'),
+      sampleNfdXml.replace('<dVal>2028-06-30</dVal>', '<dVal>2020-01-01</dVal>'),
       'NFD_ExpiredBatch.xml'
     );
     const resExpired = reconcileNFeDocuments(tamperedExpiredBatchNfd, docNfo);
@@ -131,8 +131,8 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       'T3.8: Captura de alerta para Lote com Data de Validade Vencida'
     );
 
-    // Scenario 3.9: Invalid Return CFOP Detection (CFOP 5102 instead of 5202/1202)
-    const tamperedCfopNfd = parseNFeXml(sampleNfdXml.replace('<CFOP>5202</CFOP>', '<CFOP>5102</CFOP>'), 'NFD_BadCfop.xml');
+    // Scenario 3.9: Invalid Return CFOP Detection (CFOP 6102 instead of 6202/1202/2202)
+    const tamperedCfopNfd = parseNFeXml(sampleNfdXml.replace('<CFOP>6202</CFOP>', '<CFOP>6102</CFOP>'), 'NFD_BadCfop.xml');
     const resCfop = reconcileNFeDocuments(tamperedCfopNfd, docNfo);
     assert(
       resCfop.itemComparisons.some(c => c.issues.some(i => i.code === 'CFOP_INVALID_FOR_RETURN')),
@@ -149,6 +149,22 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     const multiRes = reconcileNFdAgainstMultipleNfos(docNfd, [docNfo, docNfo2]);
     assert(multiRes.nfd.nNF === '663338', 'T4.3: Reconciliação Multi-NFO (1:N) executada com sucesso');
 
+    // 5. Novas Validações Pirâmide & NDO (Reunião Glécia)
+    // T5.1: Motivo Automático Avaria -> Almoxarifado AVARIA
+    assert(res.piramideResolution?.almoxarifado === 'AVARIA', 'T5.1: Detecção de Motivo Pirâmide (Avaria ➔ Almoxarifado AVARIA)');
+
+    // T5.2: NDO Sugerida
+    assert(res.ndoSuggestion !== undefined && res.ndoSuggestion.operationType === 'DEV_VENDA', 'T5.2: Sugestão de NDO de Devolução');
+
+    // T5.3: Auditoria de Quantidades
+    const itemImuno = res.itemComparisons.find(c => c.nfdItem.cEAN === '7896685304945');
+    assert(itemImuno?.qDevolvida === 3 && itemImuno?.qFaturada === 24, 'T5.3: Comparação de Quantidade Devolvida (3) vs Faturada (24)');
+    assert(itemImuno?.returnType === 'PARTIAL', 'T5.4: Identificação de Devolução Parcial (3 de 24 faturados)');
+
+    // T5.5: Quantidade Total da Nota (3 + 3 = 6 un)
+    assert(res.summary.totalQuantityNfd === 6, 'T5.5: Totalizador de Quantidade Devolvida na NFD (6 un)');
+
+
   } catch (err: any) {
     failed++;
     log.push(`❌ Exceção não capturada durante a execução da suíte: ${err.message}`);
@@ -161,3 +177,4 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     log,
   };
 }
+

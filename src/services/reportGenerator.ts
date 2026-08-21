@@ -1,7 +1,7 @@
 import { ReconciliationResult } from '../types/nfe';
 
 export function generateDiscrepancyReport(result: ReconciliationResult): string {
-  const { nfd, nfo, headerValidation, itemComparisons, summary } = result;
+  const { nfd, nfo, headerValidation, itemComparisons, summary, ndoSuggestion, piramideResolution } = result;
 
   const dateStr = new Date().toLocaleDateString('pt-BR');
   const criticalIssues = [
@@ -23,7 +23,13 @@ export function generateDiscrepancyReport(result: ReconciliationResult): string 
   lines.push(`Destinatário: ${nfd.dest.xNome} (CNPJ: ${nfd.dest.cnpj})`);
   lines.push(`Nota Fiscal de Devolução (NFD): Nº ${nfd.nNF} (Chave: ${nfd.chNFe})`);
   lines.push(`Nota Fiscal de Origem (NFO): Nº ${nfo.nNF} (Chave: ${nfo.chNFe})`);
-  if (summary.motivoDevolucao) {
+  if (ndoSuggestion) {
+    lines.push(`NDO Sugerida (Pirâmide): ${ndoSuggestion.cfop} - ${ndoSuggestion.ndoDescription}`);
+  }
+  if (piramideResolution) {
+    lines.push(`Motivo Pirâmide: ${piramideResolution.motivoCode} - ${piramideResolution.motivoDesc}`);
+    lines.push(`Almoxarifado Sugerido: ${piramideResolution.almoxarifado} (${piramideResolution.isAutomatic ? 'Automático' : 'Avaliação Física na Doca'})`);
+  } else if (summary.motivoDevolucao) {
     lines.push(`Motivo Declarado pelo Cliente: ${summary.motivoDevolucao}`);
   }
   lines.push('----------------------------------------------------------------');
@@ -57,8 +63,15 @@ export function generateDiscrepancyReport(result: ReconciliationResult): string 
     const statusIcon = c.issues.some(i => i.severity === 'CRITICAL') ? '❌' : c.issues.length > 0 ? '⚠️' : '✅';
     const nfdItem = c.nfdItem;
     const nfoItem = c.nfoItem;
+    const qtyInfo = nfoItem
+      ? `${nfdItem.qCom} ${nfdItem.uCom} (de ${nfoItem.qCom} ${nfoItem.uCom} faturados - ${c.returnType === 'TOTAL' ? 'Total' : c.returnType === 'PARTIAL' ? 'Parcial' : 'Excedente'})`
+      : `${nfdItem.qCom} ${nfdItem.uCom}`;
+
     lines.push(`${idx + 1}. ${statusIcon} ${nfdItem.xProd}`);
-    lines.push(`   • EAN: ${nfdItem.cEAN || 'Sem GTIN'} | Qtd Devolvida: ${nfdItem.qCom} | Preço Un: R$ ${nfdItem.vUnCom.toFixed(2)}`);
+    lines.push(`   • EAN: ${nfdItem.cEAN || 'Sem GTIN'} | Qtd: ${qtyInfo} | Preço Un: R$ ${nfdItem.vUnCom.toFixed(4)}`);
+    if (c.piramideResolution) {
+      lines.push(`   • Destino Pirâmide: Almoxarifado [${c.piramideResolution.almoxarifado}] (${c.piramideResolution.motivoDesc})`);
+    }
     if (nfdItem.batches.length > 0) {
       lines.push(`   • Lote(s) NFD: ${nfdItem.batches.map(b => b.nLote).join(', ')}`);
     } else {
