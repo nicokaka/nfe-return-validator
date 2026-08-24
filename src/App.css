@@ -2785,19 +2785,6 @@ svg.search-icon {
   margin: 2px 0 0 0;
 }
 
-.keyboard-shortcuts-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--border-color);
-  padding: 5px 10px;
-  border-radius: var(--radius-xs);
-  font-family: 'JetBrains Mono', monospace;
-}
-
 .copilot-block {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -2863,17 +2850,6 @@ svg.search-icon {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
-}
-
-.shortcut-badge {
-  font-size: 9.5px;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
-  padding: 1px 5px;
-  border-radius: 3px;
-  border: 1px solid rgba(99, 102, 241, 0.25);
 }
 
 .field-input-group {

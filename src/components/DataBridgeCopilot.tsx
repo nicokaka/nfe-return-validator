@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
-import { Copy, Check, Keyboard, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck } from './Icons';
+import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
 
@@ -38,36 +38,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
   const formatDecimal4 = (val: number) => {
     return val.toFixed(4).replace('.', ',');
   };
-
-  // Keyboard Shortcuts Handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && !e.shiftKey && !e.altKey) {
-        if (e.key === '1') {
-          e.preventDefault();
-          copyToClipboard(nfd.chNFe, 'chave');
-        } else if (e.key === '2') {
-          e.preventDefault();
-          copyToClipboard(nfd.nProt || '', 'protocolo');
-        } else if (e.key === '3') {
-          e.preventDefault();
-          copyToClipboard(nfd.nNF, 'nNF');
-        } else if (e.key === '4') {
-          e.preventDefault();
-          copyToClipboard(ndoSuggestion?.cfop || '2.202', 'ndo');
-        } else if (e.key === '5') {
-          e.preventDefault();
-          copyToClipboard(selectedWarehouse, 'almox');
-        } else if (e.key === '6') {
-          e.preventDefault();
-          copyToClipboard(formatCurrency(nfd.totals.vNF), 'vNF');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nfd, ndoSuggestion, selectedWarehouse, copyToClipboard]);
 
   // Format all items for 1-click batch copy into ERP Pirâmide
   const generateFormattedItemsBatchText = () => {
@@ -108,11 +78,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
             </p>
           </div>
         </div>
-
-        <div className="keyboard-shortcuts-hint">
-          <Keyboard className="icon-xs" />
-          <span>Atalhos: Ctrl+1 (Chave) | Ctrl+2 (Protocolo) | Ctrl+3 (Nº NF) | Ctrl+4 (NDO) | Ctrl+5 (Almox) | Ctrl+6 (Total)</span>
-        </div>
       </div>
 
       {/* Seção 1: Dados Mestres do Cabeçalho Pirâmide */}
@@ -126,7 +91,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           <div className="copilot-field-card">
             <div className="field-meta">
               <span className="field-label">Número da NF</span>
-              <span className="shortcut-badge">Ctrl+3</span>
             </div>
             <div className="field-input-group">
               <input type="text" readOnly value={nfd.nNF} className="field-input font-mono font-weight-600" />
@@ -181,7 +145,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           <div className="copilot-field-card">
             <div className="field-meta">
               <span className="field-label">Protocolo SEFAZ</span>
-              <span className="shortcut-badge">Ctrl+2</span>
             </div>
             <div className="field-input-group">
               <input type="text" readOnly value={nfd.nProt || 'Não informado'} className="field-input font-mono" />
@@ -200,7 +163,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           <div className="copilot-field-card col-span-2">
             <div className="field-meta">
               <span className="field-label">Chave de Acesso (44 dígitos)</span>
-              <span className="shortcut-badge">Ctrl+1</span>
             </div>
             <div className="field-input-group">
               <input type="text" readOnly value={nfd.chNFe} className="field-input font-mono text-sm" />
@@ -264,7 +226,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           <div className="copilot-field-card col-span-2">
             <div className="field-meta">
               <span className="field-label">NDO Entrada Pirâmide</span>
-              <span className="shortcut-badge">Ctrl+4</span>
             </div>
             <div className="field-input-group">
               <input
@@ -316,7 +277,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           <div className="copilot-field-card">
             <div className="field-meta">
               <span className="field-label">Almoxarifado Destino</span>
-              <span className="shortcut-badge">Ctrl+5</span>
             </div>
             <div className="field-input-group">
               <select
@@ -455,7 +415,6 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           <div className="copilot-field-card">
             <div className="field-meta">
               <span className="field-label">Valor Total NF (vNF)</span>
-              <span className="shortcut-badge">Ctrl+6</span>
             </div>
             <div className="field-input-group">
               <input type="text" readOnly value={formatCurrency(nfd.totals.vNF)} className="field-input font-mono font-weight-600" />
