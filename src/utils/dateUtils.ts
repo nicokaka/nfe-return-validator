@@ -1,9 +1,8 @@
 /**
- * Utilitário de data fiscal para evitar problemas de fuso horário UTC (ex: 2028-06-30 virando 29/06/2028).
+ * Utilitários fiscais de data, CNPJ e chaves de acesso.
  */
 export function formatFiscalDate(dateStr?: string): string {
   if (!dateStr) return 'N/A';
-
   const clean = dateStr.trim();
   if (!clean) return 'N/A';
 
@@ -13,19 +12,19 @@ export function formatFiscalDate(dateStr?: string): string {
   }
 
   // Se estiver no formato YYYY-MM-DD ou YYYY-MM-DDTHH:mm:ss...
-  const datePart = clean.split('T')[0];
-  const parts = datePart.split('-');
-
-  if (parts.length === 3 && parts[0].length === 4) {
-    const [year, month, day] = parts;
-    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  const match = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}/${month}/${year}`;
   }
 
-  // Fallback seguro
   try {
     const d = new Date(clean);
     if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString('pt-BR');
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
     }
   } catch {
     // ignore
@@ -33,3 +32,25 @@ export function formatFiscalDate(dateStr?: string): string {
 
   return clean;
 }
+
+export function formatCNPJ(cnpj?: string): string {
+  if (!cnpj) return 'N/A';
+  const clean = cnpj.replace(/\D/g, '');
+  if (clean.length === 14) {
+    return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  }
+  if (clean.length === 11) {
+    return clean.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+  }
+  return cnpj;
+}
+
+export function formatChaveAcesso(key?: string): string {
+  if (!key) return 'N/A';
+  const clean = key.replace(/\D/g, '');
+  if (clean.length === 44) {
+    return clean.replace(/(\d{4})/g, '$1 ').trim();
+  }
+  return key;
+}
+

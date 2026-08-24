@@ -1,7 +1,7 @@
 import React from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRightLeft, FileWarning, ShieldCheck, Tag, DollarSign, Package, PackageCheck } from './Icons';
-import { formatFiscalDate } from '../utils/dateUtils';
+import { formatFiscalDate, formatCNPJ, formatChaveAcesso } from '../utils/dateUtils';
 
 interface ExecutiveSummaryProps {
   result: ReconciliationResult;
@@ -14,7 +14,6 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
   const formatCurrency = (val: number) => {
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
-
 
   return (
     <div className="executive-summary-section">
@@ -81,17 +80,16 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               <span className="card-date">Emissão: {formatFiscalDate(nfo.dhEmi)}</span>
             </div>
 
-
             <div className="card-entity">
               <div className="entity-label">EMITENTE • NOSSA EMPRESA</div>
               <div className="entity-name">{nfo.emit.xNome}</div>
-              <div className="entity-cnpj">CNPJ: {nfo.emit.cnpj}</div>
+              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfo.emit.cnpj)}</div>
             </div>
 
             <div className="card-entity">
               <div className="entity-label">DESTINATÁRIO • CLIENTE</div>
               <div className="entity-name">{nfo.dest.xNome}</div>
-              <div className="entity-cnpj">CNPJ: {nfo.dest.cnpj}</div>
+              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfo.dest.cnpj)}</div>
             </div>
 
             <div className="card-metrics-grid">
@@ -113,7 +111,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
 
             <div className="card-footer-info">
               <span className="info-key">Chave de Acesso:</span>
-              <span className="info-val font-mono">{nfo.chNFe}</span>
+              <span className="info-val font-mono">{formatChaveAcesso(nfo.chNFe)}</span>
             </div>
           </div>
         </div>
@@ -145,17 +143,16 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               <span className="card-date">Emissão: {formatFiscalDate(nfd.dhEmi)}</span>
             </div>
 
-
             <div className="card-entity">
               <div className="entity-label">EMITENTE • CLIENTE</div>
               <div className="entity-name">{nfd.emit.xNome}</div>
-              <div className="entity-cnpj">CNPJ: {nfd.emit.cnpj}</div>
+              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfd.emit.cnpj)}</div>
             </div>
 
             <div className="card-entity">
               <div className="entity-label">DESTINATÁRIO • NOSSA EMPRESA</div>
               <div className="entity-name">{nfd.dest.xNome}</div>
-              <div className="entity-cnpj">CNPJ: {nfd.dest.cnpj}</div>
+              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfd.dest.cnpj)}</div>
             </div>
 
             <div className="card-metrics-grid">
@@ -184,7 +181,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
                 <strong>Motivo Pirâmide:</strong> {piramideResolution ? `${piramideResolution.motivoCode} - ${piramideResolution.motivoDesc}` : summary.motivoDevolucao || 'Divergência Geral'}
                 {piramideResolution && (
                   <span className="ml-2 font-weight-600 text-xs">
-                    (Destino: {piramideResolution.isAutomatic ? piramideResolution.almoxarifado : 'Avaliação Doca'})
+                    {' '}(Destino: {piramideResolution.isAutomatic ? piramideResolution.almoxarifado : 'Avaliação Doca'})
                   </span>
                 )}
               </div>
@@ -202,7 +199,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
 
             <div className="card-footer-info">
               <span className="info-key">Chave de Acesso:</span>
-              <span className="info-val font-mono">{nfd.chNFe}</span>
+              <span className="info-val font-mono">{formatChaveAcesso(nfd.chNFe)}</span>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
 import { Copy, Check, Keyboard, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
-import { formatFiscalDate } from '../utils/dateUtils';
+import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
 
 interface DataBridgeCopilotProps {
   result: ReconciliationResult;
@@ -221,7 +221,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
               <span className="field-label">CNPJ Emitente (Cliente)</span>
             </div>
             <div className="field-input-group">
-              <input type="text" readOnly value={nfd.emit.cnpj} className="field-input font-mono" />
+              <input type="text" readOnly value={formatCNPJ(nfd.emit.cnpj)} className="field-input font-mono" />
               <button
                 type="button"
                 className={`btn-copy ${copiedKey === 'cnpjEmit' ? 'copied' : ''}`}
@@ -261,7 +261,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
 
         <div className="copilot-fields-grid">
           {/* NDO Sugerida */}
-          <div className="copilot-field-card">
+          <div className="copilot-field-card col-span-2">
             <div className="field-meta">
               <span className="field-label">NDO Entrada Pirâmide</span>
               <span className="shortcut-badge">Ctrl+4</span>
@@ -271,6 +271,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                 type="text"
                 readOnly
                 value={`${ndoSuggestion?.cfop || '2.202'} - ${ndoSuggestion?.ndoDescription || 'Devolução Interestadual'}`}
+                title={`${ndoSuggestion?.cfop || '2.202'} - ${ndoSuggestion?.ndoDescription || 'Devolução Interestadual'}`}
                 className="field-input font-mono font-weight-600"
               />
               <button
