@@ -3820,3 +3820,124 @@ svg.search-icon {
   border-top-color: #e2e8f0;
 }
 
+/* Light Mode File Chips & Ingestion Tags */
+[data-theme='light'] .file-chip {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+[data-theme='light'] .file-chip.chip-nfo {
+  border-left: 3px solid #2563eb;
+  background-color: #f8faff;
+}
+[data-theme='light'] .file-chip.chip-nfd {
+  border-left: 3px solid #d97706;
+  background-color: #fffdfa;
+}
+[data-theme='light'] .chip-type-tag.tag-nfo {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  font-weight: 700;
+}
+[data-theme='light'] .chip-type-tag.tag-nfd {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+}
+[data-theme='light'] .chip-type-tag.tag-unknown {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-weight: 700;
+}
+[data-theme='light'] .chip-name {
+  color: #0f172a;
+}
+[data-theme='light'] .chip-meta {
+  color: #475569;
+}
+[data-theme='light'] .chip-remove-btn {
+  color: #64748b;
+}
+[data-theme='light'] .chip-remove-btn:hover {
+  color: #dc2626;
+}
+
+/* Light Mode Classification Badges (Header Count) */
+[data-theme='light'] .badge-pill.nfo {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  font-weight: 700;
+}
+[data-theme='light'] .badge-pill.nfd {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+}
+[data-theme='light'] .badge-pill.unknown {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-weight: 700;
+}
+
+/* Light Mode Pair Row Badges & Texts */
+[data-theme='light'] .pair-nfd-badge {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+}
+[data-theme='light'] .pair-nfo-badge {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  font-weight: 700;
+}
+[data-theme='light'] .pair-nfo-badge.unpaired {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+[data-theme='light'] .method-tag {
+  background-color: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-weight: 600;
+}
+[data-theme='light'] .customer-name {
+  color: #1e293b;
+  font-weight: 600;
+}
+[data-theme='light'] .item-count {
+  color: #475569;
+}
+[data-theme='light'] .dot-divider {
+  color: #94a3b8;
+}
+
+/* Light Mode Warehouse & Batch Pills */
+[data-theme='light'] .warehouse-auto {
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+  font-weight: 600;
+}
+[data-theme='light'] .warehouse-manual {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 600;
+}
+[data-theme='light'] .batch-pill.batch-ok {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-weight: 600;
+}
+
+
