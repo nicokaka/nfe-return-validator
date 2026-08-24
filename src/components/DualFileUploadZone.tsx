@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, FileText, Trash2, Play, Sparkles, CheckCircle2, Bot, ArrowRight, ArrowLeft, Cpu, X, Layers, ChevronDown, ChevronUp } from './Icons';
+import { UploadCloud, Trash2, Sparkles, CheckCircle2, Bot, ArrowRight, ArrowLeft, Cpu, X, Layers, ChevronDown, ChevronUp, Zap, ShieldCheck, Building2 } from './Icons';
 import { LoadedFile } from '../hooks/useReconciliation';
 
 interface DualFileUploadZoneProps {
@@ -40,7 +40,55 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
   const nfdFiles = loadedFiles.filter(f => f.doc.nfeType === 'NFD');
   const unknownFiles = loadedFiles.filter(f => f.doc.nfeType === 'UNKNOWN');
 
-  const canAnalyze = loadedFiles.length >= 2;
+  const canAnalyze = loadedFiles.length >= 2 && nfoFiles.length > 0 && nfdFiles.length > 0;
+
+  // Dynamic Tactical Telemetry
+  const getRobotTelemetry = () => {
+    if (isAnalyzing) {
+      return {
+        status: 'working',
+        badge: '⚙️ AUDITORIA EM ANDAMENTO',
+        message: 'Escaneando tags <infNFe>, chaves <NFref>, rastreabilidade de lote e calculando proporcionalidade de descontos...',
+        actionText: 'PROCESSANDO LOTE FISCAL...',
+      };
+    }
+
+    if (nfoFiles.length > 0 && nfdFiles.length > 0) {
+      return {
+        status: 'ready',
+        badge: '⚡ MOTOR DE PAREAMENTO PRONTO',
+        message: `Pronto para cruzar ${nfdFiles.length} Nota(s) de Devolução (NFD) com ${nfoFiles.length} Nota(s) de Saída (NFO). Motores 1:1, 1:N e NT 2021.004 ativos.`,
+        actionText: 'EXECUTAR AUDITORIA FISCAL INTELIGENTE',
+      };
+    }
+
+    if (nfoFiles.length > 0 && nfdFiles.length === 0) {
+      return {
+        status: 'waiting',
+        badge: '🔍 AGUARDANDO DEVOLUÇÃO (NFD)',
+        message: `Detectei ${nfoFiles.length} Nota(s) de Saída (NFO). Adicione o XML de Devolução (NFD) do cliente para iniciar o cruzamento!`,
+        actionText: 'AGUARDANDO XML DE DEVOLUÇÃO',
+      };
+    }
+
+    if (nfdFiles.length > 0 && nfoFiles.length === 0) {
+      return {
+        status: 'waiting',
+        badge: '🔍 AGUARDANDO ORIGEM (NFO)',
+        message: `Detectei ${nfdFiles.length} Nota(s) de Devolução (NFD). Adicione o XML de Origem (NFO) da sua empresa para validar faturamento e alíquotas.`,
+        actionText: 'AGUARDANDO XML DE ORIGEM',
+      };
+    }
+
+    return {
+      status: 'waiting',
+      badge: '💡 CARREGUE OS XMLS',
+      message: 'Adicione pelo menos 1 Nota de Origem (NFO) e 1 de Devolução (NFD) para auditar.',
+      actionText: 'INICIAR AUDITORIA',
+    };
+  };
+
+  const telemetry = getRobotTelemetry();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -190,15 +238,20 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
             {loadedFiles.map(file => {
               const isLongNumericKey = /^\d{20,}/.test(file.name.replace(/\D/g, ''));
               const displayName = isLongNumericKey ? `Nota nº ${file.doc.nNF}` : file.name;
+              const typeLabel = file.doc.nfeType === 'NFO' ? 'NFO • SAÍDA' : file.doc.nfeType === 'NFD' ? 'NFD • DEVOLUÇÃO' : 'XML';
 
               return (
                 <div key={file.id} className={`file-chip chip-${file.doc.nfeType.toLowerCase()}`}>
-                  <FileText className="chip-icon" />
+                  <span className={`chip-type-tag tag-${file.doc.nfeType.toLowerCase()}`}>
+                    {typeLabel}
+                  </span>
                   <div className="chip-info">
                     <span className="chip-name" title={file.name}>
                       {displayName}
                     </span>
-                    <span className="chip-meta">NF nº {file.doc.nNF}</span>
+                    <span className="chip-meta">
+                      {file.doc.emit?.xNome ? file.doc.emit.xNome.slice(0, 20) + '...' : `NF nº ${file.doc.nNF}`}
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -213,33 +266,47 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
             })}
           </div>
 
-          {/* Robot Auditor Action Node */}
-          <div className={`batch-robot-action-card ${canAnalyze ? 'ready' : ''} ${isAnalyzing ? 'analyzing' : ''}`}>
+          {/* Futuristic Cybernetic AI Robot Action Hub */}
+          <div className={`batch-robot-action-card status-${telemetry.status} ${isAnalyzing ? 'analyzing' : ''}`}>
             <div className="robot-card-left-group">
-              <div className="robot-avatar-box">
-                <div className="robot-aura-ring"></div>
-                <div className="robot-eye-lights">
-                  <span className="eye left-eye"></span>
-                  <span className="eye right-eye"></span>
+              {/* Animated AI Holographic Core */}
+              <div className="robot-ai-avatar">
+                <div className="robot-orbital-glow"></div>
+                <div className="robot-pulse-ring"></div>
+                <div className="robot-core-hex">
+                  <Bot className="robot-core-icon" />
                 </div>
-                <Bot className="robot-icon" />
-                {isAnalyzing && <Cpu className="robot-cpu-spinner" />}
+                <div className="robot-sparkle-badge">
+                  <Sparkles className="icon-xxs" />
+                </div>
               </div>
 
               <div className="robot-action-details">
-                <h4 className="robot-action-title">
-                  Robô Auditor Fiscal
-                  <span className={`status-badge-inline ${isAnalyzing ? 'working' : canAnalyze ? 'ready' : 'waiting'}`}>
-                    {isAnalyzing ? '⚙️ Processando' : canAnalyze ? '⚡ Pronto' : 'Aguardando'}
+                <div className="robot-action-title-row">
+                  <h4 className="robot-action-title">
+                    Robô Auditor Fiscal IA
+                  </h4>
+                  <span className={`robot-status-pill pill-${telemetry.status}`}>
+                    {telemetry.badge}
                   </span>
-                </h4>
+                </div>
+
                 <p className="robot-action-sub">
-                  {isAnalyzing
-                    ? '⚙️ Cruzando dados tributários, lotes e referências fiscais em milissegundos...'
-                    : canAnalyze
-                    ? `⚡ Pronto para auditar e parear automaticamente as ${loadedFiles.length} notas carregadas.`
-                    : '💡 Adicione pelo menos 1 NFO e 1 NFD para iniciar a auditoria.'}
+                  {telemetry.message}
                 </p>
+
+                {/* Telemetry Feature Badges */}
+                <div className="robot-telemetry-tags">
+                  <span className="telemetry-tag">
+                    <ShieldCheck className="icon-xxs" /> NT 2021.004 Pharma
+                  </span>
+                  <span className="telemetry-tag">
+                    <Layers className="icon-xxs" /> Pareamento 1:1 & 1:N
+                  </span>
+                  <span className="telemetry-tag">
+                    <Building2 className="icon-xxs" /> Bridge ERP Pirâmide
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -247,18 +314,17 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
               type="button"
               onClick={onRunReconciliation}
               disabled={!canAnalyze || isAnalyzing}
-              className={`btn btn-robot-action ${canAnalyze ? 'btn-robot-pulse' : ''} ${isAnalyzing ? 'btn-analyzing' : ''}`}
+              className={`btn-cyber-audit ${canAnalyze ? 'btn-active-glow' : 'btn-disabled'} ${isAnalyzing ? 'btn-analyzing' : ''}`}
             >
               {isAnalyzing ? (
                 <>
-                  <span className="spinner-dots">
-                    <span></span><span></span><span></span>
-                  </span>
-                  AUDITANDO LOTE...
+                  <Cpu className="icon-xs spin-infinite" />
+                  <span>PROCESSANDO LOTE...</span>
                 </>
               ) : (
                 <>
-                  <Play className="icon-xs" /> INICIAR AUDITORIA EM LOTE
+                  <Zap className="icon-xs" />
+                  <span>{telemetry.actionText}</span>
                 </>
               )}
             </button>

@@ -2172,76 +2172,301 @@ font-size: 10.5px;
   color: var(--color-danger);
 }
 
-/* Robot Action Card */
+.chip-type-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.chip-type-tag.tag-nfo {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.chip-type-tag.tag-nfd {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.chip-type-tag.tag-unknown {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* ==========================================================================
+   FUTURISTIC AI ROBOT ACTION HUB
+   ========================================================================== */
 .batch-robot-action-card {
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.35) 0%, rgba(18, 18, 21, 0.95) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all var(--transition-normal);
+}
+
+.batch-robot-action-card.status-ready {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.25) 0%, rgba(18, 18, 21, 0.95) 100%);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 24px rgba(16, 185, 129, 0.08);
+}
+
+.batch-robot-action-card.status-waiting {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(18, 18, 21, 0.95) 100%);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.batch-robot-action-card.analyzing {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.25) 0%, rgba(18, 18, 21, 0.95) 100%);
+  border-color: #818cf8;
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.25);
+}
+
+.batch-robot-action-card.analyzing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #818cf8, #34d399, transparent);
+  animation: laserScan 2s linear infinite;
+}
+
+@keyframes laserScan {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
 }
 
 .robot-card-left-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
+}
+
+/* AI Holographic Avatar */
+.robot-ai-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.robot-orbital-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #6366f1, #10b981);
+  opacity: 0.4;
+  filter: blur(4px);
+  z-index: 0;
+  animation: orbitalPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes orbitalPulse {
+  0% { transform: scale(0.95); opacity: 0.3; }
+  100% { transform: scale(1.05); opacity: 0.6; }
+}
+
+.robot-pulse-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  animation: spinRing 12s linear infinite;
+  z-index: 0;
+}
+
+@keyframes spinRing {
+  100% { transform: rotate(360deg); }
+}
+
+.robot-core-hex {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.robot-core-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.robot-sparkle-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px #10b981;
+  z-index: 2;
+}
+
+.icon-xxs {
+  width: 11px;
+  height: 11px;
 }
 
 .robot-action-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+
+.robot-action-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .robot-action-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
   margin: 0;
+  letter-spacing: -0.2px;
 }
 
-.status-badge-inline {
+.robot-status-pill {
   font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
+  font-weight: 700;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
-.status-badge-inline.ready {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-success);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+
+.robot-status-pill.pill-ready {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
 }
-.status-badge-inline.working {
-  background: rgba(99, 102, 241, 0.1);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+
+.robot-status-pill.pill-waiting {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
-.status-badge-inline.waiting {
-  background: var(--bg-surface);
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
+
+.robot-status-pill.pill-working {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.4);
 }
 
 .robot-action-sub {
-  font-size: 11.5px;
-  color: var(--text-muted);
+  font-size: 12px;
+  color: var(--text-secondary);
   margin: 0;
+  line-height: 1.4;
 }
 
-.batch-robot-action-card .btn-robot-action {
-  width: auto;
-  padding: 9px 18px;
+.robot-telemetry-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.telemetry-tag {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Cybernetic High-Energy Action Button */
+.btn-cyber-audit {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  transition: all var(--transition-fast);
   white-space: nowrap;
+}
+
+.btn-cyber-audit.btn-active-glow {
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #0d9488 100%);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-cyber-audit.btn-active-glow:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.3);
+}
+
+.btn-cyber-audit.btn-disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-cyber-audit.btn-analyzing {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  animation: pulseButton 1.5s infinite;
+}
+
+@keyframes pulseButton {
+  0% { opacity: 0.85; }
+  50% { opacity: 1; filter: brightness(1.2); }
+  100% { opacity: 0.85; }
+}
+
+.spin-infinite {
+  animation: spinRing 2s linear infinite;
 }
 
 /* Collapsed Bar for Ingested Files */
@@ -3169,6 +3394,38 @@ svg.search-icon {
 }
 [data-theme='light'] .status-banner.rejected .status-banner-sub {
   color: #7f1d1d;
+}
+
+/* Light Mode AI Robot Action Hub */
+[data-theme='light'] .batch-robot-action-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+[data-theme='light'] .batch-robot-action-card.status-ready {
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+  border-color: #a7f3d0;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.08);
+}
+[data-theme='light'] .batch-robot-action-card.status-waiting {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border-color: #cbd5e1;
+}
+[data-theme='light'] .robot-action-title {
+  color: #0f172a;
+}
+[data-theme='light'] .robot-action-sub {
+  color: #475569;
+}
+[data-theme='light'] .telemetry-tag {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+[data-theme='light'] .btn-cyber-audit.btn-disabled {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #94a3b8;
 }
 
 /* Light Mode Summary Cards */
