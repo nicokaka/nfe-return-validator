@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
-import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck } from './Icons';
+import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck, ChevronDown, ChevronUp } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
 
@@ -12,6 +12,9 @@ interface DataBridgeCopilotProps {
 export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) => {
   const { nfd, nfo, itemComparisons, ndoSuggestion, piramideResolution: initialPiramideResolution } = result;
   const { copiedKey, copyToClipboard } = useClipboard(2000);
+
+  // Retractable Assistant state (collapsed by default to keep UI clean and compact)
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   // Selected Motivo / Almoxarifado state (allows user override)
   const [selectedMotivoCode, setSelectedMotivoCode] = useState<string>(
@@ -65,23 +68,53 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
   };
 
   return (
-    <div className="copilot-section">
-      <div className="copilot-header">
+    <div className={`copilot-section ${isExpanded ? 'is-expanded' : 'is-collapsed'}`}>
+      {/* Header Retrátil Interativo */}
+      <div 
+        className="copilot-header"
+        onClick={() => setIsExpanded(!isExpanded)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        title={isExpanded ? 'Clique para recolher o assistente' : 'Clique para abrir o assistente de lançamento'}
+      >
         <div className="copilot-title-group">
           <div className="copilot-icon-box">
             <Sparkles className="icon" />
           </div>
           <div>
-            <h3 className="copilot-title">Assistente Tático de Lançamento (ERP Pirâmide)</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="copilot-title">Assistente de Lançamento (ERP Pirâmide)</h3>
+              <span className={`copilot-status-pill ${isExpanded ? 'active' : 'inactive'}`}>
+                {isExpanded ? 'Ativo / Expandido' : 'Recolhido'}
+              </span>
+            </div>
             <p className="copilot-subtitle">
-              Ponte de dados instantânea com botões de 1-clique, direcionamento automático de almoxarifados e conciliação de centavos.
+              Ponte de dados com botões de 1-clique, direcionamento de almoxarifados e conciliação de centavos para lançamento ágil.
             </p>
           </div>
         </div>
+
+        <div className="copilot-header-actions">
+          <button
+            type="button"
+            className="btn-copilot-toggle"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+          >
+            {isExpanded ? <ChevronUp className="icon-xs" /> : <ChevronDown className="icon-xs" />}
+            <span>{isExpanded ? 'Recolher Assistente' : 'Abrir Assistente'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Seção 1: Dados Mestres do Cabeçalho Pirâmide */}
-      <div className="copilot-block">
+      {/* Conteúdo Expansível / Retrátil */}
+      {isExpanded && (
+        <div className="copilot-collapsible-content">
+          {/* Seção 1: Dados Mestres do Cabeçalho Pirâmide */}
+          <div className="copilot-block">
         <h4 className="copilot-block-title">
           <Building2 className="icon-xs" /> 1. Dados de Cabeçalho da Nota de Devolução (NFD)
         </h4>
@@ -627,6 +660,8 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           </table>
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 };
