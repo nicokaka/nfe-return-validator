@@ -832,25 +832,127 @@
 
 .product-sub {
   font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 2px;
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+[data-theme='dark'] .product-sub {
+  color: #94a3b8;
+}
+
+[data-theme='light'] .product-sub {
+  color: #475569;
 }
 
 .diff-highlight {
   font-size: 10px;
   font-weight: 600;
+  margin-top: 3px;
 }
 
-.batch-pill {
-  font-family: 'JetBrains Mono', monospace;
+.unit-label {
   font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 4px;
 }
-.batch-ok { background-color: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); }
-.batch-missing { background-color: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
-.batch-nfo-pill { background-color: rgba(59,130,246,0.1); color: #3B82F6; }
+
+.text-cell-price,
+.text-cell-desc {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.price-main,
+.desc-main {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+/* Sistema Estruturado de Lotes (Sem quebras feias) */
+.cell-lote {
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+.batch-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.25;
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.batch-card .batch-number {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.batch-card .batch-val {
+  font-size: 10px;
+  opacity: 0.85;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.batch-card-ok {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.batch-card-ok .batch-number {
+  color: var(--color-success, #10b981);
+}
+
+.batch-card-nfo {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: var(--text-primary);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.batch-card-nfo .batch-number {
+  color: #60a5fa;
+}
+
+.batch-card-exempt {
+  background-color: rgba(14, 165, 233, 0.08);
+  border: 1px dashed rgba(14, 165, 233, 0.35);
+  color: #38bdf8;
+  padding: 4px 8px;
+}
+
+.batch-card-exempt .batch-exempt-label {
+  font-weight: 600;
+  font-size: 11px;
+  color: #38bdf8;
+}
+
+.batch-card-exempt .batch-exempt-sub {
+  font-size: 9.5px;
+  opacity: 0.8;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+
+.batch-card-missing {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: var(--color-danger, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.batch-card-missing .batch-missing-label {
+  font-weight: 700;
+  font-size: 10.5px;
+}
 
 .expanded-detail-row td {
   padding: 0;
@@ -2836,5 +2938,119 @@
   color: var(--text-muted);
 }
 
+/* Badges de NCM Farmacêutico */
+.ncm-category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
+.badge-ncm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
 
+.badge-ncm-medicamento {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.badge-ncm-vitamina {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.badge-ncm-suplemento {
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge-ncm-cosmetico_correlato {
+  background: rgba(168, 85, 247, 0.1);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.badge-ncm-outros {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.badge-anvisa {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Badges de Quantidade & Tipos de Devolução */
+.quantity-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.quantity-main {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.quantity-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.badge-qty {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.badge-qty-total {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.badge-qty-partial {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.badge-qty-excess {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Ajustes de Largura e Alinhamento das Colunas da Matriz */
+.reconciliation-table th:nth-child(1) { width: 35px; text-align: center; }
+.reconciliation-table th:nth-child(2) { width: 95px; text-align: center; }
+.reconciliation-table th:nth-child(4) { min-width: 125px; }
+.reconciliation-table th:nth-child(5) { min-width: 135px; }
+.reconciliation-table th:nth-child(6) { min-width: 115px; }
+.reconciliation-table th:nth-child(7) { min-width: 105px; }
+.reconciliation-table th:nth-child(8) { min-width: 115px; }
+.reconciliation-table th:nth-child(9) { min-width: 145px; }
+.reconciliation-table th:nth-child(10) { min-width: 145px; }

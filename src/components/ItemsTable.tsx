@@ -105,13 +105,6 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
               const nfdDescUnit = nfdItem.qCom > 0 ? nfdItem.vDesc / nfdItem.qCom : 0;
               const nfoDescUnit = nfoItem && nfoItem.qCom > 0 ? nfoItem.vDesc / nfoItem.qCom : 0;
 
-              const nfdLotesStr = nfdItem.batches.length > 0
-                ? nfdItem.batches.map(b => `${b.nLote}${b.dVal ? ` (Val: ${formatFiscalDate(b.dVal)})` : ''}`).join(', ')
-                : 'NÃO INFORMADO';
-              const nfoLotesStr = nfoItem && nfoItem.batches.length > 0
-                ? nfoItem.batches.map(b => `${b.nLote}${b.dVal ? ` (Val: ${formatFiscalDate(b.dVal)})` : ''}`).join(', ')
-                : (nfoItem ? 'Sem lote' : 'N/A');
-
               let rowClass = 'row-approved';
 
               if (hasCritical) rowClass = 'row-critical';
@@ -178,14 +171,14 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                       <div className="quantity-cell">
                         <div className="quantity-main">
                           <span className="font-weight-600 font-mono text-base">{nfdItem.qCom}</span>
-                          <span className="text-muted text-xs ml-1 font-weight-500">{nfdItem.uCom}</span>
+                          <span className="unit-label font-mono">{nfdItem.uCom || 'UN'}</span>
                         </div>
                         {nfoItem && (
                           <div className="quantity-sub">
-                            <span className="text-muted text-xs">de {nfoItem.qCom} {nfoItem.uCom}</span>
+                            <span className="text-muted text-xs">de {nfoItem.qCom} {nfoItem.uCom || 'UN'}</span>
                             {c.returnType === 'TOTAL' && (
                               <span className="badge-qty badge-qty-total" title="Devolução 100% Total">
-                                Total (100%)
+                                Total 100%
                               </span>
                             )}
                             {c.returnType === 'PARTIAL' && (
@@ -220,8 +213,9 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                       )}
                     </td>
 
-                    <td className="font-mono">
-                      {formatCurrency(nfdItem.vUnCom)}
+                    {/* Preço Unitário */}
+                    <td className="font-mono text-cell-price">
+                      <span className="price-main">{formatCurrency(nfdItem.vUnCom)}</span>
                       {nfoItem && Math.abs(nfdItem.vUnCom - nfoItem.vUnCom) > 0.001 && (
                         <span className="diff-highlight danger block">
                           Origem: {formatCurrency(nfoItem.vUnCom)}
@@ -229,8 +223,9 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                       )}
                     </td>
 
-                    <td className="font-mono">
-                      {formatCurrency(nfdDescUnit)}
+                    {/* Desconto / Unidade */}
+                    <td className="font-mono text-cell-desc">
+                      <span className="desc-main">{formatCurrency(nfdDescUnit)}</span>
                       {c.discountAudit && (
                         <div className="discount-audit-container mt-1">
                           {c.discountAudit.isExceededProductValue ? (
@@ -258,18 +253,47 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                       )}
                     </td>
 
-                    <td>
-                      <span className={`batch-pill ${nfdItem.batches.length === 0 ? 'batch-missing' : 'batch-ok'}`}>
-                        {nfdLotesStr}
-                      </span>
+                    {/* LOTE NFD (com suporte estruturado e sem quebra feia) */}
+                    <td className="cell-lote">
+                      {nfdItem.batches.length > 0 ? (
+                        <div className="batch-card batch-card-ok">
+                          <span className="batch-number font-mono">{nfdItem.batches[0].nLote}</span>
+                          {nfdItem.batches[0].dVal && (
+                            <span className="batch-val text-xs font-mono">
+                              Val: {formatFiscalDate(nfdItem.batches[0].dVal)}
+                            </span>
+                          )}
+                        </div>
+                      ) : c.ncmProfile?.category === 'VITAMINA' || c.ncmProfile?.category === 'SUPLEMENTO' || result.nfd.finNFe === 4 ? (
+                        <div className="batch-card batch-card-exempt" title="Dispensado pela NT 2021.004 na SEFAZ (Conferência física na doca)">
+                          <span className="batch-exempt-label">ℹ️ S/ LOTE XML</span>
+                          <span className="batch-exempt-sub">NT 2021.004</span>
+                        </div>
+                      ) : (
+                        <div className="batch-card batch-card-missing" title="Lote ausente na nota fiscal">
+                          <span className="batch-missing-label">❌ NÃO INFORMADO</span>
+                        </div>
+                      )}
                     </td>
 
-                    <td>
-                      <span className="batch-pill batch-nfo-pill">{nfoLotesStr}</span>
+                    {/* LOTE NFO (com suporte estruturado e sem quebra feia) */}
+                    <td className="cell-lote">
+                      {nfoItem && nfoItem.batches.length > 0 ? (
+                        <div className="batch-card batch-card-nfo">
+                          <span className="batch-number font-mono">{nfoItem.batches[0].nLote}</span>
+                          {nfoItem.batches[0].dVal && (
+                            <span className="batch-val text-xs font-mono">
+                              Val: {formatFiscalDate(nfoItem.batches[0].dVal)}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted text-xs font-mono">{nfoItem ? 'Sem lote' : 'N/A'}</span>
+                      )}
                     </td>
 
                     <td className="cell-center">
-                      <button type="button" className="btn-icon">
+                      <button type="button" className="btn-icon" title="Ver detalhes do item">
                         {isExpanded ? <ChevronUp className="icon-xs" /> : <ChevronDown className="icon-xs" />}
                       </button>
                     </td>
