@@ -25,7 +25,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
             <>
               <CheckCircle2 className="status-banner-icon success" />
               <div>
-                <h2 className="status-banner-title">NF DE DEVOLUÇÃO CONFORME E LIBERADA</h2>
+                <h2 className="status-banner-title">NF DE DEVOLUÇÃO CONFORME • LIBERADA PARA ENTRADA</h2>
                 <p className="status-banner-sub">
                   Todos os produtos, lotes, tributos e valores conferem perfeitamente com a Nota de Origem.
                 </p>
@@ -37,9 +37,9 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
             <>
               <AlertTriangle className="status-banner-icon warning" />
               <div>
-                <h2 className="status-banner-title">ATENÇÃO — DIVERGÊNCIAS LEVES DETECTADAS</h2>
+                <h2 className="status-banner-title">DIVERGÊNCIAS LEVES DETECTADAS • CONFERÊNCIA SUGERIDA</h2>
                 <p className="status-banner-sub">
-                  Encontrados {summary.totalWarnings} alerta(s) tributários ou de formatação. Verifique a tabela abaixo.
+                  Encontrados {summary.totalWarnings} alerta(s) tributários ou regulatórios. Verifique a matriz abaixo.
                 </p>
               </div>
             </>
@@ -49,9 +49,9 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
             <>
               <XCircle className="status-banner-icon danger" />
               <div>
-                <h2 className="status-banner-title">ENTRADA BLOQUEADA — DIVERGÊNCIAS CRÍTICAS</h2>
+                <h2 className="status-banner-title">ENTRADA BLOQUEADA • DIVERGÊNCIAS CRÍTICAS</h2>
                 <p className="status-banner-sub">
-                  Detectados {summary.totalCriticalErrors} erro(s) crítico(s) (Lote ausente/incorreto, preço divergente ou excesso de quantidade).
+                  Detectados {summary.totalCriticalErrors} erro(s) crítico(s) (Lote incorreto, preço divergente ou excesso de quantidade).
                 </p>
               </div>
             </>
@@ -59,8 +59,8 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
         </div>
 
         {summary.totalCriticalErrors > 0 && (
-          <button type="button" onClick={onGenerateReport} className="btn btn-danger-solid">
-            <FileWarning className="icon-sm" /> Gerar Laudo Pró-Coleta para Cliente
+          <button type="button" onClick={onGenerateReport} className="btn btn-danger-solid btn-sm">
+            <FileWarning className="icon-xs" /> Gerar Laudo de Divergência
           </button>
         )}
       </div>

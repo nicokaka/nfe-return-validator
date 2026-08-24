@@ -68,9 +68,11 @@ export function App() {
             <PackageCheck className="icon" />
           </div>
           <div>
-            <h1 className="brand-title">Validador Fiscal de Devoluções</h1>
-            <p className="brand-subtitle">Auditoria em Lote NFO x NFD | Automação Operacional ERP Pirâmide</p>
-
+            <h1 className="brand-title">
+              Validador Fiscal de Devoluções
+              <span className="brand-badge">Enterprise v2.0</span>
+            </h1>
+            <p className="brand-subtitle">Auditoria Tributária em Lote (NFO x NFD) • ERP Pirâmide & NT 2021.004</p>
           </div>
         </div>
 
