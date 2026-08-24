@@ -415,7 +415,7 @@
 }
 
 .status-banner.approved {
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.02) 60%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.02) 60%, var(--bg-surface) 100%);
   border: 1px solid rgba(16, 185, 129, 0.3);
   border-left: 4px solid #10b981;
   box-shadow: 0 4px 20px rgba(16, 185, 129, 0.06);
@@ -428,7 +428,7 @@
 }
 
 .status-banner.has_warnings {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.02) 60%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.02) 60%, var(--bg-surface) 100%);
   border: 1px solid rgba(245, 158, 11, 0.3);
   border-left: 4px solid #f59e0b;
   box-shadow: 0 4px 20px rgba(245, 158, 11, 0.06);
@@ -441,7 +441,7 @@
 }
 
 .status-banner.rejected {
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.02) 60%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.02) 60%, var(--bg-surface) 100%);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-left: 4px solid #ef4444;
   box-shadow: 0 4px 20px rgba(239, 68, 68, 0.06);
@@ -499,7 +499,7 @@
 }
 
 .summary-card.card-nfo {
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.07) 0%, rgba(18, 18, 21, 0.98) 60%);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.07) 0%, var(--bg-surface) 60%);
   border: 1px solid rgba(59, 130, 246, 0.25);
   border-top: 3px solid #3b82f6;
   box-shadow: 0 4px 20px rgba(59, 130, 246, 0.05);
@@ -526,7 +526,7 @@
 }
 
 .summary-card.card-nfd {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.07) 0%, rgba(18, 18, 21, 0.98) 60%);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.07) 0%, var(--bg-surface) 60%);
   border: 1px solid rgba(245, 158, 11, 0.25);
   border-top: 3px solid #f59e0b;
   box-shadow: 0 4px 20px rgba(245, 158, 11, 0.05);
@@ -765,7 +765,7 @@
 
 /* Pharma Executive Panel */
 .pharma-executive-panel {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.09) 0%, rgba(6, 182, 212, 0.04) 50%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.09) 0%, rgba(6, 182, 212, 0.04) 50%, var(--bg-surface) 100%);
   border: 1px solid rgba(139, 92, 246, 0.25);
   border-left: 4px solid #8b5cf6;
   border-radius: var(--radius-md);
@@ -2322,7 +2322,7 @@ font-size: 10.5px;
 }
 
 .kpi-card.kpi-approved {
-  background: linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.1) 0%, var(--bg-surface) 100%);
   border-color: rgba(16, 185, 129, 0.28);
 }
 .kpi-card.kpi-approved .kpi-value {
@@ -2330,7 +2330,7 @@ font-size: 10.5px;
 }
 
 .kpi-card.kpi-warning {
-  background: linear-gradient(145deg, rgba(245, 158, 11, 0.1) 0%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.1) 0%, var(--bg-surface) 100%);
   border-color: rgba(245, 158, 11, 0.28);
 }
 .kpi-card.kpi-warning .kpi-value {
@@ -2338,7 +2338,7 @@ font-size: 10.5px;
 }
 
 .kpi-card.kpi-rejected {
-  background: linear-gradient(145deg, rgba(239, 68, 68, 0.1) 0%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(145deg, rgba(239, 68, 68, 0.1) 0%, var(--bg-surface) 100%);
   border-color: rgba(239, 68, 68, 0.28);
 }
 .kpi-card.kpi-rejected .kpi-value {
@@ -2346,7 +2346,7 @@ font-size: 10.5px;
 }
 
 .kpi-card.kpi-unpaired {
-  background: linear-gradient(145deg, rgba(148, 163, 184, 0.08) 0%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(145deg, rgba(148, 163, 184, 0.08) 0%, var(--bg-surface) 100%);
   border-color: rgba(148, 163, 184, 0.22);
 }
 .kpi-card.kpi-unpaired .kpi-value {
@@ -2354,7 +2354,7 @@ font-size: 10.5px;
 }
 
 .kpi-card.kpi-total-val {
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.14) 0%, rgba(18, 18, 21, 0.95) 100%);
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.14) 0%, var(--bg-surface) 100%);
   border-color: rgba(99, 102, 241, 0.35);
 }
 .kpi-card.kpi-total-val .kpi-value.highlight {
@@ -2981,3 +2981,430 @@ svg.search-icon {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   LIGHT THEME REFINEMENT (Linear / Stripe Clean Enterprise Light)
+   ========================================================================== */
+[data-theme='light'] .app-container {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(circle at 15% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 35%),
+    radial-gradient(circle at 85% 0%, rgba(14, 165, 233, 0.04) 0%, transparent 30%);
+}
+
+[data-theme='light'] .app-header {
+  background-color: #ffffff;
+  border-bottom-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme='light'] .btn-ghost {
+  color: #475569;
+}
+[data-theme='light'] .btn-ghost:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Light Mode Status Banner */
+[data-theme='light'] .status-banner.approved {
+  background: linear-gradient(90deg, #ecfdf5 0%, #ffffff 70%);
+  border-color: #a7f3d0;
+  border-left: 4px solid #059669;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.05);
+}
+[data-theme='light'] .status-banner.approved .status-banner-title {
+  color: #065f46;
+}
+[data-theme='light'] .status-banner.approved .status-banner-icon {
+  color: #059669;
+}
+[data-theme='light'] .status-banner.approved .status-banner-sub {
+  color: #047857;
+}
+
+[data-theme='light'] .status-banner.has_warnings {
+  background: linear-gradient(90deg, #fffbeb 0%, #ffffff 70%);
+  border-color: #fde68a;
+  border-left: 4px solid #d97706;
+  box-shadow: 0 2px 10px rgba(217, 119, 6, 0.05);
+}
+[data-theme='light'] .status-banner.has_warnings .status-banner-title {
+  color: #92400e;
+}
+[data-theme='light'] .status-banner.has_warnings .status-banner-icon {
+  color: #d97706;
+}
+[data-theme='light'] .status-banner.has_warnings .status-banner-sub {
+  color: #78350f;
+}
+
+[data-theme='light'] .status-banner.rejected {
+  background: linear-gradient(90deg, #fef2f2 0%, #ffffff 70%);
+  border-color: #fecaca;
+  border-left: 4px solid #dc2626;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.05);
+}
+[data-theme='light'] .status-banner.rejected .status-banner-title {
+  color: #991b1b;
+}
+[data-theme='light'] .status-banner.rejected .status-banner-icon {
+  color: #dc2626;
+}
+[data-theme='light'] .status-banner.rejected .status-banner-sub {
+  color: #7f1d1d;
+}
+
+/* Light Mode Summary Cards */
+[data-theme='light'] .summary-card {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .summary-card.card-nfo {
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 50%);
+  border-color: #bfdbfe;
+  border-top: 3px solid #2563eb;
+}
+[data-theme='light'] .card-nfo .card-header {
+  background: rgba(37, 99, 235, 0.06);
+  border-bottom: 1px solid #dbeafe;
+}
+[data-theme='light'] .card-nfo .badge-nfo {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+[data-theme='light'] .card-nfo .card-nf-number {
+  color: #1e40af;
+}
+[data-theme='light'] .card-nfo .entity-cnpj {
+  color: #2563eb;
+}
+[data-theme='light'] .card-nfo .metric-box {
+  background-color: #f0f7ff;
+  border-color: #dbeafe;
+}
+[data-theme='light'] .card-nfo .metric-value {
+  color: #1e3a8a;
+}
+[data-theme='light'] .card-nfo .card-entity {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme='light'] .summary-card.card-nfd {
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50%);
+  border-color: #fde68a;
+  border-top: 3px solid #d97706;
+}
+[data-theme='light'] .card-nfd .card-header {
+  background: rgba(217, 119, 6, 0.06);
+  border-bottom: 1px solid #fef3c7;
+}
+[data-theme='light'] .card-nfd .badge-nfd {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+[data-theme='light'] .card-nfd .card-nf-number {
+  color: #92400e;
+}
+[data-theme='light'] .card-nfd .entity-cnpj {
+  color: #b45309;
+}
+[data-theme='light'] .card-nfd .metric-box {
+  background-color: #fffdf5;
+  border-color: #fde68a;
+}
+[data-theme='light'] .card-nfd .metric-value.highlight {
+  color: #b45309;
+  text-shadow: none;
+}
+[data-theme='light'] .card-nfd .card-entity {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .motivo-highlight-box {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left: 3px solid #d97706;
+  color: #78350f;
+}
+
+[data-theme='light'] .connection-badge {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+[data-theme='light'] .ref-status.success {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+[data-theme='light'] .card-sefaz-badge {
+  color: #059669;
+}
+
+/* Light Mode Pharma Panel */
+[data-theme='light'] .pharma-executive-panel {
+  background: linear-gradient(135deg, #faf5ff 0%, #f0fdf4 50%, #ffffff 100%);
+  border-color: #e9d5ff;
+  border-left: 4px solid #7c3aed;
+  box-shadow: 0 2px 12px rgba(124, 58, 237, 0.05);
+}
+[data-theme='light'] .pharma-panel-header {
+  border-bottom-color: #f3e8ff;
+}
+[data-theme='light'] .pharma-panel-title {
+  color: #5b21b6;
+}
+[data-theme='light'] .pharma-panel-subtitle {
+  color: #64748b;
+}
+[data-theme='light'] .pharma-status-badge.badge-success {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+[data-theme='light'] .pharma-metric-card {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .pharma-metric-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+[data-theme='light'] .pharma-metric-name {
+  color: #475569;
+}
+[data-theme='light'] .pharma-metric-number {
+  color: #0f172a;
+}
+[data-theme='light'] .pharma-metric-desc {
+  color: #64748b;
+}
+
+/* Light Mode Batch Dashboard KPIs */
+[data-theme='light'] .batch-header-banner {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme='light'] .kpi-card {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+[data-theme='light'] .kpi-card.kpi-approved {
+  background: linear-gradient(145deg, #ecfdf5 0%, #ffffff 100%);
+  border-color: #a7f3d0;
+}
+[data-theme='light'] .kpi-card.kpi-approved .kpi-value {
+  color: #059669;
+}
+[data-theme='light'] .kpi-card.kpi-approved .kpi-icon-box.success {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+[data-theme='light'] .kpi-card.kpi-warning {
+  background: linear-gradient(145deg, #fffbeb 0%, #ffffff 100%);
+  border-color: #fde68a;
+}
+[data-theme='light'] .kpi-card.kpi-warning .kpi-value {
+  color: #d97706;
+}
+[data-theme='light'] .kpi-card.kpi-warning .kpi-icon-box.warning {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+[data-theme='light'] .kpi-card.kpi-rejected {
+  background: linear-gradient(145deg, #fef2f2 0%, #ffffff 100%);
+  border-color: #fecaca;
+}
+[data-theme='light'] .kpi-card.kpi-rejected .kpi-value {
+  color: #dc2626;
+}
+[data-theme='light'] .kpi-card.kpi-rejected .kpi-icon-box.danger {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+[data-theme='light'] .kpi-card.kpi-unpaired {
+  background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
+  border-color: #cbd5e1;
+}
+[data-theme='light'] .kpi-card.kpi-unpaired .kpi-value {
+  color: #334155;
+}
+[data-theme='light'] .kpi-card.kpi-unpaired .kpi-icon-box.muted {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+[data-theme='light'] .kpi-card.kpi-total-val {
+  background: linear-gradient(145deg, #eef2ff 0%, #ffffff 100%);
+  border-color: #c7d2fe;
+}
+[data-theme='light'] .kpi-card.kpi-total-val .kpi-value.highlight {
+  color: #4338ca;
+  text-shadow: none;
+}
+
+[data-theme='light'] .kpi-label {
+  color: #64748b;
+}
+
+/* Light Mode Filter Pills & Search */
+[data-theme='light'] .batch-filter-pill {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+[data-theme='light'] .batch-filter-pill:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+[data-theme='light'] .batch-filter-pill.active {
+  background: #4f46e5;
+  border-color: #4338ca;
+  color: #ffffff;
+}
+[data-theme='light'] .batch-search-box {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+}
+[data-theme='light'] .batch-search-input {
+  color: #0f172a;
+}
+
+/* Light Mode DataBridge Copilot */
+[data-theme='light'] .copilot-header {
+  background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+  border-color: #c7d2fe;
+  border-left: 4px solid #4f46e5;
+  box-shadow: 0 2px 10px rgba(79, 70, 229, 0.05);
+}
+[data-theme='light'] .copilot-title {
+  color: #312e81;
+}
+[data-theme='light'] .copilot-subtitle {
+  color: #475569;
+}
+[data-theme='light'] .copilot-block {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .copilot-block-title {
+  color: #0f172a;
+  border-bottom-color: #f1f5f9;
+}
+[data-theme='light'] .copilot-field-card {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .copilot-field-card:hover {
+  border-color: #a5b4fc;
+}
+[data-theme='light'] .field-input-group {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+}
+[data-theme='light'] .field-input {
+  color: #0f172a;
+}
+[data-theme='light'] .field-select {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+[data-theme='light'] .btn-copy {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+[data-theme='light'] .btn-copy:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+  color: #3730a3;
+}
+[data-theme='light'] .btn-copy.copied {
+  background: #d1fae5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+/* Light Mode Items Table */
+[data-theme='light'] .items-table-section {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .table-header-bar {
+  background-color: #ffffff;
+  border-bottom-color: #e2e8f0;
+}
+[data-theme='light'] .table-title {
+  color: #0f172a;
+}
+[data-theme='light'] .reconciliation-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  border-bottom-color: #e2e8f0;
+}
+[data-theme='light'] .reconciliation-table td {
+  border-bottom-color: #f1f5f9;
+  color: #0f172a;
+}
+[data-theme='light'] .item-row:hover {
+  background-color: #f8fafc;
+}
+[data-theme='light'] .cell-product-name {
+  color: #0f172a;
+}
+[data-theme='light'] .cell-product-code {
+  color: #64748b;
+}
+[data-theme='light'] .cell-ean {
+  color: #475569;
+}
+[data-theme='light'] .item-expanded-row {
+  background-color: #f8fafc;
+}
+[data-theme='light'] .item-expanded-panel {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .batch-card {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .batch-code {
+  color: #0f172a;
+}
+[data-theme='light'] .batch-expiry {
+  color: #475569;
+}
+[data-theme='light'] .item-history-audit-box {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+[data-theme='light'] .pair-card {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+[data-theme='light'] .pair-card:hover {
+  border-color: #cbd5e1;
+}
+[data-theme='light'] .pair-card.expanded {
+  border-color: #a5b4fc;
+}
+[data-theme='light'] .pair-expanded-content {
+  background-color: #f8fafc;
+  border-top-color: #e2e8f0;
+}
+
