@@ -152,6 +152,23 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                           </>
                         )}
                       </div>
+                      {/* NCM Category Badge */}
+                      {c.ncmProfile && (
+                        <div className="ncm-category-badge mt-1">
+                          <span
+                            className={`badge-ncm badge-ncm-${c.ncmProfile.category.toLowerCase()}`}
+                            title={`NCM ${nfdItem.ncm}: ${c.ncmProfile.description}`}
+                          >
+                            <span className="badge-icon">{c.ncmProfile.icon}</span> {c.ncmProfile.categoryLabel}
+                            <span className="font-mono text-xs opacity-75 ml-1">[{nfdItem.ncm || 'S/NCM'}]</span>
+                          </span>
+                          {nfdItem.med?.cProdANVISA && (
+                            <span className="badge-anvisa ml-1" title="Código de Registro ANVISA (NT 2021.004)">
+                              ANVISA: {nfdItem.med.cProdANVISA}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
 
                     <td className="font-mono text-sm">{nfdItem.cEAN || 'Sem GTIN'}</td>
@@ -214,7 +231,27 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
 
                     <td className="font-mono">
                       {formatCurrency(nfdDescUnit)}
-                      {nfoItem && Math.abs(nfdDescUnit - nfoDescUnit) > 0.05 && (
+                      {c.discountAudit && (
+                        <div className="discount-audit-container mt-1">
+                          {c.discountAudit.isExceededProductValue ? (
+                            <span className="badge-discount badge-discount-danger" title="Rejeição SEFAZ 483: Desconto maior que o produto">
+                              ❌ &gt; Valor Prod
+                            </span>
+                          ) : !c.discountAudit.isProportional ? (
+                            <span
+                              className="badge-discount badge-discount-warning"
+                              title={`Divergência de Desconto! Esperado proporcional: ${formatCurrency(c.discountAudit.expectedDiscount)}`}
+                            >
+                              ⚠️ Dif: {formatCurrency(c.discountAudit.diffDiscount)}
+                            </span>
+                          ) : nfdItem.vDesc > 0 ? (
+                            <span className="badge-discount badge-discount-ok" title="Desconto proporcional perfeito com a origem">
+                              ✅ Proporcional
+                            </span>
+                          ) : null}
+                        </div>
+                      )}
+                      {nfoItem && Math.abs(nfdDescUnit - nfoDescUnit) > 0.05 && !c.discountAudit && (
                         <span className="diff-highlight warning block">
                           Origem: {formatCurrency(nfoDescUnit)}
                         </span>
@@ -290,6 +327,37 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                               )}
                             </div>
 
+                            {/* Cartão de Inteligência Farmacêutica & Descontos */}
+                            <div className="item-detail-card">
+                              <h6 className="detail-card-header">Auditoria Regulatória & Descontos</h6>
+                              <div className="detail-field">
+                                <span>Classificação NCM:</span>
+                                <strong>{c.ncmProfile ? `${c.ncmProfile.categoryLabel} (${c.ncmProfile.ncm})` : nfdItem.ncm}</strong>
+                              </div>
+                              <div className="detail-field">
+                                <span>Regime PIS/COFINS:</span>
+                                <span>{c.ncmProfile?.pisCofinsRegime === 'MONOFASICO_ALÍQUOTA_ZERO' ? 'Monofásico (Alíquota Zero na revenda)' : 'Tributação Normal'}</span>
+                              </div>
+                              {c.discountAudit && (
+                                <div className="detail-field">
+                                  <span>Auditoria de Desconto:</span>
+                                  <strong>
+                                    Devolvido: {formatCurrency(c.discountAudit.actualDiscount)} | Esperado: {formatCurrency(c.discountAudit.expectedDiscount)}
+                                  </strong>
+                                </div>
+                              )}
+                              {nfdItem.med?.vPMC && (
+                                <div className="detail-field">
+                                  <span>Preço Máximo Consumidor (PMC):</span>
+                                  <strong>{formatCurrency(nfdItem.med.vPMC)}</strong>
+                                </div>
+                              )}
+                              <div className="detail-field">
+                                <span>Rastreabilidade (NT 2021.004):</span>
+                                <span>{c.ncmProfile?.requiresMedTag ? (nfdItem.batches.length > 0 ? '✅ Lote Informado' : 'ℹ️ Dispensado na devolução (finNFe=4)') : 'ℹ️ Não obrigatório para este NCM'}</span>
+                              </div>
+                            </div>
+
                             {/* Side-by-side Tax Comparison */}
                             {nfoItem && (
                               <div className="tax-comparison-grid">
@@ -302,13 +370,13 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                     <span>Alíquota ICMS:</span> <strong>{nfdItem.icms?.pICMS}%</strong>
                                   </div>
                                   <div className="tax-item">
-                                    <span>Valor ICMS:</span> <strong>{formatCurrency(nfdItem.icms?.vICMS)}</strong>
+                                    <span>PIS CST / Alíq:</span> <strong>{nfdItem.pis?.cst || 'N/A'} {nfdItem.pis?.pPIS ? `(${nfdItem.pis.pPIS}%)` : ''}</strong>
+                                  </div>
+                                  <div className="tax-item">
+                                    <span>COFINS CST:</span> <strong>{nfdItem.cofins?.cst || 'N/A'}</strong>
                                   </div>
                                   <div className="tax-item">
                                     <span>IPI CST:</span> <strong>{nfdItem.ipi?.cst || 'N/A'}</strong>
-                                  </div>
-                                  <div className="tax-item">
-                                    <span>Valor IPI:</span> <strong>{formatCurrency(nfdItem.ipi?.vIPI)}</strong>
                                   </div>
                                 </div>
 
@@ -321,13 +389,13 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                     <span>Alíquota ICMS:</span> <strong>{nfoItem.icms?.pICMS}%</strong>
                                   </div>
                                   <div className="tax-item">
-                                    <span>Valor ICMS:</span> <strong>{formatCurrency(nfoItem.icms?.vICMS)}</strong>
+                                    <span>PIS CST / Alíq:</span> <strong>{nfoItem.pis?.cst || 'N/A'} {nfoItem.pis?.pPIS ? `(${nfoItem.pis.pPIS}%)` : ''}</strong>
+                                  </div>
+                                  <div className="tax-item">
+                                    <span>COFINS CST:</span> <strong>{nfoItem.cofins?.cst || 'N/A'}</strong>
                                   </div>
                                   <div className="tax-item">
                                     <span>IPI CST:</span> <strong>{nfoItem.ipi?.cst || 'N/A'}</strong>
-                                  </div>
-                                  <div className="tax-item">
-                                    <span>Valor IPI:</span> <strong>{formatCurrency(nfoItem.ipi?.vIPI)}</strong>
                                   </div>
                                 </div>
                               </div>

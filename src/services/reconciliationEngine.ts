@@ -10,6 +10,12 @@ import {
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { detectPiramideMotivo } from './piramideService';
 import { suggestNDO, validateTaxReformAndBonificacao } from './ndoTaxEngine';
+import {
+  auditDiscount,
+  auditPharmaceuticalItem,
+  buildPharmaceuticalSummary,
+  classifyNcm,
+} from './pharmaFiscalEngine';
 
 function isCleanEanValid(ean: string): boolean {
   if (!ean) return false;
@@ -220,6 +226,17 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     // Perform item-level validation rules
     const itemIssues: ValidationIssue[] = [];
 
+    // Classificação NCM e perfil regulatório
+    const ncmProfile = classifyNcm(nfdItem.ncm || (matchedNfoItem ? matchedNfoItem.ncm : ''));
+
+    // Auditoria especializada de Desconto
+    const { discountAudit, issues: discountIssues } = auditDiscount(nfdItem, matchedNfoItem);
+    itemIssues.push(...discountIssues);
+
+    // Auditoria farmacêutica regulatória (NT 2021.004, ANVISA, PIS/COFINS Monofásico)
+    const { issues: pharmaIssues } = auditPharmaceuticalItem(nfdItem, matchedNfoItem, nfd, nfo);
+    itemIssues.push(...pharmaIssues);
+
     if (!matchedNfoItem) {
       itemIssues.push({
         id: `ITEM_${nfdItem.nItem}_UNMATCHED`,
@@ -267,34 +284,22 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
         });
       }
 
-      // I4: Proportional Discount
-      const nfdDescPerUnit = nfdItem.qCom > 0 ? nfdItem.vDesc / nfdItem.qCom : 0;
-      const nfoDescPerUnit = matchedNfoItem.qCom > 0 ? matchedNfoItem.vDesc / matchedNfoItem.qCom : 0;
-      const diffDescPerUnit = Math.abs(nfdDescPerUnit - nfoDescPerUnit);
-
-      if (diffDescPerUnit > 0.05) {
-        itemIssues.push({
-          id: `I4_${nfdItem.nItem}`,
-          code: 'DISCOUNT_MISMATCH',
-          title: 'Desconto Incompatível com a Origem',
-          description: `Desconto por unidade devolvido (R$ ${nfdDescPerUnit.toFixed(2)}/un) diverge da venda original (R$ ${nfoDescPerUnit.toFixed(2)}/un).`,
-          severity: 'WARNING',
-          field: 'vDesc',
-        });
-      }
-
       // I5 & I6: Batch / Lote check
       const hasNfoBatches = matchedNfoItem.batches.length > 0;
       const hasNfdBatches = nfdItem.batches.length > 0;
 
       if (hasNfoBatches && !hasNfdBatches) {
         const expectedBatchesStr = matchedNfoItem.batches.map(b => b.nLote).join(', ');
+        // Conforme NT 2021.004, devolução (finNFe=4) ou vitaminas/suplementos não são rejeitados na SEFAZ sem tag <rastro>
+        const isExempt = nfd.finNFe === 4 || ncmProfile.category === 'VITAMINA' || ncmProfile.category === 'SUPLEMENTO';
         itemIssues.push({
           id: `I5_${nfdItem.nItem}`,
           code: 'BATCH_MISSING',
-          title: 'Lote Ausente na Nota de Devolução',
-          description: `A NFD omitiu a tag de lote (<rastro>). A NFO original registrava o(s) lote(s): ${expectedBatchesStr}.`,
-          severity: 'CRITICAL',
+          title: isExempt ? 'Lote Ausente no XML (Dispensado pela SEFAZ)' : 'Lote Ausente na Nota de Devolução',
+          description: isExempt
+            ? `A NFD omitiu a tag <rastro>. Conforme NT 2021.004, a SEFAZ autoriza a nota, porém o lote faturado na origem foi: ${expectedBatchesStr}. Realize a conferência física na doca.`
+            : `A NFD omitiu a tag de lote (<rastro>). A NFO original registrava o(s) lote(s): ${expectedBatchesStr}.`,
+          severity: isExempt ? 'INFO' : 'CRITICAL',
           field: 'nLote',
         });
       } else if (hasNfoBatches && hasNfdBatches) {
@@ -332,13 +337,13 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       });
 
       // I7: CFOP Validation
-      const isReturnCfop = /^[1-7](20[1-9]|411)/.test(nfdItem.cfop);
+      const isReturnCfop = /^[1-7](20[1-9]|411|910)/.test(nfdItem.cfop);
       if (nfdItem.cfop && !isReturnCfop) {
         itemIssues.push({
           id: `I7_${nfdItem.nItem}`,
           code: 'CFOP_INVALID_FOR_RETURN',
           title: 'CFOP Incompatível com Operação de Devolução',
-          description: `O CFOP ${nfdItem.cfop} do item não é um CFOP de devolução (esperado: x201, x202, x411, etc.).`,
+          description: `O CFOP ${nfdItem.cfop} do item não é um CFOP de devolução (esperado: x201, x202, x411, x910, etc.).`,
           severity: 'WARNING',
           field: 'cfop',
         });
@@ -441,6 +446,8 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       percentageReturned,
       returnType,
       piramideResolution: itemPiramideResolution,
+      ncmProfile,
+      discountAudit,
       issues: itemIssues,
       isMatchOk,
     });
@@ -475,6 +482,8 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     overallReturnType = 'PARTIAL';
   }
 
+  const pharmaceuticalSummary = buildPharmaceuticalSummary(itemComparisons, nfd, nfo);
+
   return {
     nfd,
     nfo,
@@ -484,6 +493,7 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     unmatchedNfdItems,
     ndoSuggestion,
     piramideResolution,
+    pharmaceuticalSummary,
     summary: {
       totalItemsNfd: nfd.items.length,
       totalMatched: itemComparisons.filter(c => c.nfoItem).length,
@@ -497,7 +507,6 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     },
   };
 }
-
 
 export function reconcileNFdAgainstMultipleNfos(
   nfd: NFeDocument,

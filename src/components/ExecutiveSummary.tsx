@@ -207,6 +207,74 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
           </div>
         </div>
       </div>
+
+      {/* Painel de Inteligência Fiscal Farmacêutica & Descontos */}
+      {result.pharmaceuticalSummary && (
+        <div className="pharma-executive-panel mt-3">
+          <div className="pharma-panel-header">
+            <div className="pharma-header-left">
+              <span className="pharma-panel-icon">🧬</span>
+              <div>
+                <h4 className="pharma-panel-title">Diagnóstico & Inteligência Fiscal Farmacêutica</h4>
+                <p className="pharma-panel-subtitle">
+                  Auditoria de NCMs farmacêuticos, conformidade NT 2021.004 (dispensa de lote em devolução), PIS/COFINS monofásico e rateio proporcional de descontos.
+                </p>
+              </div>
+            </div>
+            {result.pharmaceuticalSummary.temDivergenciaDesconto ? (
+              <span className="pharma-status-badge badge-warning">
+                ⚠️ Divergência de Desconto Detectada
+              </span>
+            ) : (
+              <span className="pharma-status-badge badge-success">
+                ✅ Descontos 100% Proporcionais
+              </span>
+            )}
+          </div>
+
+          <div className="pharma-metrics-grid">
+            <div className="pharma-metric-card">
+              <div className="pharma-metric-top">
+                <span className="pharma-card-icon">💊</span>
+                <span className="pharma-metric-name">Medicamentos (NCM 30xx)</span>
+              </div>
+              <div className="pharma-metric-number">{result.pharmaceuticalSummary.totalMedicamentos} itens</div>
+              <div className="pharma-metric-desc">Regulados pela ANVISA / Monofásicos</div>
+            </div>
+
+            <div className="pharma-metric-card">
+              <div className="pharma-metric-top">
+                <span className="pharma-card-icon">🧪</span>
+                <span className="pharma-metric-name">Vitaminas (NCM 2936)</span>
+              </div>
+              <div className="pharma-metric-number">{result.pharmaceuticalSummary.totalVitaminas} itens</div>
+              <div className="pharma-metric-desc">Capítulo 29 (Lote Voluntário)</div>
+            </div>
+
+            <div className="pharma-metric-card">
+              <div className="pharma-metric-top">
+                <span className="pharma-card-icon">🥤</span>
+                <span className="pharma-metric-name">Suplementos (NCM 2106)</span>
+              </div>
+              <div className="pharma-metric-number">{result.pharmaceuticalSummary.totalSuplementos} itens</div>
+              <div className="pharma-metric-desc">Alimento / Tributação Normal</div>
+            </div>
+
+            <div className="pharma-metric-card">
+              <div className="pharma-metric-top">
+                <span className="pharma-card-icon">🏷️</span>
+                <span className="pharma-metric-name">Auditoria de Desconto Global</span>
+              </div>
+              <div className="pharma-metric-number font-mono">
+                {formatCurrency(result.pharmaceuticalSummary.totalDescontoNfd)}
+              </div>
+              <div className="pharma-metric-desc">
+                Esperado Proporcional: {formatCurrency(result.pharmaceuticalSummary.totalDescontoNfoProporcional)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

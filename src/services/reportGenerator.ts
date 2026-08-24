@@ -68,14 +68,19 @@ export function generateDiscrepancyReport(result: ReconciliationResult): string 
       : `${nfdItem.qCom} ${nfdItem.uCom}`;
 
     lines.push(`${idx + 1}. ${statusIcon} ${nfdItem.xProd}`);
+    const ncmDesc = c.ncmProfile ? `${c.ncmProfile.categoryLabel} [NCM ${nfdItem.ncm}]` : `NCM ${nfdItem.ncm}`;
+    lines.push(`   • Classificação: ${ncmDesc}${nfdItem.med?.cProdANVISA ? ` | ANVISA: ${nfdItem.med.cProdANVISA}` : ''}`);
     lines.push(`   • EAN: ${nfdItem.cEAN || 'Sem GTIN'} | Qtd: ${qtyInfo} | Preço Un: R$ ${nfdItem.vUnCom.toFixed(4)}`);
+    if (c.discountAudit) {
+      lines.push(`   • Desconto: Informado R$ ${c.discountAudit.actualDiscount.toFixed(2)} | Esperado Proporcional R$ ${c.discountAudit.expectedDiscount.toFixed(2)} (${c.discountAudit.isProportional ? '✅ Conforme' : '⚠️ Divergente'})`);
+    }
     if (c.piramideResolution) {
       lines.push(`   • Destino Pirâmide: Almoxarifado [${c.piramideResolution.almoxarifado}] (${c.piramideResolution.motivoDesc})`);
     }
     if (nfdItem.batches.length > 0) {
       lines.push(`   • Lote(s) NFD: ${nfdItem.batches.map(b => b.nLote).join(', ')}`);
     } else {
-      lines.push(`   • Lote(s) NFD: ❌ NÃO INFORMADO NA NOTA`);
+      lines.push(`   • Lote(s) NFD: ${c.ncmProfile?.category === 'VITAMINA' || c.ncmProfile?.category === 'SUPLEMENTO' ? 'ℹ️ NÃO INFORMADO (Dispensado pela NT 2021.004)' : '❌ NÃO INFORMADO NA NOTA'}`);
     }
 
     if (nfoItem) {

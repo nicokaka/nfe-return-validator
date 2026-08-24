@@ -1,4 +1,16 @@
-import { NFeBatch, NFeDocument, NFeItem, NFeParticipant, NFeTaxICMS, NFeTaxIPI, NFeTotals } from '../types/nfe';
+import {
+  NFeBatch,
+  NFeDocument,
+  NFeItem,
+  NFeItemMed,
+  NFeParticipant,
+  NFeTaxCOFINS,
+  NFeTaxICMS,
+  NFeTaxICMSST,
+  NFeTaxIPI,
+  NFeTaxPIS,
+  NFeTotals,
+} from '../types/nfe';
 
 function getTagText(parent: Element | Document, tagNames: string[]): string {
   for (const tagName of tagNames) {
@@ -52,14 +64,29 @@ function parseBatches(prodEl: Element): NFeBatch[] {
   return batches;
 }
 
-function parseICMS(impostoEl: Element): NFeTaxICMS | undefined {
+function parseMed(prodEl: Element): NFeItemMed | undefined {
+  const medEl = prodEl.getElementsByTagName('med')[0];
+  if (!medEl) return undefined;
+
+  const cProdANVISA = getTagText(medEl, ['cProdANVISA']);
+  const xMotivoIsencao = getTagText(medEl, ['xMotivoIsencao']) || undefined;
+  const vPMC = parseFloatSafe(getTagText(medEl, ['vPMC'])) || undefined;
+
+  if (!cProdANVISA && !xMotivoIsencao && !vPMC) return undefined;
+
+  return {
+    cProdANVISA: cProdANVISA || (xMotivoIsencao ? 'ISENTO' : ''),
+    xMotivoIsencao,
+    vPMC,
+  };
+}
+
+function parseICMS(impostoEl: Element): { icms?: NFeTaxICMS; icmsST?: NFeTaxICMSST } {
   const icmsContainer = impostoEl.getElementsByTagName('ICMS')[0];
-  if (!icmsContainer) return undefined;
+  if (!icmsContainer) return {};
 
-  // ICMS can have child like ICMS00, ICMS10, ICMS20, ICMS40, ICMS60, ICMS90, ICMSSN102, etc.
   const childNodes = Array.from(icmsContainer.children || []) as Element[];
-  if (childNodes.length === 0) return undefined;
-
+  if (childNodes.length === 0) return {};
 
   const child = childNodes[0];
   const orig = getTagText(child, ['orig']);
@@ -69,7 +96,19 @@ function parseICMS(impostoEl: Element): NFeTaxICMS | undefined {
   const pICMS = parseFloatSafe(getTagText(child, ['pICMS']));
   const vICMS = parseFloatSafe(getTagText(child, ['vICMS']));
 
-  return { orig, cst, modBC, vBC, pICMS, vICMS };
+  const icms: NFeTaxICMS = { orig, cst, modBC, vBC, pICMS, vICMS };
+
+  // Check for ICMS ST tags
+  const vBCST = parseFloatSafe(getTagText(child, ['vBCST']));
+  const pICMSST = parseFloatSafe(getTagText(child, ['pICMSST', 'pST']));
+  const vICMSST = parseFloatSafe(getTagText(child, ['vICMSST']));
+
+  let icmsST: NFeTaxICMSST | undefined;
+  if (vBCST > 0 || vICMSST > 0 || pICMSST > 0) {
+    icmsST = { vBCST, pICMSST, vICMSST };
+  }
+
+  return { icms, icmsST };
 }
 
 function parseIPI(impostoEl: Element): NFeTaxIPI | undefined {
@@ -85,6 +124,38 @@ function parseIPI(impostoEl: Element): NFeTaxIPI | undefined {
   const vIPI = parseFloatSafe(getTagText(ipiTrib, ['vIPI']));
 
   return { cst, vBC, pIPI, vIPI };
+}
+
+function parsePIS(impostoEl: Element): NFeTaxPIS | undefined {
+  const pisContainer = impostoEl.getElementsByTagName('PIS')[0];
+  if (!pisContainer) return undefined;
+
+  const childNodes = Array.from(pisContainer.children || []) as Element[];
+  if (childNodes.length === 0) return undefined;
+
+  const child = childNodes[0];
+  const cst = getTagText(child, ['CST']);
+  const vBC = parseFloatSafe(getTagText(child, ['vBC']));
+  const pPIS = parseFloatSafe(getTagText(child, ['pPIS', 'pPISST']));
+  const vPIS = parseFloatSafe(getTagText(child, ['vPIS', 'vPISST']));
+
+  return { cst, vBC, pPIS, vPIS };
+}
+
+function parseCOFINS(impostoEl: Element): NFeTaxCOFINS | undefined {
+  const cofinsContainer = impostoEl.getElementsByTagName('COFINS')[0];
+  if (!cofinsContainer) return undefined;
+
+  const childNodes = Array.from(cofinsContainer.children || []) as Element[];
+  if (childNodes.length === 0) return undefined;
+
+  const child = childNodes[0];
+  const cst = getTagText(child, ['CST']);
+  const vBC = parseFloatSafe(getTagText(child, ['vBC']));
+  const pCOFINS = parseFloatSafe(getTagText(child, ['pCOFINS', 'pCOFINSST']));
+  const vCOFINS = parseFloatSafe(getTagText(child, ['vCOFINS', 'vCOFINSST']));
+
+  return { cst, vBC, pCOFINS, vCOFINS };
 }
 
 function parseItem(detEl: Element, index: number): NFeItem {
@@ -110,8 +181,11 @@ function parseItem(detEl: Element, index: number): NFeItem {
   const infAdProd = getTagText(detEl, ['infAdProd']);
 
   const batches = parseBatches(prodEl);
-  const icms = parseICMS(impostoEl);
+  const med = parseMed(prodEl);
+  const { icms, icmsST } = parseICMS(impostoEl);
   const ipi = parseIPI(impostoEl);
+  const pis = parsePIS(impostoEl);
+  const cofins = parseCOFINS(impostoEl);
 
   return {
     nItem,
@@ -129,8 +203,12 @@ function parseItem(detEl: Element, index: number): NFeItem {
     xPed,
     nItemPed,
     batches,
+    med,
     icms,
+    icmsST,
     ipi,
+    pis,
+    cofins,
     infAdProd,
   };
 }
@@ -214,6 +292,10 @@ export function parseNFeXml(xmlContent: string, fileName: string = 'NFe.xml'): N
   const dhEmi = getTagText(ide, ['dhEmi', 'dEmi']);
   const natOp = getTagText(ide, ['natOp']);
   const finNFe = parseInt(getTagText(ide, ['finNFe']) || '1', 10);
+  const tpNFStr = getTagText(ide, ['tpNF']);
+  const tpNF = tpNFStr ? parseInt(tpNFStr, 10) : undefined;
+  const indPresStr = getTagText(ide, ['indPres']);
+  const indPres = indPresStr ? parseInt(indPresStr, 10) : undefined;
 
   // Extract chNFe
   let chNFe = id.replace(/^NFe/i, '');
@@ -281,6 +363,8 @@ export function parseNFeXml(xmlContent: string, fileName: string = 'NFe.xml'): N
     dhEmi,
     natOp,
     finNFe,
+    tpNF,
+    indPres,
     nProt,
     dhRecbto,
     cStat,

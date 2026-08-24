@@ -216,3 +216,32 @@ gleciaAlhandra1/
 * `SERV` - Almoxarifado de Serviços
 * `VC` - Produtos Vencidos
 
+---
+
+## 🧬 7. INTELIGÊNCIA FISCAL FARMACÊUTICA, NCM & REGRAS ESPECÍFICAS
+
+### 7.1. Matriz Regulatória de NCMs Farmacêuticos vs Obrigações NF-e
+
+| Faixa NCM | Categoria | Tag `<med>` | Tag `<rastro>` (Lote) | Regime PIS/COFINS | CST PIS Esperado | Base Legal / Observações |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **3001 a 3006** | **Medicamentos** | **Obrigatória** | Obrigatória na Venda | **Monofásico** (Alíquota Zero) | **04** (ou 06) | Lei 10.147/2000. Rejeição SEFAZ 840 se faltar `<med>`. Rejeição 873 se faltar `<rastro>` na venda. |
+| **2936** | **Vitaminas / Provitaminas** | *Dispensada* | *Voluntária / Opcional* | Tributação Normal | 01, 02, 49, 99 | Capítulo 29 (Química Orgânica). Não sofre rejeição 840/873 na SEFAZ. |
+| **2106 / 1901** | **Suplementos Alimentares** | *Dispensada* | *Voluntária / Opcional* | Tributação Normal | 01, 02, 49, 99 | Capítulo 21 (Preparações Alimentícias). Natureza de alimento. |
+| **3304 a 3307** | **Cosméticos / Higiene** | *Dispensada* | *Voluntária / Opcional* | Tributação Normal | 01, 02, 04, 49 | Capítulo 33 (Perfumaria e Cosméticos). |
+
+### 7.2. Exceções da Nota Técnica (NT) 2021.004 da SEFAZ
+A NT 2021.004 introduziu exceções determinísticas para a validação da tag `<rastro>` (Lote, Fabricação e Validade):
+1. **NF-e de Devolução (`finNFe = 4`):** A SEFAZ **NÃO REJEITA** a nota fiscal caso o cliente devolva sem a tag `<rastro>`. O validador emite alerta informativo (`INFO`) para auditoria física na doca sem travar indevidamente o espelho de devolução.
+2. **Vendas Não Presenciais (`indPres = 2` ou `3`):** Vendas via internet/telefone.
+3. **NF-e de Entrada (`tpNF = 0`):** Operações de emissão própria de entrada.
+
+### 7.3. Motor de Auditoria de Descontos Proporcionais (`vDesc`)
+Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcional à quantidade devolvida:
+* **Fórmula do Desconto Esperado:**
+  $$\text{Desconto Esperado} = \text{Arredondar2Casas}\left( \text{vDesc}_{\text{origem}} \times \frac{\text{qCom}_{\text{devolvida}}}{\text{qCom}_{\text{faturada}}} \right)$$
+* **Regras de Validação:**
+  * **Rejeição SEFAZ 483 (`CRITICAL`):** Ocorre se $\text{vDesc}_{\text{item}} > \text{vProd}_{\text{item}}$. A SEFAZ bloqueia a autorização.
+  * **Desconto Omitido na Devolução (`WARNING`):** Venda original teve desconto concedido e NFD zerou o campo.
+  * **Divergência de Proporcionalidade (`WARNING` / `CRITICAL`):** Se $|\text{vDesc}_{\text{NFD}} - \text{vDesc}_{\text{Esperado}}| > \text{R\$} 0,05$.
+
+

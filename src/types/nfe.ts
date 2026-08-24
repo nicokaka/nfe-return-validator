@@ -34,6 +34,60 @@ export interface NFeTaxIPI {
   vIPI: number;
 }
 
+export interface NFeItemMed {
+  cProdANVISA: string;
+  xMotivoIsencao?: string;
+  vPMC?: number;
+}
+
+export interface NFeTaxPIS {
+  cst: string;
+  vBC: number;
+  pPIS: number;
+  vPIS: number;
+}
+
+export interface NFeTaxCOFINS {
+  cst: string;
+  vBC: number;
+  pCOFINS: number;
+  vCOFINS: number;
+}
+
+export interface NFeTaxICMSST {
+  vBCST: number;
+  pICMSST: number;
+  vICMSST: number;
+}
+
+export type NcmCategory = 'MEDICAMENTO' | 'VITAMINA' | 'SUPLEMENTO' | 'COSMETICO_CORRELATO' | 'OUTROS';
+
+export interface NcmProfile {
+  ncm: string;
+  cleanNcm: string;
+  category: NcmCategory;
+  categoryLabel: string;
+  icon: string;
+  requiresMedTag: boolean;
+  requiresRastroTag: boolean;
+  pisCofinsRegime: 'MONOFASICO_ALÍQUOTA_ZERO' | 'TRIBUTACAO_NORMAL' | 'ISENTO_VARIAVEL';
+  expectedPisCst: string[];
+  anvisaRegulated: boolean;
+  description: string;
+}
+
+export interface DiscountAudit {
+  actualDiscount: number;
+  expectedDiscount: number;
+  diffDiscount: number;
+  discountPerUnitNfd: number;
+  discountPerUnitNfo: number;
+  discountPercentageNfd: number;
+  discountPercentageNfo: number;
+  isProportional: boolean;
+  isExceededProductValue: boolean;
+}
+
 export interface NFeItem {
   nItem: number;
   cProd: string;
@@ -52,6 +106,10 @@ export interface NFeItem {
   batches: NFeBatch[];
   icms?: NFeTaxICMS;
   ipi?: NFeTaxIPI;
+  pis?: NFeTaxPIS;
+  cofins?: NFeTaxCOFINS;
+  icmsST?: NFeTaxICMSST;
+  med?: NFeItemMed;
   infAdProd?: string;
 }
 
@@ -66,6 +124,20 @@ export interface NFeTotals {
   vNF: number;
 }
 
+export interface PharmaceuticalSummary {
+  totalMedicamentos: number;
+  totalVitaminas: number;
+  totalSuplementos: number;
+  totalCosmeticosCorrelatos: number;
+  totalOutros: number;
+  totalMonofasicos: number;
+  totalComLote: number;
+  totalComAnvisa: number;
+  totalDescontoNfd: number;
+  totalDescontoNfoProporcional: number;
+  temDivergenciaDesconto: boolean;
+}
+
 export interface NFeDocument {
   id: string; // infNfe Id
   rawXml: string;
@@ -77,6 +149,8 @@ export interface NFeDocument {
   dhEmi: string;
   natOp: string;
   finNFe: number; // 1 = Normal, 4 = Devolução
+  tpNF?: number; // 0 = Entrada, 1 = Saída
+  indPres?: number; // 1 = Presencial, 2 = Internet, 3 = Teleatendimento, etc.
   nProt?: string;
   dhRecbto?: string;
   cStat?: number;
@@ -146,6 +220,8 @@ export interface ItemComparison {
   percentageReturned?: number;
   returnType?: ReturnType;
   piramideResolution?: PiramideResolution;
+  ncmProfile?: NcmProfile;
+  discountAudit?: DiscountAudit;
   issues: ValidationIssue[];
   isMatchOk: boolean;
 }
@@ -166,6 +242,7 @@ export interface ReconciliationResult {
   unmatchedNfdItems: NFeItem[];
   ndoSuggestion?: NDOSuggestion;
   piramideResolution?: PiramideResolution;
+  pharmaceuticalSummary?: PharmaceuticalSummary;
   summary: {
     totalItemsNfd: number;
     totalMatched: number;

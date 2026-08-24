@@ -45,17 +45,17 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     assert(item1 ? item1.isMatchOk : false, 'T2.5: Item 1 Aprovado sem erros críticos');
     assert(item1 ? item1.nfdItem.batches[0]?.nLote === '2606039' : false, 'T2.6: Presença e conferência do lote no Item 1');
 
-    // Item 2 (IMUNOGLUCAN DS) - Should fail for missing lote
+    // Item 2 (IMUNOGLUCAN DS - NCM 2936 Vitamina) - Conforme NT 2021.004, tag <rastro> não é mandatória
     const item2 = res.itemComparisons.find(c => c.nfdItem.cEAN === '7896685303467');
     assert(!!item2, 'T2.7: Match por EAN do Item 2');
-    assert(item2 ? !item2.isMatchOk : false, 'T2.8: Item 2 Rejeitado por Lote Ausente');
+    assert(item2 ? item2.isMatchOk : false, 'T2.8: Item 2 em Conformidade Fiscal (Vitamina NCM 2936 dispensa tag <rastro> na SEFAZ)');
     assert(
-      item2 ? item2.issues.some(i => i.code === 'BATCH_MISSING' && i.severity === 'CRITICAL') : false,
-      'T2.9: Flag de Erro Crítico BATCH_MISSING no Item 2'
+      item2 ? item2.issues.some(i => i.code === 'BATCH_MISSING' && i.severity === 'INFO') : false,
+      'T2.9: Aviso Informativo de Conferência Física (INFO) sem bloquear a nota'
     );
 
     // Overall Status
-    assert(res.summary.overallStatus === 'REJECTED', 'T2.10: Status Geral da Nota = BLOQUEADO (devido ao erro do lote no item 2)');
+    assert(res.summary.overallStatus === 'APPROVED', 'T2.10: Status Geral da Nota = APROVADO (com inteligência farmacêutica de NCM)');
 
     // 3. Simulated Edge Cases & User Errors
 
@@ -164,6 +164,63 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     // T5.5: Quantidade Total da Nota (3 + 3 = 6 un)
     assert(res.summary.totalQuantityNfd === 6, 'T5.5: Totalizador de Quantidade Devolvida na NFD (6 un)');
 
+    // 6. Inteligência Fiscal Farmacêutica, NCM, NT 2021.004 e Descontos
+
+    // T6.1: Classificação NCM Inteligente (NCM 29362990 = Vitamina)
+    assert(item1?.ncmProfile?.category === 'VITAMINA', 'T6.1: Perfil NCM 2936 classificado com precisão como Vitamina');
+
+    // T6.2: Auditoria de Desconto Proporcional
+    assert(item1?.discountAudit !== undefined, 'T6.2: Auditoria de Desconto Proporcional gerada');
+    assert(item1?.discountAudit?.isProportional === true, 'T6.3: Desconto proporcional em conformidade (R$ 41,68 devolvido = proporcional de R$ 333,47 / 24 * 3)');
+
+    // T6.4: Simulação de Desconto com Rejeição 483 SEFAZ (vDesc > vProd)
+    const tamperedDiscount483 = parseNFeXml(
+      sampleNfdXml.replace('<vDesc>41.68</vDesc>', '<vDesc>500.00</vDesc>'),
+      'NFD_Discount483.xml'
+    );
+    const resDisc483 = reconcileNFeDocuments(tamperedDiscount483, docNfo);
+    const itemDisc483 = resDisc483.itemComparisons[0];
+    assert(
+      itemDisc483?.issues.some(i => i.code === 'DISCOUNT_EXCEEDS_PRODUCT_VALUE'),
+      'T6.4: Captura da Rejeição SEFAZ 483 (Desconto R$500 > Valor Produto R$297.75)'
+    );
+
+    // T6.5: Simulação de Desconto Proporcional na Devolução Parcial
+    // Venda de 10 un a R$100 com R$200 de desconto (R$20/un). Devolução de 3 un deve ter R$60 de desconto.
+    const customNfoXml = sampleNfoXml
+      .replace(/<qCom>24\.0000<\/qCom>/g, '<qCom>10.0000</qCom>')
+      .replace('<vDesc>333.47</vDesc>', '<vDesc>200.00</vDesc>');
+    const customNfdXml = sampleNfdXml
+      .replace('<qCom>3.0000</qCom>', '<qCom>3.0000</qCom>')
+      .replace('<vDesc>41.68</vDesc>', '<vDesc>60.00</vDesc>');
+    const docCustomNfo = parseNFeXml(customNfoXml, 'NFO_CustomDisc.xml');
+    const docCustomNfd = parseNFeXml(customNfdXml, 'NFD_CustomDisc.xml');
+    const resCustomDisc = reconcileNFeDocuments(docCustomNfd, docCustomNfo);
+    const itemCustomDisc = resCustomDisc.itemComparisons.find(c => c.nfdItem.cEAN === '7896685304945');
+    assert(
+      itemCustomDisc?.discountAudit?.isProportional === true,
+      'T6.5: Reconhecimento de Desconto Proporcional Exato (3/10 * R$200 = R$60)'
+    );
+
+    // T6.6: Simulação de Desconto Não Proporcional (esperado R$60, informado R$150)
+    const customNfdBadDiscXml = sampleNfdXml
+      .replace('<qCom>3.0000</qCom>', '<qCom>3.0000</qCom>')
+      .replace('<vDesc>41.68</vDesc>', '<vDesc>150.00</vDesc>');
+    const docBadDiscNfd = parseNFeXml(customNfdBadDiscXml, 'NFD_BadDisc.xml');
+    const resBadDisc = reconcileNFeDocuments(docBadDiscNfd, docCustomNfo);
+    const itemBadDisc = resBadDisc.itemComparisons[0];
+    assert(
+      itemBadDisc?.issues.some(i => i.code === 'DISCOUNT_NOT_PROPORTIONAL'),
+      'T6.6: Alerta para Desconto Não Proporcional (informado R$150 vs esperado R$60)'
+    );
+
+    // T6.7: Resumo Executivo Farmacêutico
+    assert(res.pharmaceuticalSummary !== undefined, 'T6.7: Resumo Executivo Farmacêutico gerado');
+    assert(
+      res.pharmaceuticalSummary?.totalMedicamentos !== undefined &&
+      res.pharmaceuticalSummary?.totalDescontoNfd !== undefined,
+      'T6.8: Métricas de medicamentos e total de descontos consolidadas'
+    );
 
   } catch (err: any) {
     failed++;
@@ -177,4 +234,5 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     log,
   };
 }
+
 
