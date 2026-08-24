@@ -212,9 +212,9 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
             <div className="pharma-header-left">
               <span className="pharma-panel-icon">🧬</span>
               <div>
-                <h4 className="pharma-panel-title">Diagnóstico & Inteligência Fiscal Farmacêutica</h4>
+                <h4 className="pharma-panel-title">Resumo Farmacêutico</h4>
                 <p className="pharma-panel-subtitle">
-                  Auditoria de NCMs farmacêuticos, conformidade NT 2021.004 (dispensa de lote em devolução), PIS/COFINS monofásico e rateio proporcional de descontos.
+                  Classificação de NCMs, conformidade NT 2021.004 e conferência de descontos proporcionais.
                 </p>
               </div>
             </div>

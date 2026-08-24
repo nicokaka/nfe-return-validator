@@ -47,43 +47,43 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
     if (isAnalyzing) {
       return {
         status: 'working',
-        badge: '⚙️ AUDITORIA EM ANDAMENTO',
-        message: 'Escaneando tags <infNFe>, chaves <NFref>, rastreabilidade de lote e calculando proporcionalidade de descontos...',
-        actionText: 'PROCESSANDO LOTE FISCAL...',
+        badge: 'Processando...',
+        message: 'Cruzando dados das notas, lotes e referências fiscais...',
+        actionText: 'PROCESSANDO...',
       };
     }
 
     if (nfoFiles.length > 0 && nfdFiles.length > 0) {
       return {
         status: 'ready',
-        badge: '⚡ MOTOR DE PAREAMENTO PRONTO',
-        message: `Pronto para cruzar ${nfdFiles.length} Nota(s) de Devolução (NFD) com ${nfoFiles.length} Nota(s) de Saída (NFO). Motores 1:1, 1:N e NT 2021.004 ativos.`,
-        actionText: 'EXECUTAR AUDITORIA FISCAL INTELIGENTE',
+        badge: 'Pronto',
+        message: `Pronto para cruzar ${nfdFiles.length} Devolução(ões) com ${nfoFiles.length} Nota(s) de Origem.`,
+        actionText: 'INICIAR AUDITORIA',
       };
     }
 
     if (nfoFiles.length > 0 && nfdFiles.length === 0) {
       return {
         status: 'waiting',
-        badge: '🔍 AGUARDANDO DEVOLUÇÃO (NFD)',
-        message: `Detectei ${nfoFiles.length} Nota(s) de Saída (NFO). Adicione o XML de Devolução (NFD) do cliente para iniciar o cruzamento!`,
-        actionText: 'AGUARDANDO XML DE DEVOLUÇÃO',
+        badge: 'Falta NFD',
+        message: `${nfoFiles.length} NFO carregada(s). Adicione a Nota de Devolução (NFD) para continuar.`,
+        actionText: 'AGUARDANDO NFD',
       };
     }
 
     if (nfdFiles.length > 0 && nfoFiles.length === 0) {
       return {
         status: 'waiting',
-        badge: '🔍 AGUARDANDO ORIGEM (NFO)',
-        message: `Detectei ${nfdFiles.length} Nota(s) de Devolução (NFD). Adicione o XML de Origem (NFO) da sua empresa para validar faturamento e alíquotas.`,
-        actionText: 'AGUARDANDO XML DE ORIGEM',
+        badge: 'Falta NFO',
+        message: `${nfdFiles.length} NFD carregada(s). Adicione a Nota de Origem (NFO) para continuar.`,
+        actionText: 'AGUARDANDO NFO',
       };
     }
 
     return {
       status: 'waiting',
-      badge: '💡 CARREGUE OS XMLS',
-      message: 'Adicione pelo menos 1 Nota de Origem (NFO) e 1 de Devolução (NFD) para auditar.',
+      badge: 'Aguardando',
+      message: 'Adicione pelo menos 1 NFO e 1 NFD para iniciar.',
       actionText: 'INICIAR AUDITORIA',
     };
   };
@@ -284,7 +284,7 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
               <div className="robot-action-details">
                 <div className="robot-action-title-row">
                   <h4 className="robot-action-title">
-                    Robô Auditor Fiscal IA
+                    Auditor Fiscal
                   </h4>
                   <span className={`robot-status-pill pill-${telemetry.status}`}>
                     {telemetry.badge}
@@ -298,13 +298,13 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
                 {/* Telemetry Feature Badges */}
                 <div className="robot-telemetry-tags">
                   <span className="telemetry-tag">
-                    <ShieldCheck className="icon-xxs" /> NT 2021.004 Pharma
+                    <ShieldCheck className="icon-xxs" /> NT 2021.004
                   </span>
                   <span className="telemetry-tag">
-                    <Layers className="icon-xxs" /> Pareamento 1:1 & 1:N
+                    <Layers className="icon-xxs" /> Pareamento 1:1 / 1:N
                   </span>
                   <span className="telemetry-tag">
-                    <Building2 className="icon-xxs" /> Bridge ERP Pirâmide
+                    <Building2 className="icon-xxs" /> ERP Pirâmide
                   </span>
                 </div>
               </div>

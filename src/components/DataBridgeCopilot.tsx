@@ -90,7 +90,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
               </span>
             </div>
             <p className="copilot-subtitle">
-              Ponte de dados com botões de 1-clique, direcionamento de almoxarifados e conciliação de centavos para lançamento ágil.
+              Copie campos para o ERP, selecione motivos e almoxarifados.
             </p>
           </div>
         </div>
