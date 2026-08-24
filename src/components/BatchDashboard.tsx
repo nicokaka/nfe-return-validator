@@ -182,9 +182,12 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
         </div>
 
         <div className="kpi-card kpi-total-val">
-          <div className="kpi-content full-width">
-            <span className="kpi-label">Valor Total Devolvido no Lote</span>
+          <div className="kpi-icon-box total">
+            <Layers className="icon" />
+          </div>
+          <div className="kpi-content">
             <span className="kpi-value highlight">{formatCurrency(summary.totalValueNfd)}</span>
+            <span className="kpi-label">Valor Total Devolvido</span>
           </div>
         </div>
       </div>
@@ -329,12 +332,6 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
                 {/* Expanded Detail View */}
                 {isExpanded && rec && (
                   <div className="pair-expanded-body">
-                    <div className="pair-expanded-top-bar">
-                      <h4 className="pair-detail-title">
-                        Detalhamento Auditado do Par NFD nº {pair.nfd.nNF}
-                      </h4>
-                    </div>
-
                     {/* Reusable Executive Summary */}
                     <ExecutiveSummary
                       result={rec}

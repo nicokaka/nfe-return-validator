@@ -553,7 +553,7 @@
 }
 
 .card-header {
-  padding: 11px 16px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -577,10 +577,10 @@
 }
 
 .card-body {
-  padding: 16px 18px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
 }
 
@@ -2244,6 +2244,38 @@ font-size: 10.5px;
   white-space: nowrap;
 }
 
+/* Collapsed Bar for Ingested Files */
+.batch-collapsed-bar {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.batch-collapsed-bar:hover {
+  border-color: var(--border-color-hover);
+  background-color: var(--bg-surface-elevated);
+}
+
+.collapsed-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.collapsed-bar-info strong {
+  color: var(--text-primary);
+}
+
 /* ==========================================================================
    BATCH DASHBOARD (Enterprise Multi-Pair Manager)
    ========================================================================== */
@@ -2394,6 +2426,10 @@ font-size: 10.5px;
   background-color: rgba(148, 163, 184, 0.12);
   color: #94a3b8;
 }
+.kpi-icon-box.total {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+}
 
 .kpi-content {
   display: flex;
@@ -2430,7 +2466,7 @@ font-size: 10.5px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -2444,8 +2480,9 @@ font-size: 10.5px;
 .pill-btn {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
-  padding: 5px 12px;
+  border-radius: var(--radius-xs);
+  height: 32px;
+  padding: 0 12px;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -2453,7 +2490,7 @@ font-size: 10.5px;
   transition: all var(--transition-fast);
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .pill-btn:hover {
@@ -2499,10 +2536,11 @@ font-size: 10.5px;
   gap: 8px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
+  border-radius: var(--radius-xs);
+  height: 32px;
+  padding: 0 10px;
   width: 100%;
-  max-width: 340px;
+  max-width: 320px;
   transition: border-color var(--transition-fast);
 }
 
@@ -3332,9 +3370,24 @@ svg.search-icon {
   color: #4338ca;
   text-shadow: none;
 }
+[data-theme='light'] .kpi-card.kpi-total-val .kpi-icon-box.total {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
 
 [data-theme='light'] .kpi-label {
   color: #64748b;
+}
+
+/* Light Mode Collapsed File Bar */
+[data-theme='light'] .batch-collapsed-bar {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+[data-theme='light'] .batch-collapsed-bar:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 /* Light Mode Filter Pills & Search */
