@@ -271,9 +271,9 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
         });
       }
 
-      // I3: Product total
+      // I3: Product total (tolerância de R$ 0.05 para arredondamentos de 4 casas decimais)
       const expectedProdTotal = nfdItem.qCom * nfdItem.vUnCom;
-      if (Math.abs(nfdItem.vProd - expectedProdTotal) > 0.02) {
+      if (Math.abs(nfdItem.vProd - expectedProdTotal) > 0.05) {
         itemIssues.push({
           id: `I3_${nfdItem.nItem}`,
           code: 'PROD_TOTAL_MISMATCH',
@@ -548,7 +548,13 @@ export function reconcileNFdAgainstMultipleNfos(
     chNFe: nfoList[0].chNFe,
     items: combinedItems,
     totals: {
-      ...nfoList[0].totals,
+      vBC: nfoList.reduce((acc, n) => acc + n.totals.vBC, 0),
+      vICMS: nfoList.reduce((acc, n) => acc + n.totals.vICMS, 0),
+      vProd: nfoList.reduce((acc, n) => acc + n.totals.vProd, 0),
+      vDesc: nfoList.reduce((acc, n) => acc + n.totals.vDesc, 0),
+      vIPI: nfoList.reduce((acc, n) => acc + n.totals.vIPI, 0),
+      vPIS: nfoList.reduce((acc, n) => acc + n.totals.vPIS, 0),
+      vCOFINS: nfoList.reduce((acc, n) => acc + n.totals.vCOFINS, 0),
       vNF: totalVNF,
     },
   };
