@@ -77,7 +77,7 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
   // Batch CSV Export for all pairs
   const handleExportBatchCsv = () => {
     const csvRows: string[] = [
-      'ID Par;Status;Tipo Vinculo;NFD Numero;NFD Chave;NFO(s) Numero;Cliente Emitente;Qtd Itens NFD;Valor Devolvido R$;NDO Entrada;Almoxarifado;Erros Criticos;Alertas;Motivo Devolucao',
+      'ID Par;Status;Tipo Vinculo;NFD Numero;NFD Chave;NFO(s) Numero;Cliente Emitente;Qtd Itens NFD;Medicamentos (30xx);Vitaminas (2936);Suplementos (2106);Valor Devolvido R$;Desconto NFD R$;Desconto Esperado R$;NDO Entrada;Almoxarifado;Erros Criticos;Alertas;Motivo Devolucao',
     ];
 
     pairs.forEach(p => {
@@ -87,6 +87,12 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
       const nfoNums = p.nfoList.map(n => n.nNF).join(' + ') || 'NENHUMA';
       const emitName = nfd.emit.xNome.replace(/"/g, '""');
       const valDev = nfd.totals.vNF.toFixed(2);
+      const pharmaSum = rec?.pharmaceuticalSummary;
+      const totalMeds = pharmaSum?.totalMedicamentos || 0;
+      const totalVits = pharmaSum?.totalVitaminas || 0;
+      const totalSupls = pharmaSum?.totalSuplementos || 0;
+      const descNfd = (pharmaSum?.totalDescontoNfd || nfd.totals.vDesc || 0).toFixed(2);
+      const descEsp = (pharmaSum?.totalDescontoNfoProporcional || 0).toFixed(2);
       const ndo = rec?.ndoSuggestion?.cfop || 'N/A';
       const almox = rec?.piramideResolution?.almoxarifado || 'ALMOX';
       const errCrit = rec?.summary.totalCriticalErrors || 0;
@@ -94,7 +100,7 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
       const motivo = rec?.summary.motivoDevolucao || nfd.parsedMotivoDevolucao || 'Nao informado';
 
       csvRows.push(
-        `"${p.id}";"${status}";"${p.nfoList.length > 1 ? '1:N' : p.nfoList.length === 1 ? '1:1' : 'SEM_VINCULO'}";"${nfd.nNF}";"${nfd.chNFe}";"${nfoNums}";"${emitName}";${nfd.items.length};${valDev};"${ndo}";"${almox}";${errCrit};${errWarn};"${motivo.replace(/"/g, '""')}"`
+        `"${p.id}";"${status}";"${p.nfoList.length > 1 ? '1:N' : p.nfoList.length === 1 ? '1:1' : 'SEM_VINCULO'}";"${nfd.nNF}";"${nfd.chNFe}";"${nfoNums}";"${emitName}";${nfd.items.length};${totalMeds};${totalVits};${totalSupls};${valDev};${descNfd};${descEsp};"${ndo}";"${almox}";${errCrit};${errWarn};"${motivo.replace(/"/g, '""')}"`
       );
     });
 

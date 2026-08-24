@@ -76,19 +76,20 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
         const item = c.nfdItem;
         const lote = item.batches.map(b => b.nLote).join('/') || 'S/LOTE';
         const val = item.batches[0]?.dVal ? formatFiscalDate(item.batches[0]?.dVal) : 'N/A';
-        return `Item ${item.nItem} | Cod: ${item.cProd} | EAN: ${item.cEAN || 'SEM GTIN'} | Qtd: ${item.qCom} ${item.uCom} | Pr.Unit: R$ ${formatCurrency(item.vUnCom)} | Total: R$ ${formatCurrency(item.vProd)} | Lote: ${lote} | Val: ${val} | Almox: ${selectedWarehouse}`;
+        const descStr = item.vDesc > 0 ? ` | Desc: R$ ${formatCurrency(item.vDesc)}` : '';
+        return `Item ${item.nItem} | Cod: ${item.cProd} | EAN: ${item.cEAN || 'SEM GTIN'} | NCM: ${item.ncm || 'S/NCM'} | Qtd: ${item.qCom} ${item.uCom} | Pr.Unit: R$ ${formatCurrency(item.vUnCom)}${descStr} | Total: R$ ${formatCurrency(item.vProd)} | Lote: ${lote} | Val: ${val} | Almox: ${selectedWarehouse}`;
       })
       .join('\n');
   };
 
   // Tab-delimited TSV for direct paste into spreadsheet / ERP grid
   const generateTsvItemsBatchText = () => {
-    const header = 'Item\tCódigo\tDescrição\tEAN\tQtd\tUn\tPreço Unit\tTotal\tLote\tValidade\tAlmoxarifado';
+    const header = 'Item\tCódigo\tDescrição\tNCM\tEAN\tQtd\tUn\tPreço Unit\tDesconto\tTotal\tLote\tValidade\tAlmoxarifado';
     const rows = itemComparisons.map(c => {
       const item = c.nfdItem;
       const lote = item.batches.map(b => b.nLote).join('/') || '';
       const val = item.batches[0]?.dVal ? formatFiscalDate(item.batches[0]?.dVal) : '';
-      return `${item.nItem}\t${item.cProd}\t${item.xProd}\t${item.cEAN}\t${item.qCom}\t${item.uCom}\t${formatCurrency(item.vUnCom)}\t${formatCurrency(item.vProd)}\t${lote}\t${val}\t${selectedWarehouse}`;
+      return `${item.nItem}\t${item.cProd}\t${item.xProd}\t${item.ncm || ''}\t${item.cEAN}\t${item.qCom}\t${item.uCom}\t${formatCurrency(item.vUnCom)}\t${formatCurrency(item.vDesc)}\t${formatCurrency(item.vProd)}\t${lote}\t${val}\t${selectedWarehouse}`;
     });
     return [header, ...rows].join('\n');
   };
@@ -564,8 +565,10 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                 <th>#</th>
                 <th>Cód. Produto</th>
                 <th>Descrição</th>
+                <th>NCM</th>
                 <th>Qtd</th>
                 <th>Pr. Unit</th>
+                <th>Desconto</th>
                 <th>Lote</th>
                 <th>Validade</th>
                 <th>Almox</th>
@@ -598,6 +601,17 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                       <button
                         type="button"
                         className="btn-text-copy"
+                        onClick={() => copyToClipboard(item.ncm || '', `ncm_${i}`)}
+                        title="Clique para copiar o NCM"
+                      >
+                        <span className="font-mono text-xs">{item.ncm || 'S/NCM'}</span>
+                        {copiedKey === `ncm_${i}` ? <Check className="icon-xs success" /> : <Copy className="icon-xs" />}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn-text-copy"
                         onClick={() => copyToClipboard(item.qCom.toString(), `qCom_${i}`)}
                         title="Clique para copiar a quantidade"
                       >
@@ -614,6 +628,17 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                       >
                         <span className="font-mono">{formatCurrency(item.vUnCom)}</span>
                         {copiedKey === `vUn_${i}` ? <Check className="icon-xs success" /> : <Copy className="icon-xs" />}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn-text-copy"
+                        onClick={() => copyToClipboard(formatCurrency(item.vDesc), `vDesc_${i}`)}
+                        title="Clique para copiar o valor do desconto"
+                      >
+                        <span className="font-mono">{formatCurrency(item.vDesc)}</span>
+                        {copiedKey === `vDesc_${i}` ? <Check className="icon-xs success" /> : <Copy className="icon-xs" />}
                       </button>
                     </td>
                     <td>
