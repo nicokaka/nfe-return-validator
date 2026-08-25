@@ -3,6 +3,9 @@ import { reconcileNFeDocuments, reconcileNFdAgainstMultipleNfos } from './reconc
 import { executeBatchPairing } from './batchPairingEngine';
 import { sampleNfdXml, sampleNfoXml } from '../data/sampleXmls';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
+import { calculateExpectedIcms, identifyCompany } from '../data/companyData';
+import { findProductByEan, findProductByCode } from '../data/productCatalog';
+import { auditIcmsStProportionality } from './pharmaFiscalEngine';
 
 export function runExhaustiveTestSuite(): { total: number; passed: number; failed: number; log: string[] } {
   const log: string[] = [];
@@ -221,6 +224,53 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       res.pharmaceuticalSummary?.totalDescontoNfd !== undefined,
       'T6.8: Métricas de medicamentos e total de descontos consolidadas'
     );
+
+    // 7. Diretrizes da Gerência Fiscal (Polliana) e Reforma Tributária
+    // T7.1: Identificação de Empresa
+    assert(res.companyProfile?.key === 'QUESALON_PB', 'T7.1: Identificação automática de empresa (QUESALON PB)');
+
+    // T7.2: INFAN PB - Redução de Base 9,90% (NCM 3004)
+    const infanCompany = identifyCompany('08825857000138', 'PB', 'INFAN INDUSTRIA QUIMICA FARMACEUTICA');
+    const icmsInfan3004 = calculateExpectedIcms(infanCompany, 'PB', '30049099');
+    assert(
+      icmsInfan3004.expectedRate === 0.205 && icmsInfan3004.reductionPercentage === 9.90 && icmsInfan3004.baseMultiplier === 0.901,
+      'T7.2: INFAN (PB) com Redução de Base de ICMS de 9,90% para NCM 3004'
+    );
+
+    // T7.3: INFAN PB - Redução de Base 10,49% (Cosméticos 3401/3304)
+    const icmsInfanCosm = calculateExpectedIcms(infanCompany, 'PB', '34012010');
+    assert(
+      icmsInfanCosm.reductionPercentage === 10.49 && icmsInfanCosm.baseMultiplier === 0.8951,
+      'T7.3: INFAN (PB) com Redução de Base de ICMS de 10,49% para Cosméticos e Higiene'
+    );
+
+    // T7.4: QUESALON EXTREMA MG - Alíquotas Interestaduais (12% Sul/Sudeste vs 7% Demais)
+    const extremaCompany = identifyCompany('04792134000496', 'MG', 'QUESALON EXTREMA');
+    const icmsExtremaSP = calculateExpectedIcms(extremaCompany, 'SP', '30049099');
+    const icmsExtremaBA = calculateExpectedIcms(extremaCompany, 'BA', '30049099');
+    assert(icmsExtremaSP.expectedRate === 0.12, 'T7.4: QUESALON Extrema MG ➔ SP (Sul/Sudeste): Alíquota 12,00%');
+    assert(icmsExtremaBA.expectedRate === 0.07, 'T7.5: QUESALON Extrema MG ➔ BA (Nordeste/CO/N/ES): Alíquota 7,00%');
+
+    // T7.6: Catálogo Oficial de 90 Produtos da Polliana
+    const floraxProduct = findProductByEan('7896685300183');
+    assert(
+      floraxProduct !== undefined && floraxProduct.ncm === '30049099' && floraxProduct.cest === '13.004.01',
+      'T7.6: Catálogo de Produtos: Localização por EAN (FLORAX NCM 30049099 / CEST 13.004.01)'
+    );
+    const prodByCode = findProductByCode(18);
+    assert(prodByCode !== undefined && prodByCode.cod === 18, 'T7.7: Catálogo de Produtos: Localização por Código Interno (Cód 18)');
+
+    // T7.8: Matriz de CFOPs do ERP Pirâmide
+    assert(res.ndoSuggestion?.cfop === '2.202', 'T7.8: Matriz de CFOPs do Pirâmide: Saída 6102 ➔ Devolução 6202 ➔ Entrada 2.202');
+
+    // T7.9: Auditoria de ICMS-ST Proporcional
+    const mockNfoStItem = { ...res.nfd.items[0], qCom: 10, icms: { orig: '0', cst: '10', pICMS: 12, vBC: 1000, vICMS: 120, vBCST: 1500, vICMSST: 180 } };
+    const mockNfdStItem = { ...res.nfd.items[0], qCom: 3, icms: { orig: '0', cst: '10', pICMS: 12, vBC: 300, vICMS: 36, vBCST: 450, vICMSST: 54 } };
+    const stAuditRes = auditIcmsStProportionality(mockNfdStItem, mockNfoStItem);
+    assert(stAuditRes.icmsStAudit.isProportional === true, 'T7.9: ICMS-ST Proporcional Exato (3/10 de R$ 180 = R$ 54)');
+
+    // T7.10: Reforma Tributária (IBS e CBS) & DFeReferenciado
+    assert(res.taxReformSummary !== undefined, 'T7.10: Resumo e Telemetria da Reforma Tributária (IBS/CBS) gerados');
 
   } catch (err: any) {
     failed++;

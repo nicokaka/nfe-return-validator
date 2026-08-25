@@ -69,7 +69,14 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
         {/* NFO Card */}
         <div className="summary-card card-nfo">
           <div className="card-header">
-            <div className="card-type-badge badge-nfo">NOTA DE ORIGEM (SAÍDA)</div>
+            <div className="flex items-center gap-2">
+              <div className="card-type-badge badge-nfo">NOTA DE ORIGEM (SAÍDA)</div>
+              {result.companyProfile && (
+                <span className="badge-pill nfo text-xs font-semibold" title={result.companyProfile.notes}>
+                  {result.companyProfile.isIndustry ? '🏭' : '🏢'} {result.companyProfile.tradeName}
+                </span>
+              )}
+            </div>
             <div className="card-sefaz-badge">
               <ShieldCheck className="icon-xs" /> SEFAZ Autorizada
             </div>
@@ -81,15 +88,15 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
             </div>
 
             <div className="card-entity">
-              <div className="entity-label">EMITENTE • NOSSA EMPRESA</div>
+              <div className="entity-label">EMITENTE • {result.companyProfile?.tradeName || 'NOSSA EMPRESA'}</div>
               <div className="entity-name">{nfo.emit.xNome}</div>
-              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfo.emit.cnpj)}</div>
+              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfo.emit.cnpj)} ({nfo.emit.uf || 'PB'})</div>
             </div>
 
             <div className="card-entity">
               <div className="entity-label">DESTINATÁRIO • CLIENTE</div>
               <div className="entity-name">{nfo.dest.xNome}</div>
-              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfo.dest.cnpj)}</div>
+              <div className="entity-cnpj">CNPJ: {formatCNPJ(nfo.dest.cnpj)} ({nfo.dest.uf || 'UF'})</div>
             </div>
 
             <div className="card-metrics-grid">

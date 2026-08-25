@@ -1,5 +1,7 @@
 import {
   DiscountAudit,
+  IcmsAudit,
+  IcmsStAudit,
   ItemComparison,
   NcmProfile,
   NFeDocument,
@@ -7,6 +9,184 @@ import {
   PharmaceuticalSummary,
   ValidationIssue,
 } from '../types/nfe';
+import { calculateExpectedIcms, CompanyProfile } from '../data/companyData';
+
+/**
+ * Realiza a auditoria de ICMS próprio e reduções de base por NCM (ex: INFAN 9.90% e 10.49%)
+ * aplicando o Princípio da Nota Espelho.
+ */
+export function auditIcmsAndBaseReduction(
+  nfdItem: NFeItem,
+  nfoItem?: NFeItem,
+  company?: CompanyProfile,
+  destUf?: string
+): { icmsAudit: IcmsAudit; issues: ValidationIssue[] } {
+  const issues: ValidationIssue[] = [];
+  const comp = company || {
+    key: 'UNKNOWN',
+    tradeName: 'Empresa do Grupo',
+    corporateName: 'EMPRESA',
+    uf: 'PB',
+    isIndustry: false,
+    internalIcmsRate: 0.20,
+    interstateIcmsRateDefault: 0.12,
+    hasBaseReduction: false,
+    notes: '',
+  };
+
+  const nfdRate = nfdItem.icms?.pICMS || 0;
+  const nfoRate = nfoItem?.icms?.pICMS || 0;
+  const nfdVBc = nfdItem.icms?.vBC || 0;
+  const nfdVProd = nfdItem.vProd || (nfdItem.qCom * nfdItem.vUnCom);
+
+  const { expectedRate, reductionPercentage, baseMultiplier, isInternal } = calculateExpectedIcms(
+    comp,
+    destUf || '',
+    nfdItem.ncm,
+    nfoRate
+  );
+
+  const baseReductionApplied = reductionPercentage > 0;
+  const vBcExpected = Math.round(nfdVProd * baseMultiplier * 100) / 100;
+
+  // Rate match check
+  const isRateMatching = nfoItem
+    ? Math.abs(nfdRate - nfoRate) < 0.1 || (nfdRate === 0 && nfoRate === 0)
+    : Math.abs(nfdRate - (expectedRate * 100)) < 0.1;
+
+  // Base match check
+  const isBaseMatching = nfdVBc > 0
+    ? Math.abs(nfdVBc - vBcExpected) <= 0.10 || Math.abs(nfdVBc - nfdVProd) <= 0.10
+    : true;
+
+  // 1. Princípio da Nota Espelho: alíquota deve espelhar a saída
+  if (nfoItem && Math.abs(nfdRate - nfoRate) >= 0.1 && (nfdRate > 0 || nfoRate > 0)) {
+    issues.push({
+      id: `ICMS_RATE_MISMATCH_${nfdItem.nItem}`,
+      code: 'ICMS_RATE_MISMATCH',
+      title: 'Alíquota de ICMS Divergente da Origem (Princípio Nota Espelho)',
+      description: `A NFD informou alíquota de ICMS de ${nfdRate.toFixed(2)}%, mas a nota de saída faturou a ${nfoRate.toFixed(2)}%. A devolução deve reproduzir exatamente o destaque da saída para anulação contábil exata.`,
+      severity: 'CRITICAL',
+      field: 'pICMS',
+    });
+  }
+
+  // 2. Verificação de Redução de Base da INFAN
+  if (comp.key === 'INFAN' && isInternal && baseReductionApplied) {
+    if (nfdVBc > 0 && Math.abs(nfdVBc - nfdVProd) <= 0.05 && Math.abs(nfdVBc - vBcExpected) > 0.50) {
+      issues.push({
+        id: `ICMS_BASE_REDUCTION_OMITTED_${nfdItem.nItem}`,
+        code: 'ICMS_BASE_REDUCTION_OMITTED',
+        title: `Redução de Base de ICMS (${reductionPercentage.toFixed(2)}%) Omitida`,
+        description: `Na INFAN (PB interna), o produto NCM ${nfdItem.ncm} possui benefício fiscal de redução de base de cálculo de ${reductionPercentage.toFixed(2)}% (Base esperada: R$ ${vBcExpected.toFixed(2)} vs destacada R$ ${nfdVBc.toFixed(2)}).`,
+        severity: 'WARNING',
+        field: 'vBC',
+      });
+    }
+  }
+
+  return {
+    icmsAudit: {
+      company: comp.tradeName,
+      originRate: nfoRate,
+      returnRate: nfdRate,
+      expectedRate: expectedRate * 100,
+      reductionPercentage,
+      baseReductionApplied,
+      vBcExpected,
+      vBcActual: nfdVBc,
+      isRateMatching,
+      isBaseMatching,
+      issues,
+    },
+    issues,
+  };
+}
+
+/**
+ * Audita a herança e proporcionalidade exata de ICMS-ST (Substituição Tributária)
+ */
+export function auditIcmsStProportionality(
+  nfdItem: NFeItem,
+  nfoItem?: NFeItem
+): { icmsStAudit: IcmsStAudit; issues: ValidationIssue[] } {
+  const issues: ValidationIssue[] = [];
+
+  const nfoVIcmsSt = nfoItem?.icms?.vICMSST || 0;
+  const nfoVBcSt = nfoItem?.icms?.vBCST || 0;
+  const nfdVIcmsSt = nfdItem?.icms?.vICMSST || 0;
+  const nfdVBcSt = nfdItem?.icms?.vBCST || 0;
+
+  const hasStInOrigin = nfoVIcmsSt > 0 || nfoVBcSt > 0;
+  const hasStInReturn = nfdVIcmsSt > 0 || nfdVBcSt > 0;
+
+  if (!nfoItem) {
+    return {
+      icmsStAudit: {
+        hasStInOrigin: false,
+        hasStInReturn,
+        vBcStNfd: nfdVBcSt,
+        vIcmsStNfd: nfdVIcmsSt,
+        isProportional: true,
+        diffSt: 0,
+        issues: [],
+      },
+      issues: [],
+    };
+  }
+
+  const nfoQCom = nfoItem.qCom || 0;
+  const nfdQCom = nfdItem.qCom || 0;
+  const returnRatio = nfoQCom > 0 ? nfdQCom / nfoQCom : 1;
+  const expectedVIcmsSt = Math.round(nfoVIcmsSt * returnRatio * 100) / 100;
+  const diffSt = Math.abs(nfdVIcmsSt - expectedVIcmsSt);
+  const isProportional = diffSt <= 0.05;
+
+  if (hasStInOrigin && !hasStInReturn) {
+    issues.push({
+      id: `ST_OMITTED_${nfdItem.nItem}`,
+      code: 'ICMS_ST_OMITTED_IN_RETURN',
+      title: 'ICMS-ST Destacado na Venda Omitido na Devolução',
+      description: `A nota de saída destacou R$ ${nfoVIcmsSt.toFixed(2)} de ICMS-ST. Para a quantidade devolvida (${nfdQCom} un), era esperado o destaque proporcional de R$ ${expectedVIcmsSt.toFixed(2)} de ICMS-ST.`,
+      severity: 'CRITICAL',
+      field: 'vICMSST',
+    });
+  } else if (!hasStInOrigin && hasStInReturn) {
+    issues.push({
+      id: `ST_UNEXPECTED_${nfdItem.nItem}`,
+      code: 'ICMS_ST_UNEXPECTED_IN_RETURN',
+      title: 'ICMS-ST Destacado na Devolução sem Destaque na Origem',
+      description: `A nota de devolução destacou R$ ${nfdVIcmsSt.toFixed(2)} de ICMS-ST, mas a nota de venda original não continha retenção de ST.`,
+      severity: 'CRITICAL',
+      field: 'vICMSST',
+    });
+  } else if (hasStInOrigin && hasStInReturn && !isProportional) {
+    issues.push({
+      id: `ST_NOT_PROPORTIONAL_${nfdItem.nItem}`,
+      code: 'ICMS_ST_NOT_PROPORTIONAL',
+      title: 'ICMS-ST Fora da Proporcionalidade Exata da Origem',
+      description: `ICMS-ST informado na devolução: R$ ${nfdVIcmsSt.toFixed(2)}. Valor proporcional esperado: R$ ${expectedVIcmsSt.toFixed(2)} (Divergência de R$ ${diffSt.toFixed(2)}).`,
+      severity: 'CRITICAL',
+      field: 'vICMSST',
+    });
+  }
+
+  return {
+    icmsStAudit: {
+      hasStInOrigin,
+      hasStInReturn,
+      vBcStNfo: nfoVBcSt,
+      vIcmsStNfo: nfoVIcmsSt,
+      vBcStNfd: nfdVBcSt,
+      vIcmsStNfd: nfdVIcmsSt,
+      expectedVIcmsSt,
+      isProportional,
+      diffSt,
+      issues,
+    },
+    issues,
+  };
+}
 
 /**
  * Classifica o NCM e extrai o perfil regulatório e tributário farmacêutico.

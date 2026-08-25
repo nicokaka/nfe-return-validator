@@ -370,6 +370,24 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                   </strong>
                                 </div>
                               )}
+                              {c.icmsAudit && (
+                                <div className="detail-field">
+                                  <span>ICMS Base / Redução:</span>
+                                  <span>
+                                    {c.icmsAudit.baseReductionApplied
+                                      ? `Redução de ${c.icmsAudit.reductionPercentage.toFixed(2)}% (Base esperada: ${formatCurrency(c.icmsAudit.vBcExpected)})`
+                                      : `Base Cheia (${formatCurrency(c.icmsAudit.vBcActual || c.icmsAudit.vBcExpected)})`}
+                                  </span>
+                                </div>
+                              )}
+                              {c.icmsStAudit?.hasStInOrigin && (
+                                <div className="detail-field">
+                                  <span>ICMS-ST Proporcional:</span>
+                                  <strong>
+                                    Devolvido: {formatCurrency(c.icmsStAudit.vIcmsStNfd)} | Esperado: {formatCurrency(c.icmsStAudit.expectedVIcmsSt)}
+                                  </strong>
+                                </div>
+                              )}
                               {nfdItem.med?.vPMC && (
                                 <div className="detail-field">
                                   <span>Preço Máximo Consumidor (PMC):</span>
@@ -394,6 +412,9 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                     <span>Alíquota ICMS:</span> <strong>{nfdItem.icms?.pICMS}%</strong>
                                   </div>
                                   <div className="tax-item">
+                                    <span>ICMS-ST:</span> <strong>{formatCurrency(nfdItem.icms?.vICMSST || 0)}</strong>
+                                  </div>
+                                  <div className="tax-item">
                                     <span>PIS CST / Alíq:</span> <strong>{nfdItem.pis?.cst || 'N/A'} {nfdItem.pis?.pPIS ? `(${nfdItem.pis.pPIS}%)` : ''}</strong>
                                   </div>
                                   <div className="tax-item">
@@ -411,6 +432,9 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                   </div>
                                   <div className="tax-item">
                                     <span>Alíquota ICMS:</span> <strong>{nfoItem.icms?.pICMS}%</strong>
+                                  </div>
+                                  <div className="tax-item">
+                                    <span>ICMS-ST:</span> <strong>{formatCurrency(nfoItem.icms?.vICMSST || 0)}</strong>
                                   </div>
                                   <div className="tax-item">
                                     <span>PIS CST / Alíq:</span> <strong>{nfoItem.pis?.cst || 'N/A'} {nfoItem.pis?.pPIS ? `(${nfoItem.pis.pPIS}%)` : ''}</strong>

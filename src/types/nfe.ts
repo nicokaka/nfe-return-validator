@@ -9,6 +9,7 @@ export interface NFeParticipant {
   xMun?: string;
   fone?: string;
   email?: string;
+  crt?: number;
 }
 
 export interface NFeBatch {
@@ -25,6 +26,9 @@ export interface NFeTaxICMS {
   vBC: number;
   pICMS: number;
   vICMS: number;
+  vBCST?: number;
+  pICMSST?: number;
+  vICMSST?: number;
 }
 
 export interface NFeTaxIPI {
@@ -210,6 +214,54 @@ export interface NDOSuggestion {
   explanation: string;
 }
 
+export interface IcmsAudit {
+  company: string;
+  originRate: number;
+  returnRate: number;
+  expectedRate: number;
+  reductionPercentage: number;
+  baseReductionApplied: boolean;
+  vBcExpected: number;
+  vBcActual: number;
+  isRateMatching: boolean;
+  isBaseMatching: boolean;
+  issues: ValidationIssue[];
+}
+
+export interface IcmsStAudit {
+  hasStInOrigin: boolean;
+  hasStInReturn: boolean;
+  vBcStNfo?: number;
+  vIcmsStNfo?: number;
+  vBcStNfd?: number;
+  vIcmsStNfd?: number;
+  expectedVIcmsSt?: number;
+  isProportional: boolean;
+  diffSt: number;
+  issues: ValidationIssue[];
+}
+
+export interface IbsCbsAudit {
+  hasIbsCbs: boolean;
+  cstIbsCbs?: string;
+  vBcIbsCbs?: number;
+  pIbs?: number;
+  pCbs?: number;
+  vIbs?: number;
+  vCbs?: number;
+  isCrt3Normal: boolean;
+  isCreditAtRisk: boolean;
+  issues: ValidationIssue[];
+}
+
+export interface DFeReferenciadoAudit {
+  hasItemReference: boolean;
+  refNItem?: number;
+  refChNFe?: string;
+  isCompliant2026: boolean;
+  issues: ValidationIssue[];
+}
+
 export interface ItemComparison {
   nfdItem: NFeItem;
   nfoItem?: NFeItem;
@@ -222,6 +274,10 @@ export interface ItemComparison {
   piramideResolution?: PiramideResolution;
   ncmProfile?: NcmProfile;
   discountAudit?: DiscountAudit;
+  icmsAudit?: IcmsAudit;
+  icmsStAudit?: IcmsStAudit;
+  ibsCbsAudit?: IbsCbsAudit;
+  dfeReferenciadoAudit?: DFeReferenciadoAudit;
   issues: ValidationIssue[];
   isMatchOk: boolean;
 }
@@ -243,6 +299,22 @@ export interface ReconciliationResult {
   ndoSuggestion?: NDOSuggestion;
   piramideResolution?: PiramideResolution;
   pharmaceuticalSummary?: PharmaceuticalSummary;
+  companyProfile?: {
+    key: string;
+    tradeName: string;
+    uf: string;
+    isIndustry: boolean;
+    internalIcmsRate: number;
+    hasBaseReduction: boolean;
+    notes: string;
+  };
+  taxReformSummary?: {
+    totalIbs: number;
+    totalCbs: number;
+    isCreditGuaranteed: boolean;
+    is2026Compliant: boolean;
+    riskMessage?: string;
+  };
   summary: {
     totalItemsNfd: number;
     totalMatched: number;

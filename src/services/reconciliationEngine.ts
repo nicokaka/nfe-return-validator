@@ -9,13 +9,16 @@ import {
 } from '../types/nfe';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { detectPiramideMotivo } from './piramideService';
-import { suggestNDO, validateTaxReformAndBonificacao } from './ndoTaxEngine';
+import { suggestNDO, validateTaxReformAndBonificacao, auditIbsCbsReform, auditDFeReferenciado2026 } from './ndoTaxEngine';
 import {
   auditDiscount,
   auditPharmaceuticalItem,
+  auditIcmsAndBaseReduction,
+  auditIcmsStProportionality,
   buildPharmaceuticalSummary,
   classifyNcm,
 } from './pharmaFiscalEngine';
+import { identifyCompany } from '../data/companyData';
 
 function isCleanEanValid(ean: string): boolean {
   if (!ean) return false;
@@ -48,6 +51,9 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       nfo = docA;
     }
   }
+
+  // Identificar Empresa do Grupo Emissora da NFO
+  const companyProfile = identifyCompany(nfo.emit.cnpj, nfo.emit.uf, nfo.emit.xNome);
 
   // 1. Header Validations
   const headerIssues: ValidationIssue[] = [];
@@ -229,13 +235,29 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     // Classificação NCM e perfil regulatório
     const ncmProfile = classifyNcm(nfdItem.ncm || (matchedNfoItem ? matchedNfoItem.ncm : ''));
 
-    // Auditoria especializada de Desconto
+    // Auditoria especializada de Desconto (Fórmula Oficial Polliana)
     const { discountAudit, issues: discountIssues } = auditDiscount(nfdItem, matchedNfoItem);
     itemIssues.push(...discountIssues);
 
     // Auditoria farmacêutica regulatória (NT 2021.004, ANVISA, PIS/COFINS Monofásico)
     const { issues: pharmaIssues } = auditPharmaceuticalItem(nfdItem, matchedNfoItem, nfd, nfo);
     itemIssues.push(...pharmaIssues);
+
+    // Auditoria de ICMS e Redução de Base (ex: INFAN 9.90% e 10.49%) com Princípio da Nota Espelho
+    const { icmsAudit, issues: icmsIssues } = auditIcmsAndBaseReduction(nfdItem, matchedNfoItem, companyProfile, nfd.dest.uf);
+    itemIssues.push(...icmsIssues);
+
+    // Auditoria de ICMS-ST Proporcional
+    const { icmsStAudit, issues: stIssues } = auditIcmsStProportionality(nfdItem, matchedNfoItem);
+    itemIssues.push(...stIssues);
+
+    // Auditoria da Reforma Tributária (IBS e CBS)
+    const { ibsCbsAudit, issues: ibsCbsIssues } = auditIbsCbsReform(nfdItem, nfd);
+    itemIssues.push(...ibsCbsIssues);
+
+    // Auditoria DFeReferenciado SEFAZ 2026 (NT RTC v1.40 / Regra VC02-14)
+    const { dfeReferenciadoAudit, issues: dfeIssues } = auditDFeReferenciado2026(nfdItem, matchedNfoItem, nfd, nfo);
+    itemIssues.push(...dfeIssues);
 
     if (!matchedNfoItem) {
       itemIssues.push({
@@ -337,33 +359,20 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       });
 
       // I7: CFOP Validation
-      const isReturnCfop = /^[1-7](20[1-9]|411|910)/.test(nfdItem.cfop);
+      const isReturnCfop = /^[1-7](20[1-9]|411|910|949)/.test(nfdItem.cfop);
       if (nfdItem.cfop && !isReturnCfop) {
         itemIssues.push({
           id: `I7_${nfdItem.nItem}`,
           code: 'CFOP_INVALID_FOR_RETURN',
           title: 'CFOP Incompatível com Operação de Devolução',
-          description: `O CFOP ${nfdItem.cfop} do item não é um CFOP de devolução (esperado: x201, x202, x411, x910, etc.).`,
+          description: `O CFOP ${nfdItem.cfop} do item não é um CFOP de devolução (esperado: x201, x202, x411, x949, etc.).`,
           severity: 'WARNING',
           field: 'cfop',
         });
       }
 
-      // I8 & I9: ICMS Validation
+      // I8: ICMS CST
       if (nfdItem.icms && matchedNfoItem.icms) {
-        // ICMS Rate
-        if (Math.abs(nfdItem.icms.pICMS - matchedNfoItem.icms.pICMS) > 0.001) {
-          itemIssues.push({
-            id: `I9_${nfdItem.nItem}`,
-            code: 'ICMS_RATE_MISMATCH',
-            title: 'Alíquota de ICMS Divergente',
-            description: `Alíquota de ICMS devolvida (${nfdItem.icms.pICMS}%) diverge da origem (${matchedNfoItem.icms.pICMS}%).`,
-            severity: 'CRITICAL',
-            field: 'pICMS',
-          });
-        }
-
-        // ICMS CST
         if (nfdItem.icms.cst !== matchedNfoItem.icms.cst) {
           itemIssues.push({
             id: `I8_${nfdItem.nItem}`,
@@ -448,6 +457,10 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       piramideResolution: itemPiramideResolution,
       ncmProfile,
       discountAudit,
+      icmsAudit,
+      icmsStAudit,
+      ibsCbsAudit,
+      dfeReferenciadoAudit,
       issues: itemIssues,
       isMatchOk,
     });
@@ -484,6 +497,12 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
 
   const pharmaceuticalSummary = buildPharmaceuticalSummary(itemComparisons, nfd, nfo);
 
+  // Totais da Reforma Tributária
+  const totalCbs = itemComparisons.reduce((acc, c) => acc + (c.ibsCbsAudit?.vCbs || 0), 0);
+  const totalIbs = itemComparisons.reduce((acc, c) => acc + (c.ibsCbsAudit?.vIbs || 0), 0);
+  const isCreditGuaranteed = !itemComparisons.some(c => c.ibsCbsAudit?.isCreditAtRisk);
+  const is2026Compliant = itemComparisons.every(c => c.dfeReferenciadoAudit?.isCompliant2026 !== false);
+
   return {
     nfd,
     nfo,
@@ -494,6 +513,24 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     ndoSuggestion,
     piramideResolution,
     pharmaceuticalSummary,
+    companyProfile: {
+      key: companyProfile.key,
+      tradeName: companyProfile.tradeName,
+      uf: companyProfile.uf,
+      isIndustry: companyProfile.isIndustry,
+      internalIcmsRate: companyProfile.internalIcmsRate,
+      hasBaseReduction: companyProfile.hasBaseReduction,
+      notes: companyProfile.notes,
+    },
+    taxReformSummary: {
+      totalIbs,
+      totalCbs,
+      isCreditGuaranteed,
+      is2026Compliant,
+      riskMessage: isCreditGuaranteed
+        ? undefined
+        : 'Aviso de Reforma Tributária: cliente em Regime Normal sem destaque de IBS/CBS.',
+    },
     summary: {
       totalItemsNfd: nfd.items.length,
       totalMatched: itemComparisons.filter(c => c.nfoItem).length,
