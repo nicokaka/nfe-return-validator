@@ -30,6 +30,27 @@ function cleanCnpj(cnpj: string): string {
   return cnpj.replace(/\D/g, '');
 }
 
+export function normalizeUnit(u?: string): string {
+  if (!u) return 'UN';
+  const clean = u.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (['UN', 'UND', 'UNID', 'UNIDADE', 'UNI', 'U', 'PC', 'PCA', 'PECA'].includes(clean)) return 'UN';
+  if (['CX', 'CXA', 'CAIXA', 'BOX'].includes(clean)) return 'CX';
+  if (['FR', 'FRS', 'FRASCO', 'FRASC'].includes(clean)) return 'FR';
+  if (['TB', 'TUBO', 'TUB'].includes(clean)) return 'TB';
+  if (['BL', 'BLIST', 'BLISTER'].includes(clean)) return 'BL';
+  if (['ENV', 'ENVELOPE', 'SACHE', 'SACHET'].includes(clean)) return 'ENV';
+  if (['AMP', 'AMPL', 'AMPOLA'].includes(clean)) return 'AMP';
+  if (['FLAC', 'FLACONETE'].includes(clean)) return 'FLAC';
+  if (['LT', 'LITRO', 'L'].includes(clean)) return 'L';
+  if (['KG', 'KILO', 'QUILO'].includes(clean)) return 'KG';
+  if (['G', 'GR', 'GRAMA'].includes(clean)) return 'G';
+  if (['ML', 'MILILITRO'].includes(clean)) return 'ML';
+  if (['CP', 'CPS', 'CAP', 'CAPS', 'CAPSULA', 'CAPSULAS'].includes(clean)) return 'CAPS';
+  if (['COM', 'COMP', 'COMPRIMIDO', 'COMPRIMIDOS'].includes(clean)) return 'COMP';
+  if (['CV'].includes(clean)) return 'CV';
+  return clean;
+}
+
 export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): ReconciliationResult {
   // Determine which is NFD and which is NFO
   let nfd: NFeDocument;
@@ -410,16 +431,20 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
         }
       }
 
-      // I15: uCom Info
-      if (nfdItem.uCom && matchedNfoItem.uCom && nfdItem.uCom.toUpperCase() !== matchedNfoItem.uCom.toUpperCase()) {
-        itemIssues.push({
-          id: `I15_${nfdItem.nItem}`,
-          code: 'UCOM_DIFFERENT',
-          title: 'Unidade de Medida Comercial com Grafia Diferente',
-          description: `Unidade na NFD: "${nfdItem.uCom}" vs NFO: "${matchedNfoItem.uCom}".`,
-          severity: 'INFO',
-          field: 'uCom',
-        });
+      // I15: uCom Info (Equipara sinônimos como UN, UND, UNID, UNIDADE)
+      if (nfdItem.uCom && matchedNfoItem.uCom) {
+        const normNfd = normalizeUnit(nfdItem.uCom);
+        const normNfo = normalizeUnit(matchedNfoItem.uCom);
+        if (normNfd !== normNfo) {
+          itemIssues.push({
+            id: `I15_${nfdItem.nItem}`,
+            code: 'UCOM_DIFFERENT',
+            title: 'Unidade de Medida Comercial Diferente',
+            description: `Unidade na NFD: "${nfdItem.uCom}" vs NFO: "${matchedNfoItem.uCom}".`,
+            severity: 'INFO',
+            field: 'uCom',
+          });
+        }
       }
     }
 

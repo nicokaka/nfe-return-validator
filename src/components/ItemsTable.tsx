@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck, ShieldCheck } from './Icons';
 import { formatFiscalDate } from '../utils/dateUtils';
+import { normalizeUnit } from '../services/reconciliationEngine';
 
 interface ItemsTableProps {
   result: ReconciliationResult;
@@ -172,11 +173,11 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                       <div className="quantity-cell">
                         <div className="quantity-main">
                           <span className="font-weight-600 font-mono text-base">{nfdItem.qCom}</span>
-                          <span className="unit-label font-mono">{nfdItem.uCom || 'UN'}</span>
+                          <span className="unit-label font-mono">{normalizeUnit(nfdItem.uCom)}</span>
                         </div>
                         {nfoItem && (
                           <div className="quantity-sub">
-                            <span className="text-muted text-xs">de {nfoItem.qCom} {nfoItem.uCom || 'UN'}</span>
+                            <span className="text-muted text-xs">de {nfoItem.qCom} {normalizeUnit(nfoItem.uCom)}</span>
                             {c.returnType === 'TOTAL' && (
                               <span className="badge-qty badge-qty-total" title="Devolução 100% Total">
                                 Total 100%
@@ -404,6 +405,39 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                   <div className="col-tax-status">Auditoria Automática</div>
                                 </div>
                                 <div className="smart-tax-tbody">
+                                  {/* Linha: CFOP da Operação */}
+                                  {(() => {
+                                    const nfoCfop = nfoItem.cfop || '6102';
+                                    const nfdCfop = nfdItem.cfop || '6202';
+                                    const isReturnCfop = ['1201', '1202', '1411', '1949', '2201', '2202', '2411', '2949', '5201', '5202', '5411', '5949', '6201', '6202', '6411', '6949'].some(cf => nfdCfop.includes(cf.replace('.', '')));
+                                    const suggestedCfop = result.ndoSuggestion?.cfop || '2.202';
+
+                                    return (
+                                      <div className="smart-tax-row">
+                                        <div className="col-tax-name font-weight-600">
+                                          CFOP da Operação
+                                        </div>
+                                        <div className="col-tax-nfo font-mono">
+                                          {nfoCfop} <span className="badge-tag">Saída Faturada</span>
+                                        </div>
+                                        <div className="col-tax-nfd font-mono">
+                                          {nfdCfop} <span className="badge-tag">Devolução Cliente</span>
+                                        </div>
+                                        <div className="col-tax-status">
+                                          {isReturnCfop ? (
+                                            <span className="match-chip match-chip-ok" title={`CFOP legítimo de devolução. Escrituração sugerida: ${suggestedCfop} no Pirâmide`}>
+                                              <CheckCircle2 className="icon-xs" /> CFOP Conforme (Entrada {suggestedCfop})
+                                            </span>
+                                          ) : (
+                                            <span className="match-chip match-chip-error" title="CFOP não é de devolução">
+                                              <XCircle className="icon-xs" /> CFOP Inválido
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
+
                                   {/* Linha: Alíquota e CST ICMS */}
                                   {(() => {
                                     const nfdIcmsRate = nfdItem.icms?.pICMS || 0;
