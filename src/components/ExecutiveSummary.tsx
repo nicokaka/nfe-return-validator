@@ -78,7 +78,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               )}
             </div>
             <div className="card-sefaz-badge">
-              <ShieldCheck className="icon-xs" /> ✓ SEFAZ Autorizada
+              <ShieldCheck className="icon-xs" /> SEFAZ Autorizada
             </div>
           </div>
           <div className="card-body">
@@ -149,7 +149,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
           <div className="card-header">
             <div className="card-type-badge badge-nfd">NOTA DE DEVOLUÇÃO (ENTRADA)</div>
             <div className="card-sefaz-badge">
-              <ShieldCheck className="icon-xs" /> ✓ SEFAZ Autorizada
+              <ShieldCheck className="icon-xs" /> SEFAZ Autorizada
             </div>
           </div>
           <div className="card-body">

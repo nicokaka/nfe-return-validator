@@ -340,11 +340,11 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                   </div>
                                 ) : (
                                   <div className="item-valid-strip">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                       <span className="badge-tick-circle">✓</span>
-                                      <div>
-                                        <span className="font-weight-600 text-sm text-success">Item 100% em Conformidade com a Nota de Origem</span>
-                                        <span className="text-xs text-muted ml-2">Preço unitário, descontos rateados e tributos conferem com a saída.</span>
+                                      <div className="valid-strip-text">
+                                        <div className="font-weight-600 text-sm text-success">Item 100% em Conformidade com a Nota de Origem</div>
+                                        <div className="text-xs text-muted mt-0.5">Preço unitário, descontos rateados e tributos conferem com a saída.</div>
                                       </div>
                                     </div>
                                     {infoIssues.length > 0 && (
@@ -439,16 +439,29 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                   {(() => {
                                     const isBaseOk = c.icmsAudit?.isBaseMatching ?? true;
                                     const redApplied = c.icmsAudit?.baseReductionApplied;
+                                    const nfoQCom = nfoItem.qCom || 1;
+                                    const nfdQCom = nfdItem.qCom || 1;
+                                    const ratio = nfoQCom > 0 ? nfdQCom / nfoQCom : 1;
+                                    const nfoTotalBc = nfoItem.icms?.vBC || (nfoItem.qCom * nfoItem.vUnCom - (nfoItem.vDesc || 0));
+                                    const nfoProportionalBc = Math.round(nfoTotalBc * ratio * 100) / 100;
+                                    const nfdBc = nfdItem.icms?.vBC || (nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0));
+                                    const isPartial = nfdQCom < nfoQCom;
+
                                     return (
                                       <div className="smart-tax-row">
                                         <div className="col-tax-name font-weight-600">
                                           Base de Cálculo de ICMS
                                         </div>
                                         <div className="col-tax-nfo font-mono">
-                                          {formatCurrency(nfoItem.icms?.vBC || (nfoItem.qCom * nfoItem.vUnCom))}
+                                          {formatCurrency(nfoProportionalBc)}
+                                          {isPartial && (
+                                            <span className="text-xs text-muted ml-1" title={`Base total na saída: ${formatCurrency(nfoTotalBc)}`}>
+                                              (prop. {nfdQCom} un)
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="col-tax-nfd font-mono">
-                                          {formatCurrency(nfdItem.icms?.vBC || (nfdItem.qCom * nfdItem.vUnCom))}
+                                          {formatCurrency(nfdBc)}
                                           {redApplied && (
                                             <span className="badge-reduction ml-1">
                                               Red. {c.icmsAudit?.reductionPercentage.toFixed(2)}%
@@ -458,7 +471,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                         <div className="col-tax-status">
                                           {isBaseOk ? (
                                             <span className="match-chip match-chip-ok">
-                                              <CheckCircle2 className="icon-xs" /> {redApplied ? `Base Reduzida (${c.icmsAudit?.reductionPercentage}%)` : 'Base Cheia 100%'}
+                                              <CheckCircle2 className="icon-xs" /> {redApplied ? `Base Reduzida (${c.icmsAudit?.reductionPercentage}%)` : 'Base Cheia 100% (Conforme)'}
                                             </span>
                                           ) : (
                                             <span className="match-chip match-chip-warn">

@@ -47,16 +47,18 @@ export function auditIcmsAndBaseReduction(
   );
 
   const baseReductionApplied = reductionPercentage > 0;
-  const vBcExpected = Math.round(nfdVProd * baseMultiplier * 100) / 100;
+  const nfdDesc = nfdItem.vDesc || 0;
+  const nfdVProdLiq = Math.max(0, nfdVProd - nfdDesc);
+  const vBcExpected = Math.round(nfdVProdLiq * baseMultiplier * 100) / 100;
 
   // Rate match check
   const isRateMatching = nfoItem
     ? Math.abs(nfdRate - nfoRate) < 0.1 || (nfdRate === 0 && nfoRate === 0)
     : Math.abs(nfdRate - (expectedRate * 100)) < 0.1;
 
-  // Base match check
+  // Base match check (Considera base líquida com desconto rateado ou bruta se sem desconto)
   const isBaseMatching = nfdVBc > 0
-    ? Math.abs(nfdVBc - vBcExpected) <= 0.10 || Math.abs(nfdVBc - nfdVProd) <= 0.10
+    ? Math.abs(nfdVBc - vBcExpected) <= 0.10 || Math.abs(nfdVBc - nfdVProdLiq) <= 0.10 || Math.abs(nfdVBc - nfdVProd) <= 0.10
     : true;
 
   // 1. Princípio da Nota Espelho: alíquota deve espelhar a saída
