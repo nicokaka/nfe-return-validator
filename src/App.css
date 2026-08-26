@@ -1261,6 +1261,247 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+/* ==========================================================================
+   EXPANDED DETAIL ROW & SMART COMPARISON MATRIX
+   ========================================================================== */
+.diagnosis-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-valid-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.badge-tick-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: var(--color-success);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  flex-shrink: 0;
+}
+
+.btn-info-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-info-toggle:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.info-accordion-panel {
+  background: var(--bg-surface);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-left: 3px solid #38bdf8;
+  border-radius: var(--radius-xs);
+  padding: 10px 14px;
+  animation: fadeIn 0.2s ease;
+}
+
+.info-accordion-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.info-accordion-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+
+.info-accordion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.info-bullet {
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+/* Smart Tax Comparison Table */
+.smart-tax-comparison-section {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.comparison-section-header {
+  padding: 8px 14px;
+  background-color: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.comparison-section-header .section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.smart-tax-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.smart-tax-thead {
+  display: grid;
+  grid-template-columns: 2fr 1.6fr 1.6fr 1.8fr;
+  padding: 6px 14px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.smart-tax-tbody {
+  display: flex;
+  flex-direction: column;
+}
+
+.smart-tax-row {
+  display: grid;
+  grid-template-columns: 2fr 1.6fr 1.6fr 1.8fr;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11.5px;
+  transition: background-color var(--transition-fast);
+}
+
+.smart-tax-row:last-child {
+  border-bottom: none;
+}
+
+.smart-tax-row:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.badge-tag {
+  display: inline-block;
+  font-size: 9.5px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  margin-left: 4px;
+}
+
+.badge-reduction {
+  display: inline-block;
+  font-size: 9.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+/* Match Chips with Green Ticks */
+.match-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  width: fit-content;
+}
+
+.match-chip-ok {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.match-chip-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.match-chip-warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.badge-pill-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.badge-pill-neutral {
+  background: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 10px;
+  border: 1px solid var(--border-color);
+}
+
 .issues-box {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -1294,21 +1535,9 @@
 .issue-warning { background-color: var(--color-warning-bg); }
 .issue-info { background-color: var(--color-info-bg); }
 
-.no-issues-box {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--color-success);
-}
-
 .item-detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
@@ -1316,18 +1545,19 @@
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .detail-card-header {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-primary);
   text-transform: uppercase;
   margin-bottom: 4px;
+  letter-spacing: 0.3px;
 }
 
 .detail-field {
@@ -1335,29 +1565,6 @@
   display: flex;
   justify-content: space-between;
   gap: 6px;
-}
-
-.tax-comparison-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-}
-
-.tax-column-header {
-font-size: 10.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  text-transform: uppercase;
-}.tax-item {
-  font-size: 11px;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 2px;
 }
 
 /* ==========================================================================

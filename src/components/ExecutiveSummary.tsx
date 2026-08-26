@@ -78,7 +78,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               )}
             </div>
             <div className="card-sefaz-badge">
-              <ShieldCheck className="icon-xs" /> SEFAZ Autorizada
+              <ShieldCheck className="icon-xs" /> ✓ SEFAZ Autorizada
             </div>
           </div>
           <div className="card-body">
@@ -127,11 +127,19 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
         <div className="summary-connection-column">
           <div className="connection-badge">
             <ArrowRightLeft className="icon" />
-            <span>Link de NFref</span>
+            <span className="font-weight-600 text-xs">Cruzamento Fiscal</span>
             {headerValidation.isRefKeyMatching ? (
-              <span className="ref-status success">✓ VINCULADA</span>
+              <span className="ref-status success" title="Chave de acesso da NFO referenciada no XML da NFD">✓ Chave Vinculada</span>
             ) : (
-              <span className="ref-status danger">❌ SEM LINK</span>
+              <span className="ref-status danger" title="Chave de origem não encontrada na tag refNFe">❌ Sem Link NFref</span>
+            )}
+            {headerValidation.isParticipantsMatching ? (
+              <span className="ref-status success mt-1" title="Emitente da NFD é o Destinatário da NFO e vice-versa">✓ CNPJs Cruzados</span>
+            ) : (
+              <span className="ref-status warning mt-1" title="Divergência entre emitente/destinatário">⚠️ Verificar CNPJs</span>
+            )}
+            {headerValidation.isSefazAuthorized && (
+              <span className="ref-status success mt-1" title="Notas autorizadas na SEFAZ">✓ SEFAZ Válida</span>
             )}
           </div>
         </div>
@@ -141,7 +149,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
           <div className="card-header">
             <div className="card-type-badge badge-nfd">NOTA DE DEVOLUÇÃO (ENTRADA)</div>
             <div className="card-sefaz-badge">
-              <ShieldCheck className="icon-xs" /> SEFAZ Autorizada
+              <ShieldCheck className="icon-xs" /> ✓ SEFAZ Autorizada
             </div>
           </div>
           <div className="card-body">
