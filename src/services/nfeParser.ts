@@ -234,16 +234,19 @@ function parseTotals(totalEl: Element | null): NFeTotals {
 
 function extractMotivoDevolucao(infCpl: string): string | undefined {
   if (!infCpl) return undefined;
-  const match = infCpl.match(/MOTIVO(?:\s+(?:DA|DE)\s+DEVOLU[ÇC][AÃ]O)?:\s*(.+?)(?:\/\/|;|\n|$)/i);
+  const match = infCpl.match(/MOTIVO(?:\s+(?:DA|DE)\s+DEVOLU[ÇC][AÃ]O)?[\s:]+([^\/\n;]+)/i);
   if (match && match[1]) {
-    return match[1].trim();
+    const res = match[1].trim();
+    if (res.length > 2 && !res.toUpperCase().startsWith('CHAVE')) {
+      return res;
+    }
   }
   return undefined;
 }
 
 function extractNfoRefNumber(infCpl: string): string | undefined {
   if (!infCpl) return undefined;
-  const match = infCpl.match(/(?:NFO|NF\s+ORIGEM|NF\s+VENDA|REF):\s*(\d+)/i);
+  const match = infCpl.match(/(?:NFO|NF\s+ORIGEM|NF\s+VENDA|NOTA\s+ORIGEM|REF)[\s:]+(\d+)/i);
   if (match && match[1]) {
     return match[1].trim();
   }
