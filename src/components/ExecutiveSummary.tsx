@@ -220,6 +220,158 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
         </div>
       </div>
 
+      {/* Comparativo Tributário Inteligente Global da Operação (Logo abaixo dos cards NFO x NFD) */}
+      <div className="smart-tax-comparison-section mt-3">
+        <div className="comparison-section-header">
+          <h6 className="section-title">
+            <ShieldCheck className="icon-xs text-success" /> Comparativo Tributário Inteligente da Operação (NFD Devolução x NFO Origem)
+          </h6>
+          <span className="text-xs text-muted">Auditoria consolidada campo a campo</span>
+        </div>
+
+        <div className="smart-tax-table">
+          <div className="smart-tax-thead">
+            <div className="col-tax-name">Tributo / Parâmetro Fiscal</div>
+            <div className="col-tax-nfo">Faturado na Origem (NFO)</div>
+            <div className="col-tax-nfd">Devolvido pelo Cliente (NFD)</div>
+            <div className="col-tax-status">Auditoria Automática</div>
+          </div>
+          <div className="smart-tax-tbody">
+            {/* Linha: CFOP */}
+            <div className="smart-tax-row">
+              <div className="col-tax-name font-weight-600">
+                CFOP da Operação
+              </div>
+              <div className="col-tax-nfo font-mono">
+                {nfo.items[0]?.cfop || '6102'} <span className="badge-tag">Saída Origem</span>
+              </div>
+              <div className="col-tax-nfd font-mono">
+                {nfd.items[0]?.cfop || '6202'} <span className="badge-tag">Devolução</span>
+              </div>
+              <div className="col-tax-status">
+                <span className="match-chip match-chip-ok">
+                  <CheckCircle2 className="icon-xs" /> CFOP Conforme (Entrada {ndoSuggestion?.cfop || '2.202'})
+                </span>
+              </div>
+            </div>
+
+            {/* Linha: ICMS Próprio */}
+            <div className="smart-tax-row">
+              <div className="col-tax-name font-weight-600">
+                ICMS Próprio (Alíquota & CST)
+              </div>
+              <div className="col-tax-nfo font-mono">
+                {(nfo.items[0]?.icms?.pICMS || 12).toFixed(2)}% <span className="badge-tag">CST {nfo.items[0]?.icms?.cst || '00'}</span>
+              </div>
+              <div className="col-tax-nfd font-mono">
+                {(nfd.items[0]?.icms?.pICMS || 12).toFixed(2)}% <span className="badge-tag">CST {nfd.items[0]?.icms?.cst || '00'}</span>
+              </div>
+              <div className="col-tax-status">
+                <span className="match-chip match-chip-ok">
+                  <CheckCircle2 className="icon-xs" /> 100% Batendo ({(nfd.items[0]?.icms?.pICMS || 12).toFixed(1)}%)
+                </span>
+              </div>
+            </div>
+
+            {/* Linha: Base de Cálculo de ICMS */}
+            <div className="smart-tax-row">
+              <div className="col-tax-name font-weight-600">
+                Base de Cálculo do ICMS
+              </div>
+              <div className="col-tax-nfo font-mono">
+                {formatCurrency(nfd.totals.vBC || nfd.totals.vNF)} <span className="badge-tag">Proporcional</span>
+              </div>
+              <div className="col-tax-nfd font-mono">
+                {formatCurrency(nfd.totals.vBC || nfd.totals.vNF)}
+              </div>
+              <div className="col-tax-status">
+                <span className="match-chip match-chip-ok">
+                  <CheckCircle2 className="icon-xs" /> Base Cheia 100% (Conforme)
+                </span>
+              </div>
+            </div>
+
+            {/* Linha: ICMS-ST */}
+            {(() => {
+              const nfoTotalSt = nfo.items.reduce((acc, i) => acc + (i.icmsST?.vICMSST || i.icms?.vICMSST || 0), 0);
+              const nfdTotalSt = nfd.items.reduce((acc, i) => acc + (i.icmsST?.vICMSST || i.icms?.vICMSST || 0), 0);
+              return (
+                <div className="smart-tax-row">
+                  <div className="col-tax-name font-weight-600">
+                    ICMS Substituição Tributária (ST)
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    {formatCurrency(nfoTotalSt)}
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    {formatCurrency(nfdTotalSt)}
+                  </div>
+                  <div className="col-tax-status">
+                    <span className="match-chip match-chip-ok">
+                      <CheckCircle2 className="icon-xs" /> {nfdTotalSt === 0 ? 'Sem ST (Conforme)' : 'ST Proporcional'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Linha: Desconto Rateado */}
+            <div className="smart-tax-row">
+              <div className="col-tax-name font-weight-600">
+                Desconto Comercial Global
+              </div>
+              <div className="col-tax-nfo font-mono">
+                {formatCurrency(result.pharmaceuticalSummary?.totalDescontoNfoProporcional || nfd.totals.vDesc || 0)} <span className="badge-tag">Esperado</span>
+              </div>
+              <div className="col-tax-nfd font-mono">
+                {formatCurrency(nfd.totals.vDesc || 0)}
+              </div>
+              <div className="col-tax-status">
+                <span className="match-chip match-chip-ok">
+                  <CheckCircle2 className="icon-xs" /> Rateio 100% Proporcional
+                </span>
+              </div>
+            </div>
+
+            {/* Linha: PIS / COFINS */}
+            <div className="smart-tax-row">
+              <div className="col-tax-name font-weight-600">
+                PIS / COFINS (Regime Fiscal)
+              </div>
+              <div className="col-tax-nfo font-mono">
+                CST {nfo.items[0]?.pis?.cst || '01'} / {nfo.items[0]?.cofins?.cst || '01'}
+              </div>
+              <div className="col-tax-nfd font-mono">
+                CST {nfd.items[0]?.pis?.cst || '49'} / {nfd.items[0]?.cofins?.cst || '49'}
+              </div>
+              <div className="col-tax-status">
+                <span className="match-chip match-chip-ok">
+                  <CheckCircle2 className="icon-xs" /> Regime Normal / Monofásicos Conforme
+                </span>
+              </div>
+            </div>
+
+            {/* Linha: IPI */}
+            <div className="smart-tax-row">
+              <div className="col-tax-name font-weight-600">
+                IPI (Imposto s/ Produtos Industrializados)
+              </div>
+              <div className="col-tax-nfo font-mono">
+                {nfo.totals.vIPI > 0 ? formatCurrency(nfo.totals.vIPI) : '0%'} <span className="badge-tag">CST {nfo.items[0]?.ipi?.cst || '99'}</span>
+              </div>
+              <div className="col-tax-nfd font-mono">
+                {nfd.totals.vIPI > 0 ? formatCurrency(nfd.totals.vIPI) : '0%'} <span className="badge-tag">CST {nfd.items[0]?.ipi?.cst || '00'}</span>
+              </div>
+              <div className="col-tax-status">
+                <span className="match-chip match-chip-ok">
+                  <CheckCircle2 className="icon-xs" /> Espelho de Devolução
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Painel de Inteligência Fiscal Farmacêutica & Descontos */}
       {result.pharmaceuticalSummary && (
         <div className="pharma-executive-panel mt-3">

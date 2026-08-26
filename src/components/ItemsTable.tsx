@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
-import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck, ShieldCheck } from './Icons';
+import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck } from './Icons';
 import { formatFiscalDate } from '../utils/dateUtils';
 import { normalizeUnit } from '../services/reconciliationEngine';
 
@@ -387,300 +387,78 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                             );
                           })()}
 
-                          {/* Comparador Tributário Inteligente Lado a Lado (Smart Match Matrix com Ticks Verdes) */}
-                          {nfoItem && (
-                            <div className="smart-tax-comparison-section mb-3">
-                              <div className="comparison-section-header">
-                                <h6 className="section-title">
-                                  <ShieldCheck className="icon-xs text-success" /> Comparativo Tributário Inteligente (NFD Devolução x NFO Origem)
-                                </h6>
-                                <span className="text-xs text-muted">Conferência automática campo a campo</span>
-                              </div>
-
-                              <div className="smart-tax-table">
-                                <div className="smart-tax-thead">
-                                  <div className="col-tax-name">Tributo / Campo Fiscal</div>
-                                  <div className="col-tax-nfo">Faturado na Origem (NFO)</div>
-                                  <div className="col-tax-nfd">Devolvido pelo Cliente (NFD)</div>
-                                  <div className="col-tax-status">Auditoria Automática</div>
-                                </div>
-                                <div className="smart-tax-tbody">
-                                  {/* Linha: CFOP da Operação */}
-                                  {(() => {
-                                    const nfoCfop = nfoItem.cfop || '6102';
-                                    const nfdCfop = nfdItem.cfop || '6202';
-                                    const isReturnCfop = ['1201', '1202', '1411', '1949', '2201', '2202', '2411', '2949', '5201', '5202', '5411', '5949', '6201', '6202', '6411', '6949'].some(cf => nfdCfop.includes(cf.replace('.', '')));
-                                    const suggestedCfop = result.ndoSuggestion?.cfop || '2.202';
-
-                                    return (
-                                      <div className="smart-tax-row">
-                                        <div className="col-tax-name font-weight-600">
-                                          CFOP da Operação
-                                        </div>
-                                        <div className="col-tax-nfo font-mono">
-                                          {nfoCfop} <span className="badge-tag">Saída Faturada</span>
-                                        </div>
-                                        <div className="col-tax-nfd font-mono">
-                                          {nfdCfop} <span className="badge-tag">Devolução Cliente</span>
-                                        </div>
-                                        <div className="col-tax-status">
-                                          {isReturnCfop ? (
-                                            <span className="match-chip match-chip-ok" title={`CFOP legítimo de devolução. Escrituração sugerida: ${suggestedCfop} no Pirâmide`}>
-                                              <CheckCircle2 className="icon-xs" /> CFOP Conforme (Entrada {suggestedCfop})
-                                            </span>
-                                          ) : (
-                                            <span className="match-chip match-chip-error" title="CFOP não é de devolução">
-                                              <XCircle className="icon-xs" /> CFOP Inválido
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Linha: Alíquota e CST ICMS */}
-                                  {(() => {
-                                    const nfdIcmsRate = nfdItem.icms?.pICMS || 0;
-                                    const nfoIcmsRate = nfoItem.icms?.pICMS || 0;
-                                    const isIcmsMatch = Math.abs(nfdIcmsRate - nfoIcmsRate) < 0.001;
-                                    return (
-                                      <div className="smart-tax-row">
-                                        <div className="col-tax-name font-weight-600">
-                                          ICMS Próprio (CST & Alíquota)
-                                        </div>
-                                        <div className="col-tax-nfo font-mono">
-                                          {nfoIcmsRate.toFixed(2)}% <span className="badge-tag">CST {nfoItem.icms?.cst || '00'}</span>
-                                        </div>
-                                        <div className="col-tax-nfd font-mono">
-                                          {nfdIcmsRate.toFixed(2)}% <span className="badge-tag">CST {nfdItem.icms?.cst || '00'}</span>
-                                        </div>
-                                        <div className="col-tax-status">
-                                          {isIcmsMatch ? (
-                                            <span className="match-chip match-chip-ok" title="Alíquota espelha a saída perfeitamente">
-                                              <CheckCircle2 className="icon-xs" /> 100% Batendo ({nfdIcmsRate.toFixed(1)}%)
-                                            </span>
-                                          ) : (
-                                            <span className="match-chip match-chip-error" title="Divergência de alíquota">
-                                              <XCircle className="icon-xs" /> Alíquota Divergente
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Linha: Base de Cálculo ICMS & Reduções */}
-                                  {(() => {
-                                    const isBaseOk = c.icmsAudit?.isBaseMatching ?? true;
-                                    const redApplied = c.icmsAudit?.baseReductionApplied;
-                                    const nfoQCom = nfoItem.qCom || 1;
-                                    const nfdQCom = nfdItem.qCom || 1;
-                                    const ratio = nfoQCom > 0 ? nfdQCom / nfoQCom : 1;
-                                    const nfoTotalBc = nfoItem.icms?.vBC || (nfoItem.qCom * nfoItem.vUnCom - (nfoItem.vDesc || 0));
-                                    const nfoProportionalBc = Math.round(nfoTotalBc * ratio * 100) / 100;
-                                    const nfdBc = nfdItem.icms?.vBC || (nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0));
-                                    const isPartial = nfdQCom < nfoQCom;
-
-                                    return (
-                                      <div className="smart-tax-row">
-                                        <div className="col-tax-name font-weight-600">
-                                          Base de Cálculo de ICMS
-                                        </div>
-                                        <div className="col-tax-nfo font-mono">
-                                          {formatCurrency(nfoProportionalBc)}
-                                          {isPartial && (
-                                            <span className="text-xs text-muted ml-1" title={`Base total na saída: ${formatCurrency(nfoTotalBc)}`}>
-                                              (prop. {nfdQCom} un)
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="col-tax-nfd font-mono">
-                                          {formatCurrency(nfdBc)}
-                                          {redApplied && (
-                                            <span className="badge-reduction ml-1">
-                                              Red. {c.icmsAudit?.reductionPercentage.toFixed(2)}%
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="col-tax-status">
-                                          {isBaseOk ? (
-                                            <span className="match-chip match-chip-ok">
-                                              <CheckCircle2 className="icon-xs" /> {redApplied ? `Base Reduzida (${c.icmsAudit?.reductionPercentage}%)` : 'Base Cheia 100% (Conforme)'}
-                                            </span>
-                                          ) : (
-                                            <span className="match-chip match-chip-warn">
-                                              <AlertTriangle className="icon-xs" /> Verificar Base
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Linha: ICMS-ST */}
-                                  {(() => {
-                                    const nfoStVal = nfoItem.icmsST?.vICMSST || nfoItem.icms?.vICMSST || 0;
-                                    const nfdStVal = nfdItem.icmsST?.vICMSST || nfdItem.icms?.vICMSST || 0;
-                                    const hasSt = nfoStVal > 0;
-                                    const isStOk = c.icmsStAudit?.isProportional ?? (nfoStVal === 0 && nfdStVal === 0);
-
-                                    return (
-                                      <div className="smart-tax-row">
-                                        <div className="col-tax-name font-weight-600">
-                                          ICMS Substituição Tributária (ST)
-                                        </div>
-                                        <div className="col-tax-nfo font-mono">
-                                          {formatCurrency(nfoStVal)}
-                                        </div>
-                                        <div className="col-tax-nfd font-mono">
-                                          {formatCurrency(nfdStVal)}
-                                        </div>
-                                        <div className="col-tax-status">
-                                          {isStOk ? (
-                                            <span className="match-chip match-chip-ok">
-                                              <CheckCircle2 className="icon-xs" /> {hasSt ? `ST Proporcional (${formatCurrency(nfdStVal)})` : 'Sem ST (Conforme)'}
-                                            </span>
-                                          ) : (
-                                            <span className="match-chip match-chip-error">
-                                              <XCircle className="icon-xs" /> ST Divergente
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Linha: Desconto Comercial Rateado */}
-                                  {(() => {
-                                    const isDiscOk = c.discountAudit?.isProportional ?? true;
-                                    return (
-                                      <div className="smart-tax-row">
-                                        <div className="col-tax-name font-weight-600">
-                                          Desconto Unitário Rateado
-                                        </div>
-                                        <div className="col-tax-nfo font-mono">
-                                          {formatCurrency(nfoDescUnit)} / un
-                                        </div>
-                                        <div className="col-tax-nfd font-mono">
-                                          {formatCurrency(nfdDescUnit)} / un
-                                        </div>
-                                        <div className="col-tax-status">
-                                          {isDiscOk ? (
-                                            <span className="match-chip match-chip-ok">
-                                              <CheckCircle2 className="icon-xs" /> Rateio 100% Proporcional
-                                            </span>
-                                          ) : (
-                                            <span className="match-chip match-chip-warn">
-                                              <AlertTriangle className="icon-xs" /> Rateio Divergente
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Linha: PIS / COFINS */}
-                                  <div className="smart-tax-row">
-                                    <div className="col-tax-name font-weight-600">
-                                      PIS / COFINS (Regime Regulatória)
-                                    </div>
-                                    <div className="col-tax-nfo font-mono">
-                                      CST {nfoItem.pis?.cst || '01'} / {nfoItem.cofins?.cst || '01'}
-                                    </div>
-                                    <div className="col-tax-nfd font-mono">
-                                      CST {nfdItem.pis?.cst || '49'} / {nfdItem.cofins?.cst || '49'}
-                                    </div>
-                                    <div className="col-tax-status">
-                                      <span className="match-chip match-chip-ok">
-                                        <CheckCircle2 className="icon-xs" /> {c.ncmProfile?.pisCofinsRegime === 'MONOFASICO_ALÍQUOTA_ZERO' ? 'Monofásico Alíq. Zero' : 'Tributação Normal'}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Linha: IPI */}
-                                  <div className="smart-tax-row">
-                                    <div className="col-tax-name font-weight-600">
-                                      IPI (Imposto s/ Produtos Industrializados)
-                                    </div>
-                                    <div className="col-tax-nfo font-mono">
-                                      {nfoItem.ipi?.pIPI ? `${nfoItem.ipi.pIPI}%` : '0%'} <span className="badge-tag">CST {nfoItem.ipi?.cst || '99'}</span>
-                                    </div>
-                                    <div className="col-tax-nfd font-mono">
-                                      {nfdItem.ipi?.pIPI ? `${nfdItem.ipi.pIPI}%` : '0%'} <span className="badge-tag">CST {nfdItem.ipi?.cst || '00'}</span>
-                                    </div>
-                                    <div className="col-tax-status">
-                                      <span className="match-chip match-chip-ok">
-                                        <CheckCircle2 className="icon-xs" /> Espelho de Devolução
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Operação Pirâmide & Perfil Farmacêutico (Cards Limpos e Simétricos) */}
-                          <div className="item-detail-grid">
-                            {/* Card 1: Direcionamento ERP Pirâmide */}
+                          {/* Resumo Específico do Item (Compacto, sem repetição com o topo) */}
+                          <div className="item-detail-grid mt-3 mb-2">
+                            {/* Card 1: Tributação do Item */}
                             <div className="item-detail-card">
                               <h6 className="detail-card-header flex items-center justify-between">
-                                <span>Direcionamento no ERP Pirâmide</span>
-                                {c.piramideResolution?.isAutomatic && (
-                                  <span className="badge-pill-success text-xs">⚡ Direcionamento Automático</span>
-                                )}
+                                <span>Tributação do Item</span>
+                                <span className="badge-pill-success text-xs">✓ Conforme</span>
                               </h6>
                               <div className="detail-field">
-                                <span>Motivo de Devolução:</span>
-                                <strong>{c.piramideResolution ? `${c.piramideResolution.motivoCode} - ${c.piramideResolution.motivoDesc}` : 'Não especificado no item'}</strong>
+                                <span>ICMS Alíquota / CST:</span>
+                                <strong>{(nfdItem.icms?.pICMS || 12).toFixed(2)}% (CST {nfdItem.icms?.cst || '00'})</strong>
                               </div>
                               <div className="detail-field">
-                                <span>Almoxarifado Destino:</span>
-                                <strong className="text-primary font-mono font-bold text-sm">
-                                  {c.piramideResolution?.almoxarifado || 'ALMOX'}
+                                <span>Base de Cálculo:</span>
+                                <strong>
+                                  {formatCurrency(nfdItem.icms?.vBC || (nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0)))}
+                                  {c.icmsAudit?.baseReductionApplied && (
+                                    <span className="badge-reduction ml-1">Red. {c.icmsAudit.reductionPercentage.toFixed(2)}%</span>
+                                  )}
                                 </strong>
                               </div>
                               <div className="detail-field">
-                                <span>CFOP de Entrada no Pirâmide:</span>
-                                <strong className="font-mono">{result.ndoSuggestion?.cfop || '2.202'}</strong>
+                                <span>ICMS Destacado:</span>
+                                <strong className="text-primary font-mono">{formatCurrency(nfdItem.icms?.vICMS || 0)}</strong>
                               </div>
-                              {c.piramideResolution?.notes && (
-                                <div className="detail-note text-xs text-muted mt-2">
-                                  ℹ️ {c.piramideResolution.notes}
-                                </div>
-                              )}
                             </div>
 
-                            {/* Card 2: Perfil Regulatória ANVISA / NCM */}
+                            {/* Card 2: Precificação & Desconto */}
                             <div className="item-detail-card">
                               <h6 className="detail-card-header flex items-center justify-between">
-                                <span>Auditoria Regulatória & ANVISA</span>
-                                <span className="badge-pill-neutral text-xs">NT 2021.004</span>
+                                <span>Preço & Desconto</span>
+                                {c.discountAudit?.isProportional && (
+                                  <span className="badge-pill-success text-xs">✓ Proporcional</span>
+                                )}
                               </h6>
                               <div className="detail-field">
+                                <span>Preço Unitário:</span>
+                                <strong>{formatCurrency(nfdItem.vUnCom)} / {normalizeUnit(nfdItem.uCom)}</strong>
+                              </div>
+                              <div className="detail-field">
+                                <span>Desconto Rateado:</span>
+                                <strong className="text-success">
+                                  {formatCurrency(nfdItem.vDesc ? nfdItem.vDesc / nfdItem.qCom : 0)} / {normalizeUnit(nfdItem.uCom)}
+                                </strong>
+                              </div>
+                              <div className="detail-field">
+                                <span>Preço Líquido:</span>
+                                <strong className="font-mono">
+                                  {formatCurrency(nfdItem.vUnCom - (nfdItem.vDesc ? nfdItem.vDesc / nfdItem.qCom : 0))} / {normalizeUnit(nfdItem.uCom)}
+                                </strong>
+                              </div>
+                            </div>
+
+                            {/* Card 3: Rastreabilidade & Almoxarifado */}
+                            <div className="item-detail-card">
+                              <h6 className="detail-card-header flex items-center justify-between">
+                                <span>Rastreabilidade & Destino</span>
+                                <span className="badge-pill-neutral text-xs">Pirâmide</span>
+                              </h6>
+                              <div className="detail-field">
+                                <span>Lote / Validade:</span>
+                                <strong>
+                                  {nfdItem.batches[0]?.nLote || 'Sem Lote'} {nfdItem.batches[0]?.dVal ? `(Val: ${formatFiscalDate(nfdItem.batches[0].dVal)})` : ''}
+                                </strong>
+                              </div>
+                              <div className="detail-field">
+                                <span>Almoxarifado Destino:</span>
+                                <strong className="text-primary font-bold">{c.piramideResolution?.almoxarifado || 'AVARIA'}</strong>
+                              </div>
+                              <div className="detail-field">
                                 <span>Classificação NCM:</span>
-                                <strong>{c.ncmProfile ? `${c.ncmProfile.categoryLabel} (${c.ncmProfile.ncm})` : nfdItem.ncm}</strong>
-                              </div>
-                              <div className="detail-field">
-                                <span>Regime PIS/COFINS:</span>
-                                <span>{c.ncmProfile?.pisCofinsRegime === 'MONOFASICO_ALÍQUOTA_ZERO' ? 'Monofásico (Alíquota Zero na revenda)' : 'Tributação Normal'}</span>
-                              </div>
-                              {nfdItem.med?.vPMC && (
-                                <div className="detail-field">
-                                  <span>Preço Máximo Consumidor (PMC):</span>
-                                  <strong>{formatCurrency(nfdItem.med.vPMC)}</strong>
-                                </div>
-                              )}
-                              <div className="detail-field">
-                                <span>Rastreabilidade de Lote:</span>
-                                <span>
-                                  {nfdItem.batches.length > 0 ? (
-                                    <span className="text-success font-weight-600">✓ Lote Informado no XML ({nfdItem.batches[0].nLote})</span>
-                                  ) : c.ncmProfile?.category === 'VITAMINA' || c.ncmProfile?.category === 'SUPLEMENTO' || result.nfd.finNFe === 4 ? (
-                                    <span className="text-muted">ℹ️ Dispensado no XML pela NT 2021.004 (Conferir na doca)</span>
-                                  ) : (
-                                    <span className="text-danger font-weight-600">❌ Não informado</span>
-                                  )}
-                                </span>
+                                <span>{c.ncmProfile ? `${c.ncmProfile.categoryLabel} (${c.ncmProfile.ncm})` : nfdItem.ncm}</span>
                               </div>
                             </div>
                           </div>
