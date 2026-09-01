@@ -9,7 +9,7 @@ import {
 } from '../types/nfe';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { detectPiramideMotivo } from './piramideService';
-import { suggestNDO, validateTaxReformAndBonificacao, auditIbsCbsReform, auditDFeReferenciado2026 } from './ndoTaxEngine';
+import { suggestNDO, validateTaxReformAndBonificacao, auditIbsCbsReform, auditDFeReferenciado2026, getExpectedReturnCfop } from './ndoTaxEngine';
 import {
   auditDiscount,
   auditPharmaceuticalItem,
@@ -19,6 +19,7 @@ import {
   classifyNcm,
 } from './pharmaFiscalEngine';
 import { identifyCompany } from '../data/companyData';
+import { validateCnpjChecksum } from './cnpjValidator';
 
 function isCleanEanValid(ean: string): boolean {
   if (!ean) return false;
@@ -127,11 +128,24 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     });
   }
 
-  // H4 / H5: Participants matching
+  // H4 / H5: Participants matching & CNPJ Checksum Verification (Módulo 11)
   const cnpjNfdEmit = cleanCnpj(nfd.emit.cnpj);
   const cnpjNfoDest = cleanCnpj(nfo.dest.cnpj);
   const cnpjNfdDest = cleanCnpj(nfd.dest.cnpj);
   const cnpjNfoEmit = cleanCnpj(nfo.emit.cnpj);
+
+  // Validação Módulo 11 do CNPJ do Emissor da NFD
+  const nfdEmitCnpjCheck = validateCnpjChecksum(cnpjNfdEmit);
+  if (!nfdEmitCnpjCheck.isValidChecksum) {
+    headerIssues.push({
+      id: 'CNPJ_NFD_EMIT_INVALID',
+      code: 'CNPJ_CHECKSUM_ERROR',
+      title: 'CNPJ do Emissor da Devolução Inválido na Receita Federal',
+      description: `O CNPJ "${nfd.emit.cnpj}" informado pelo cliente é inválido: ${nfdEmitCnpjCheck.errorReason}`,
+      severity: 'CRITICAL',
+      field: 'emit/CNPJ',
+    });
+  }
 
   const isEmitDestOk = cnpjNfdEmit === cnpjNfoDest;
   const isDestEmitOk = cnpjNfdDest === cnpjNfoEmit;
@@ -280,6 +294,27 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     const { dfeReferenciadoAudit, issues: dfeIssues } = auditDFeReferenciado2026(nfdItem, matchedNfoItem, nfd, nfo);
     itemIssues.push(...dfeIssues);
 
+    // Cálculo do CFOP esperado do cliente com base na NFO (Base Única da Verdade)
+    const expectedClientCfop = matchedNfoItem
+      ? getExpectedReturnCfop(matchedNfoItem.cfop)
+      : getExpectedReturnCfop(nfdItem.cfop);
+
+    // Auditoria de CFOP: Verificar se o cliente emitiu o CFOP correto
+    if (matchedNfoItem && nfdItem.cfop && expectedClientCfop) {
+      const cleanNfdCfop = nfdItem.cfop.replace(/\D/g, '');
+      const cleanExpectedCfop = expectedClientCfop.replace(/\D/g, '');
+      if (cleanNfdCfop !== cleanExpectedCfop) {
+        itemIssues.push({
+          id: `CFOP_CLIENT_MISMATCH_${nfdItem.nItem}`,
+          code: 'CFOP_CLIENT_MISMATCH',
+          title: 'Código CFOP Incorreto Enviado pelo Cliente',
+          description: `O cliente enviou o CFOP ${nfdItem.cfop}, porém o correto esperado com base na nossa nota de venda (${matchedNfoItem.cfop}) é ${expectedClientCfop}. Oriente o usuário a solicitar Carta de Correção Eletrônica (CC-e) ao cliente.`,
+          severity: 'WARNING',
+          field: 'cfop',
+        });
+      }
+    }
+
     if (!matchedNfoItem) {
       itemIssues.push({
         id: `ITEM_${nfdItem.nItem}_UNMATCHED`,
@@ -289,17 +324,30 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
         severity: 'CRITICAL',
       });
     } else {
-      // I1: Unit Price
+      // I1: Unit Price (com inteligência de Desconto Embutido no Preço)
       const diffPrice = Math.abs(nfdItem.vUnCom - matchedNfoItem.vUnCom);
+      const isEmbeddedDiscount = discountAudit?.isEmbeddedInUnitPrice;
+
       if (diffPrice > 0.001) {
-        itemIssues.push({
-          id: `I1_${nfdItem.nItem}`,
-          code: 'UNIT_PRICE_MISMATCH',
-          title: 'Preço Unitário Divergente',
-          description: `Preço na devolução (R$ ${nfdItem.vUnCom.toFixed(4)}) diverge do faturado na origem (R$ ${matchedNfoItem.vUnCom.toFixed(4)}).`,
-          severity: 'CRITICAL',
-          field: 'vUnCom',
-        });
+        if (isEmbeddedDiscount) {
+          itemIssues.push({
+            id: `I1_EMBEDDED_DISC_${nfdItem.nItem}`,
+            code: 'DISCOUNT_EMBEDDED_IN_PRICE',
+            title: 'Desconto Comercial Embutido no Preço Unitário',
+            description: `O cliente informou o preço unitário (R$ ${nfdItem.vUnCom.toFixed(2)}) já com o desconto comercial embutido (desconto original faturado: R$ ${(discountAudit.embeddedUnitPriceDiff || 0).toFixed(2)}/un). O valor líquido confere com a nota de origem.`,
+            severity: 'INFO',
+            field: 'vUnCom',
+          });
+        } else {
+          itemIssues.push({
+            id: `I1_${nfdItem.nItem}`,
+            code: 'UNIT_PRICE_MISMATCH',
+            title: 'Preço Unitário Divergente',
+            description: `Preço na devolução (R$ ${nfdItem.vUnCom.toFixed(4)}) diverge do faturado na origem (R$ ${matchedNfoItem.vUnCom.toFixed(4)}).`,
+            severity: 'CRITICAL',
+            field: 'vUnCom',
+          });
+        }
       }
 
       // I2: Quantity
@@ -481,6 +529,7 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       returnType,
       piramideResolution: itemPiramideResolution,
       ncmProfile,
+      expectedClientCfop,
       discountAudit,
       icmsAudit,
       icmsStAudit,

@@ -138,9 +138,186 @@ O ERP Pirâmide possui **52 motivos cadastrados**, consolidados nos 11 fluxos fu
 
 ---
 
-## 🚀 7. PROTOCOLOS DE DESENVOLVIMENTO & VALIDAÇÃO DO ENGENHEIRO SENIOR
+---
+
+## 📑 8. COMPÊNDIO DE NOTAS TÉCNICAS (NTS) SEFAZ, ATOS CONFAZ & ANVISA VIGENTES
+
+Este compêndio reúne todas as Notas Técnicas federais, estaduais e regulatórias ativas no motor fiscal do Validador, destacando **o que mudou**, **o impacto prático** e **como jogar a favor da Hebron**:
+
+### 1. 🧬 NT 2025.002-RTC (v. 1.40) & NT 2024.002 — Reforma Tributária (IBS / CBS & Regra VC02-14)
+* **O que mudou:**
+  * Criação dos grupos `<IBS>`, `<CBS>`, `<gIBS>`, `<gCBS>`, `<vIBS>`, `<vCBS>` e `<detIBSCBS>` para o novo sistema tributário dual.
+  * **Regra de Validação VC02-14 (Obrigatória a partir de 01/09/2026):** Em notas de devolução (`finNFe=4`), torna **obrigatório o referenciamento item a item** no grupo `<DFeReferenciado>` (chave de acesso + número do item de origem `<nItem>`).
+* **Como joga a favor da Hebron:**
+  * **Blindagem de Caixa:** Garante que na transição tributária a Hebron não sofra glosa de créditos tributários de CBS e IBS nas entradas de devolução.
+  * O validador já audita a presença do grupo `<DFeReferenciado>` e emite alertas preventivos para adequação dos clientes.
+
+---
+
+### 2. 🚚 Ajuste SINIEF nº 49/2025 & Ajuste SINIEF nº 08/2026 — Nova Sistemática de Recusa e Devolução
+* **O que mudou:**
+  * **Extinção da "Nota de Débito" para recusa de mercadoria:** Em casos de recusa total ou parcial no ato da entrega (pelo canhoto/manifestação), o próprio remetente (Hebron) emite a NF-e de entrada para documentar o retorno.
+  * Criação do campo Tipo de Nota de Crédito (`tpNFCredito`) para identificar a causa exata do retorno.
+* **Como joga a favor da Hebron:**
+  * Elimina a bitributação de frete e desonera a operação da doca (Glécia) quando o cliente simplesmente recusa a entrega no caminhão.
+  * Permite ao validador cruzar com precisão devoluções físicas e devoluções fiscais (com emissão de NFD pelo cliente).
+
+---
+
+### 3. 🏷️ NT 2021.003 & NT 2022.001 — Cadastro Centralizado de GTIN (CCG) & Rejeições 611, 612 e 890
+* **O que mudou:**
+  * Validação matemática rigorosa do dígito verificador do código de barras EAN/GTIN (`cEAN` e `cEANTrib`) nos grupos 8, 12, 13 e 14 dígitos.
+  * Obrigatoriedade do preenchimento literal **`SEM GTIN`** para produtos sem código de barras (evita números inventados).
+* **Como joga a favor da Hebron:**
+  * Como a Hebron possui 100% dos medicamentos e suplementos cadastrados na **GS1 Brasil** e no **CCG**, o validador utiliza o catálogo oficial de 90 produtos para detectar se o cliente adulterou o EAN ou enviou código genérico na NFD.
+
+---
+
+### 4. 💊 NT 2021.004 (v. 1.30 / 1.35) & RDC 430/2020 ANVISA — Rastreabilidade e Lote
+* **O que mudou:**
+  * Grupo `<rastro>` obrigatório para NCMs 3001 a 3006 (Medicamentos).
+  * **Flexibilização Estratégica em Devoluções (`finNFe=4`):** A SEFAZ **desativou a rejeição dura** para devoluções sem tag `<rastro>`, permitindo que clientes pequenos emitam a nota sem travar na SEFAZ.
+* **Como joga a favor da Hebron:**
+  * O validador **não rejeita falsamente a devolução do cliente**, mas emite um **Aviso Informativo (`INFO`)** alertando a equipe da doca para conferir o lote fisicamente com o lote que saiu na NFO original.
+
+---
+
+### 5. 💰 NT 2019.001 / NT 2018.005 / NT 2016.002 — Rejeição 483 e Descontos Fiscais
+* **O que mudou:**
+  * Rejeição 483: `vDesc > vProd` (Desconto não pode superar o valor do produto).
+  * Desconto comercial deve ser rateado proporcionalmente à quantidade devolvida.
+* **Como joga a favor da Hebron:**
+  * **Inteligência de Desconto Embutido:** Se o cliente colocar o valor mais barato no preço unitário `<vUnCom>` (sem usar a tag `<vDesc>`), o sistema calcula a diferença e **aceita a nota sem falso erro de preço**.
+
+---
+
+### 6. 🏛️ Lei Federal 10.147/2000 & Solução de Consulta COSIT nº 188/2018 — PIS/COFINS Monofásico
+* **Regra:** Tributação monofásica concentrada na indústria (**INFAN**), com alíquota zero nas etapas de revenda (**QUESALON** e **QUEDES**).
+* **Como joga a favor da Hebron:**
+  * O motor fiscal assegura que a devolução siga o princípio da nota espelho (CST 01 na indústria / CST 49 ou 70 na distribuidora), evitando autuações por creditamento indevido ou bitributação de PIS/COFINS.
+
+---
+
+### 🏢 7. Legislações Estaduais Específicas do Grupo Hebron
+* **Decreto Estadual PB (INFAN):** Redução de Base de ICMS de **9,90%** para Medicamentos (NCM 3004) e **10,49%** para Cosméticos/Higiene (NCM 3401/3304).
+* **Termo de Acordo MG (QUESALON Extrema):** Alíquota de **12,00%** (Sul/Sudeste exceto ES) e **7,00%** (Norte/Nordeste/CO/ES).
+* **Convênio ICMS 142/2018:** Regras gerais de Substituição Tributária (ICMS-ST) proporcional em devoluções.
+
+---
+
+## 🏛️ 9. ARQUITETURA DE INTEGRAÇÃO OFICIAL COM O ERP PIRÂMIDE (PROCENGE TI ORACLE)
+
+Com base no **Manual Oficial de Integração da Procenge (v. 2025/2026)** e no mapeamento da rotina operacional da **Glécia na Doca**, o Validador assume o papel de **Motor de Triagem, Auditoria e Carga Automática**.
+
+### 1. Diagnóstico do Fluxo Manual Atual (Gargalo de Digitação)
+1. **Extração Inicial:** Planilha básica do Felipe traz apenas dados superficiais de cabeçalho; não traz lotes, produtos, descontos nem impostos. O campo "Nota de Origem" é puxado do texto livre e vem frequentemente errado ou vazio.
+2. **Controle Manual:** Planilha intermediária da Glécia para acompanhamento de status.
+3. **Digitação Manual no Módulo de Compras do Pirâmide:**
+   * Busca NFO no sistema para carregar itens faturados.
+   * Clica em "Receber NF de Devolução".
+   * Digita manualmente: Série, Número, Data de Emissão, Chave de 44 dígitos e Protocolo (imprimindo PDFs de notas borradas para digitar).
+   * Parametriza a NDO de entrada.
+   * Associa o Código do Motivo de Devolução e seleciona o Almoxarifado de Destino.
+   * Digita a "Conta Cli" para liberar o financeiro e finalizar a nota.
+
+---
+
+### 2. O Modelo Oficial Escolhido: Integração por Tabelas Intermediárias (TIs no Oracle)
+O Pirâmide opera com 3 métodos de integração:
+* **Método A (TXT):** Arquivos de texto planos (legado).
+* **Método B (Packages PL/SQL diretas):** `PCK_PIR_NFE.InsertEntrada` (síncrono/alto acoplamento).
+* **Método C (Tabelas de Integração - TI no Banco Oracle - RECOMENDADO & OFICIAL):**
+  * O Validador insere registros nas tabelas de staging com status `COD_STATUS_REGISTRO = 'NP'` (Não Processado).
+  * O Job Oracle do Pirâmide processa em background, valida NDO, regras fiscais e atualiza para `'P'` (Processado) ou grava o motivo em `'ER'` (`DSC_ERRO_REGISTRO`).
+  * **Infraestrutura Oracle Pirâmide:**
+    * **Servidor de Produção:** Final `.60`
+    * **Servidor de Homologação / Testes (Clone da Produção):** Final `.61`
+    * **Ferramenta de Acesso:** **PL/SQL Developer**
+
+---
+
+### 3. Mapeamento das Tabelas de Integração (TI) do Pirâmide (Confirmado no Banco `.61`)
+
+#### A. Cabeçalho da Nota (`TI_NOTA_FISCAL_ENTRADA`):
+| Coluna Pirâmide | Tipo Oracle | Origem no Validador Fiscal Hebron |
+|---|---|---|
+| `COD_EMPRESA_ORIGEM` | `VARCHAR2(6)` | `'001'` (QUESALON Matriz) ou `'003'` (INFAN S/A) |
+| `COD_FILIAL_ORIGEM` | `VARCHAR2(6)` | `'001'` (QUESALON PB) ou `'003'` (INFAN PB) |
+| `NUM_SEQUENCIAL_ENTRADA_ORIGEM` | `NUMBER` | Sequencial único gerado pelo validador |
+| `COD_SISTEMA_ORIGEM` | `VARCHAR2(3)` | `'VAL'` (Validador Fiscal Hebron) |
+| `COD_SIST_SOLIC_OPER_REGISTRO` | `VARCHAR2(3)` | `'VAL'` |
+| `COD_NOTA_FISCAL` | `VARCHAR2(9)` | `nfd.nNF` |
+| `COD_SERIE` | `VARCHAR2(3)` | `nfd.serie` |
+| `DAT_EMISSAO` | `DATE` | `nfd.dhEmi` |
+| `DAT_ENTRADA` / `DAT_ENTRADA_EMPRESA` | `DATE` | `SYSDATE` (Data atual de conferência na doca) |
+| `VAL_TOTAL_NOTA` | `FLOAT` | `nfd.totals.vNF` |
+| `VAL_DESCONTO` | `FLOAT` | `nfd.totals.vDesc` |
+| `COD_CHAVE_ACESSO_NFEL` | `VARCHAR2(44)` | `nfd.chNFe` (44 dígitos limpos) |
+| `COD_PROTOCOLO_NFEL` | `VARCHAR2(15)` | `nfd.protNFe` |
+| `COD_CLIENTE_ORIGEM` | `VARCHAR2(20)` | `nfd.emit.cnpj` (CNPJ do cliente emissor da devolução) |
+| `COD_TIPO_ENTRADA` | `VARCHAR2(2)` | `'D'` (Devolução) |
+| `COD_OPERACAO_REGISTRO` | `VARCHAR2(1)` | `'I'` (Inclusão) |
+| `COD_STATUS_REGISTRO` | `VARCHAR2(2)` | `'NP'` (Não Processado - para o Job do Pirâmide assumir) |
+
+#### B. Itens da Nota (`TI_ITEM_NOTA_FISCAL_ENTRADA`):
+| Coluna Pirâmide | Tipo Oracle | Origem no Validador Fiscal Hebron |
+|---|---|---|
+| `COD_FILIAL_ORIGEM` | `VARCHAR2(6)` | `'001'` ou `'003'` |
+| `NUM_SEQUENCIAL_ENTRADA_ORIGEM` | `NUMBER` | Mesmo sequencial do cabeçalho |
+| `NUM_SEQUENCIAL_ITEM_ENTRADA` | `NUMBER` | `nfdItem.nItem` (1, 2, 3...) |
+| `COD_SIST_SOLIC_OPER_REGISTRO` | `VARCHAR2(3)` | `'VAL'` |
+| `COD_OPERACAO_REGISTRO` | `VARCHAR2(1)` | `'I'` |
+| `COD_STATUS_REGISTRO` | `VARCHAR2(2)` | `'NP'` |
+| `COD_PRODUTO_ORIGEM` | `VARCHAR2(30)` | Código interno do produto no catálogo Hebron (Cód. 18, Cód. 161, etc.) |
+| `COD_UNIDADE_MEDIDA_ORIGEM` | `VARCHAR2(10)` | `normalizeUnit(nfdItem.uCom)` (ex: `'UN'`, `'CX'`) |
+| `COD_NDO_ORIGEM` | `VARCHAR2(6)` | NDO sugerida e calculada pelo motor (`2202`, `1202`, etc.) |
+| `COD_CFOP` | `VARCHAR2(6)` | CFOP de entrada auditado conforme NFO |
+| `COD_DEPOSITO` | `VARCHAR2(5)` | Depósito mapeado (`GQ`, `AVARIA`, `AVCD`, `ALMOX`, etc.) |
+| `QTD_ITEM` / `QTD_NOTA_FISCAL` / `QTD_DEVOLVIDA` | `FLOAT` | `nfdItem.qCom` |
+| `VAL_PRECO_UNITARIO_ITEM` | `FLOAT` | Preço unitário faturado original com desconto deduzido |
+| `VAL_ITEM` | `FLOAT` | `nfdItem.vProd` |
+| `COD_NOTA_FISCAL_SAIDA` | `VARCHAR2(6)` | `nfo.nNF` (Nota de Origem vinculada) |
+| `COD_SERIE_NOTA_FISCAL_SAIDA` | `VARCHAR2(2)` | `nfo.serie` |
+| `NUM_ITEM_NOTA_FISCAL_SAIDA` | `NUMBER` | `nfoItem.nItem` (Item de Origem correspondente) |
+
+#### C. Lotes e Rastreabilidade (`TI_ITEM_ENTRADA_LOTE`):
+| Coluna Pirâmide | Tipo Oracle | Obrigatório | Origem no Validador Fiscal Hebron |
+|---|---|---|---|
+| `COD_FILIAL_ORIGEM` | `VARCHAR2(6)` | **SIM** | `'001'` ou `'003'` |
+| `COD_ENTRADA_ORIGEM` | `NUMBER` | **SIM** | Sequencial da entrada (`NUM_SEQUENCIAL_ENTRADA_ORIGEM`) |
+| `COD_ITEM_ENTRADA_ORIGEM` | `NUMBER` | **SIM** | Sequencial do item (`NUM_SEQUENCIAL_ITEM_ENTRADA`) |
+| `COD_LOTE` | `VARCHAR2(50)` | **SIM** | Lote validado com base na NFO de saída (ex: `2606039`) |
+| `COD_FABRICANTE` | `VARCHAR2(10)` | **SIM** | Código fabricante (ex: `003` INFAN) |
+| `DAT_VALIDADE` | `DATE` | **SIM** | Data de validade do lote |
+| `DAT_FABRICACAO` | `DATE` | NÃO | Data de fabricação do lote |
+| `QTD_LOTE` | `NUMBER` | **SIM** | Quantidade devolvida do lote |
+
+---
+
+### 4. Empresas e Almoxarifados Oficiais Cadastrados no Banco Hebron (`.61`)
+
+#### A. Empresas & Filiais (`FILIAL`):
+* **`001`:** `QUESALON(MATRIZ)-ALHANDRA/PB` (Nome Fantasia: `QUESALON/PB`)
+* **`003`:** `INFAN-INDUSTRIA QUIMICA FARMACEUTICA NACIONAL S/A`
+
+#### B. Depósitos / Almoxarifados Oficiais (`DEPOSITO`):
+* **`GQ`:** `07 - GARANTIA DA QUALIDADE` (Destino para motivos 30, 31, 34, 35, 36)
+* **`AVCD` / `AVARIA`:** `AVCD` / `Mercadoria Avariada` (Destino para motivos 11, 33)
+* **`ALMOX`:** `01 - ALMOXARIFADO (INSUMOS/PRODUTO ACABADO)` (Destino para retorno comercial intacto)
+* **`CQ`:** `04 - CONTROLE DE QUALIDADE`
+* **`EXPEDI`:** `06 - EXPEDIÇÃO (VENDAS)`
+* **`DESCAR`:** `08 - DESCARTE`
+* **`PENHOR`:** `09 - PENHORA`
+* **`REFUGO`:** `24 - REFUGO`
+* **`NORLOG`:** `21 - NORLOG` (Armazém Logístico)
+
+---
+
+## 🚀 10. PROTOCOLOS DE DESENVOLVIMENTO & VALIDAÇÃO DO ENGENHEIRO SENIOR
 
 Para garantir estabilidade máxima e zero regressões:
 * **Suíte de Testes:** Manter 100% de aprovação nos testes automatizados (`npm test`).
 * **Compilação de Produção:** Validar compilação TypeScript com `tsc` e Vite (`npm run build`).
 * **Deploy em Produção (Debian):** Atualização via `git pull origin main && docker compose build --no-cache && docker compose up -d --force-recreate`.
+
+

@@ -90,6 +90,8 @@ export interface DiscountAudit {
   discountPercentageNfo: number;
   isProportional: boolean;
   isExceededProductValue: boolean;
+  isEmbeddedInUnitPrice?: boolean;
+  embeddedUnitPriceDiff?: number;
 }
 
 export interface NFeItem {
@@ -273,6 +275,7 @@ export interface ItemComparison {
   returnType?: ReturnType;
   piramideResolution?: PiramideResolution;
   ncmProfile?: NcmProfile;
+  expectedClientCfop?: string;
   discountAudit?: DiscountAudit;
   icmsAudit?: IcmsAudit;
   icmsStAudit?: IcmsStAudit;

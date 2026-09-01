@@ -1,6 +1,24 @@
 import { DFeReferenciadoAudit, IbsCbsAudit, NDOSuggestion, NFeDocument, NFeItem, ValidationIssue } from '../types/nfe';
 
 /**
+ * Calcula o CFOP de Devolução esperado que o cliente deveria ter emitido
+ * usando exclusivamente a Nota de Origem (NFO) como Base Única da Verdade.
+ */
+export function getExpectedReturnCfop(nfoCfopRaw: string): string {
+  const clean = (nfoCfopRaw || '').replace(/\D/g, '');
+  if (['5101', '51011', '5102', '51021'].includes(clean)) return '5202';
+  if (['6101', '61011', '6102', '61021', '6109', '6110'].includes(clean)) return '6202';
+  if (['5401', '54011', '5403', '54031'].includes(clean)) return '5411';
+  if (['6401', '6403', '64031'].includes(clean)) return '6411';
+  if (['5910', '59101'].includes(clean)) return '5949';
+  if (['6910', '69101'].includes(clean)) return '6949';
+  
+  if (clean.startsWith('5')) return '5202';
+  if (clean.startsWith('6')) return '6202';
+  return '6202';
+}
+
+/**
  * Matriz de Mapeamento de CFOPs para Integração no ERP Pirâmide
  * Fonte: DIRETRIZES_FISCAIS_GERENCIA.md & docs/polliana/produtos ean cest base.xlsx
  */
@@ -9,18 +27,19 @@ export function suggestNDO(nfd: NFeDocument, nfo?: NFeDocument): NDOSuggestion {
   const ufNfdDest = nfd.dest.uf || '';
   const isInterstate = ufNfdEmit !== '' && ufNfdDest !== '' && ufNfdEmit.toUpperCase() !== ufNfdDest.toUpperCase();
 
-  // 1. Identificar CFOP da Origem e da Devolução
+  // 1. Identificar CFOP da Origem (Base Única da Verdade)
   const nfoCfopRaw = nfo && nfo.items.length > 0 ? nfo.items[0].cfop.replace(/\D/g, '') : '';
-  const nfdCfopRaw = nfd.items.length > 0 ? nfd.items[0].cfop.replace(/\D/g, '') : (isInterstate ? '6202' : '5202');
+  const expectedReturnCfop = getExpectedReturnCfop(nfoCfopRaw);
+  const nfdCfopRaw = nfd.items.length > 0 ? nfd.items[0].cfop.replace(/\D/g, '') : expectedReturnCfop;
 
   // A. Bonificação (5910 ➔ 5949 ➔ 1949 / 2949)
   const isBonificacao =
     nfoCfopRaw === '5910' ||
     nfoCfopRaw === '6910' ||
+    (nfo ? /BONIFICA/i.test(nfo.natOp) : false) ||
     nfdCfopRaw === '5949' ||
     nfdCfopRaw === '6949' ||
-    /BONIFICA/i.test(nfd.natOp) ||
-    (nfo ? /BONIFICA/i.test(nfo.natOp) : false);
+    /BONIFICA/i.test(nfd.natOp);
 
   if (isBonificacao) {
     const entryCfop = isInterstate ? '2949' : '1949';
@@ -32,7 +51,7 @@ export function suggestNDO(nfd: NFeDocument, nfo?: NFeDocument): NDOSuggestion {
       cfop: `${entryCfop[0]}.${entryCfop.slice(1)}`,
       operationType: 'DEV_BONIFICACAO',
       isInterstate,
-      explanation: `Bonificação | Saída: ${nfoCfopRaw || '5910'} ➔ Devolução Cliente: ${nfdCfopRaw || '5949'} ➔ Entrada Pirâmide: ${entryCfop[0]}.${entryCfop.slice(1)}`,
+      explanation: `Bonificação | Saída: ${nfoCfopRaw || '5910'} ➔ Devolução Esperada: ${expectedReturnCfop || '5949'} ➔ Entrada Pirâmide: ${entryCfop[0]}.${entryCfop.slice(1)}`,
     };
   }
 

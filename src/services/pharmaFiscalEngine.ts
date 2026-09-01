@@ -346,18 +346,33 @@ export function auditDiscount(
   const returnRatio = nfoQCom > 0 ? nfdQCom / nfoQCom : 1;
   const expectedDiscount = Math.round(nfoVDesc * returnRatio * 100) / 100;
   const diffDiscount = Math.abs(nfdVDesc - expectedDiscount);
-  const isProportional = diffDiscount <= 0.05;
+  let isProportional = diffDiscount <= 0.05;
+
+  // Checagem inteligente de Desconto Comercial Embutido no Preço Unitário
+  let isEmbeddedInUnitPrice = false;
+  let embeddedUnitPriceDiff = 0;
+
+  if (nfoVDesc > 0 && nfdVDesc === 0 && nfdItem.vUnCom < nfoItem.vUnCom) {
+    const diffUnitPrice = nfoItem.vUnCom - nfdItem.vUnCom;
+    if (Math.abs(diffUnitPrice - discountPerUnitNfo) <= 0.05) {
+      isEmbeddedInUnitPrice = true;
+      embeddedUnitPriceDiff = diffUnitPrice;
+      isProportional = true;
+    }
+  }
 
   // 2. Análise de divergência de desconto
   if (nfoVDesc > 0 && nfdVDesc === 0) {
-    issues.push({
-      id: `DISC_OMITTED_${nfdItem.nItem}`,
-      code: 'DISCOUNT_OMITTED_IN_RETURN',
-      title: 'Desconto Concedido na Origem Omitido na Devolução',
-      description: `A venda original concedeu R$ ${nfoVDesc.toFixed(2)} de desconto (R$ ${discountPerUnitNfo.toFixed(2)}/un). A devolução omitiu o desconto (esperado R$ ${expectedDiscount.toFixed(2)} para ${nfdQCom} un). Isso causará divergência fiscal no estorno financeiro.`,
-      severity: 'WARNING',
-      field: 'vDesc',
-    });
+    if (!isEmbeddedInUnitPrice) {
+      issues.push({
+        id: `DISC_OMITTED_${nfdItem.nItem}`,
+        code: 'DISCOUNT_OMITTED_IN_RETURN',
+        title: 'Desconto Concedido na Origem Omitido na Devolução',
+        description: `A venda original concedeu R$ ${nfoVDesc.toFixed(2)} de desconto (R$ ${discountPerUnitNfo.toFixed(2)}/un). A devolução omitiu o desconto (esperado R$ ${expectedDiscount.toFixed(2)} para ${nfdQCom} un). Isso causará divergência fiscal no estorno financeiro.`,
+        severity: 'WARNING',
+        field: 'vDesc',
+      });
+    }
   } else if (nfoVDesc === 0 && nfdVDesc > 0) {
     issues.push({
       id: `DISC_UNEXPECTED_${nfdItem.nItem}`,
@@ -390,6 +405,8 @@ export function auditDiscount(
       discountPercentageNfo,
       isProportional,
       isExceededProductValue,
+      isEmbeddedInUnitPrice,
+      embeddedUnitPriceDiff,
     },
     issues,
   };

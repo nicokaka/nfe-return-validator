@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
-import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck, ChevronDown, ChevronUp } from './Icons';
+import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck, ChevronDown } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
 
@@ -98,21 +98,22 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
         <div className="copilot-header-actions">
           <button
             type="button"
-            className="btn-copilot-toggle"
+            className={`btn-copilot-toggle ${isExpanded ? 'is-rotated' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
           >
-            {isExpanded ? <ChevronUp className="icon-xs" /> : <ChevronDown className="icon-xs" />}
+            <ChevronDown className="icon-xs chevron-animated" />
             <span>{isExpanded ? 'Recolher Assistente' : 'Abrir Assistente'}</span>
           </button>
         </div>
       </div>
 
-      {/* Conteúdo Expansível / Retrátil */}
-      {isExpanded && (
-        <div className="copilot-collapsible-content">
+      {/* Conteúdo Expansível / Retrátil com Transição Suave Bidirecional (Abrir e Fechar) */}
+      <div className={`copilot-accordion-collapse ${isExpanded ? 'is-open' : ''}`}>
+        <div className="copilot-accordion-inner">
+          <div className="copilot-collapsible-content">
           {/* Seção 1: Dados Mestres do Cabeçalho Pirâmide */}
           <div className="copilot-block">
         <h4 className="copilot-block-title">
@@ -660,8 +661,9 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           </table>
         </div>
       </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

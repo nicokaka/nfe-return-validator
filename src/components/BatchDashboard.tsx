@@ -10,7 +10,6 @@ import {
   Download,
   Search,
   ChevronDown,
-  ChevronUp,
   Link,
   Layers,
   ArrowRight,
@@ -324,25 +323,33 @@ export const BatchDashboard: React.FC<BatchDashboardProps> = ({
                     )}
                   </div>
 
-                  <button type="button" className="btn-icon expand-toggle">
-                    {isExpanded ? <ChevronUp className="icon-xs" /> : <ChevronDown className="icon-xs" />}
+                  <button
+                    type="button"
+                    className={`btn-icon expand-toggle ${isExpanded ? 'is-rotated' : ''}`}
+                    aria-label={isExpanded ? 'Recolher par' : 'Expandir par'}
+                  >
+                    <ChevronDown className="icon-xs chevron-animated" />
                   </button>
                 </div>
 
-                {/* Expanded Detail View */}
-                {isExpanded && rec && (
-                  <div className="pair-expanded-body">
-                    {/* Reusable Executive Summary */}
-                    <ExecutiveSummary
-                      result={rec}
-                      onGenerateReport={() => onGenerateReportForPair(pair)}
-                    />
+                {/* Expanded Detail View with Two-Way Smooth Transition (Open and Close) */}
+                {rec && (
+                  <div className={`pair-accordion-collapse ${isExpanded ? 'is-open' : ''}`}>
+                    <div className="pair-accordion-inner">
+                      <div className="pair-expanded-body">
+                        {/* Reusable Executive Summary */}
+                        <ExecutiveSummary
+                          result={rec}
+                          onGenerateReport={() => onGenerateReportForPair(pair)}
+                        />
 
-                    {/* Reusable Tactical Data Bridge Copilot */}
-                    <DataBridgeCopilot result={rec} />
+                        {/* Reusable Tactical Data Bridge Copilot */}
+                        <DataBridgeCopilot result={rec} />
 
-                    {/* Reusable Items Table */}
-                    <ItemsTable result={rec} />
+                        {/* Reusable Items Table */}
+                        <ItemsTable result={rec} />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

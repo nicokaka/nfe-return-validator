@@ -43,8 +43,10 @@
    * Nunca afrouxar validações críticas (ex: Preço Unitário divergente, Devolução sem NFO referenciada, Quantidade superior à venda, Alíquotas incompatíveis).
    * Descontos comerciais DEVEM seguir a fórmula oficial de rateio unitário com tolerância de até R$ 0,05 para centavos.
    * ICMS-ST DEVE ser proporcional à quantidade devolvida.
-3. **Maturidade e Comunicação:**
-   * Explicar todas as alterações com profundidade técnica, clareza didática e fundamentação na legislação fiscal e na operação da Hebron.
+3. **Maturidade, Proatividade e Pensamento à Frente (Visão 360°):**
+   * **Proatividade e Ciclo Completo de UX:** Nunca implementar apenas "metade" de uma funcionalidade (ex: ao criar transições de expansão, implementar OBRIGATORIAMENTE a animação suave de abertura E de fechamento; ao tratar sucesso, tratar também erro e estado vazio; ao ajustar contraste, validar Dark E Light Mode).
+   * **Antecipação Fiscal e Técnica:** Pensar à frente em todos os fluxos operacionais, prevenindo falhas antes que o usuário as reporte e garantindo aderência absoluta aos padrões Hebron & ERP Pirâmide.
+   * **Comunicação de Alto Nível:** Explicar todas as alterações com profundidade técnica, clareza didática e fundamentação na legislação fiscal e na operação da Hebron.
 
 ---
 

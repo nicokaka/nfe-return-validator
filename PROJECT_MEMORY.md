@@ -1,7 +1,7 @@
 # 🧠 PROJECT MEMORY & KNOWLEDGE BASE
-> **Projeto:** Validador Fiscal & Conciliador de Devoluções de NF-e (NFO x NFD)  
-> **Status:** Ativo | Alta Performance | Padrão Senior de Elite  
-> **Última Atualização:** 2026-08-20  
+> **Projeto:** Validador Fiscal & Conciliador de Devoluções de NF-e (NFO x NFD) — Hebron & ERP Pirâmide  
+> **Status:** Ativo | 100% Testes Aprovados (55/55) | Integração TI Oracle em Andamento  
+> **Última Atualização:** 2026-09-01 (Checkpoint de Integração Pirâmide Homologação `.61`)  
 
 ---
 
@@ -244,4 +244,64 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
   * **Desconto Omitido na Devolução (`WARNING`):** Venda original teve desconto concedido e NFD zerou o campo.
   * **Divergência de Proporcionalidade (`WARNING` / `CRITICAL`):** Se $|\text{vDesc}_{\text{NFD}} - \text{vDesc}_{\text{Esperado}}| > \text{R\$} 0,05$.
 
+---
+
+## 🏛️ 8. INTEGRAÇÃO DIRETA VIA TABELAS INTERMEDIÁRIAS (TI ORACLE) DO ERP PIRÂMIDE
+
+### 8.1. O Fluxo de Trabalho da Glécia (Gargalo Eliminado)
+* **Antes:**
+  1. Extração do Felipe gera planilha superficial (sem lotes, impostos, descontos; chave/NFO frequentemente erradas).
+  2. Glécia copiava para planilha de controle.
+  3. No módulo de Compras do Pirâmide, digitava manualmente: Série, Número, Data, Chave 44 dígitos, Protocolo, NDO, Motivo, Almoxarifado (`GQ`, `AVARIA`, `EXTRV`, etc.) e "Conta Cli".
+* **Depois (Com o Validador Integrado):**
+  * O Validador lê o XML da NFD e cruza com a NFO original, validando preços, lotes, NDO e descontos rateados.
+  * O Validador grava diretamente os registros nas tabelas de staging do Oracle (`TI_NOTA_FISCAL_ENTRADA`, `TI_ITEM_NOTA_FISCAL_ENTRADA`, `TI_ITEM_ENTRADA_LOTE`) com status `COD_STATUS_REGISTRO = 'NP'`.
+  * O Job Oracle do Pirâmide processa a carga, efetua o lançamento automático e atualiza o status para `'P'` (Processado) ou `'ER'` (Erro).
+
+### 8.2. Ambiente de Homologação & Servidores Oracle Pirâmide
+* **Servidor de Produção Oracle / Pirâmide:** Final `.60` (Ambiente Oficial Hebron).
+* **Servidor de Homologação / Testes (Clone da Produção):** Final `.61` (Ambiente de Testes / Acesso ADM Nicolas).
+* **Ferramenta Oficial de Banco de Dados:** **PL/SQL Developer**.
+* **Tabelas de Integração Staging Utilizadas:**
+  * `TI_NOTA_FISCAL_ENTRADA` (Cabeçalho da NF de Entrada/Devolução)
+  * `TI_ITEM_NOTA_FISCAL_ENTRADA` (Itens faturados e devolvidos, NDO, CFOP e Almoxarifado)
+  * `TI_ITEM_ENTRADA_LOTE` (Lotes, Validade e Fabricação validados da NFO)
+  * `TI_OBS_ENTRADA_DOC_FISCAL` (Referência da NF de Saída original)
+
+### 8.3. Matriz de Direcionamento Automático de Almoxarifados
+* Motivos `30`, `31`, `34`, `35`, `36` $\rightarrow$ **`GQ`** (Garantia de Qualidade).
+* Motivos `11`, `33` $\rightarrow$ **`AVARIA`** (Avarias/Danos).
+* Motivo `39` $\rightarrow$ **`EXTRV`** (Extravios/Faltas).
+* Motivo `24` $\rightarrow$ **`RECALL`** (Recall Sanitário ANVISA).
+* Motivo `01` $\rightarrow$ **`VENCIDO`** (Produtos Vencidos).
+* Motivo `10` $\rightarrow$ **`DISPONIVEL`** (Retorno de Mercadoria Não Entregue).
+* Motivos `26` (Pedido Cancelado) e `12` (Erro de Expedição) $\rightarrow$ Triagem na Doca (`ALMOX` ou `AVARIA`).
+
+---
+
+## 📌 9. CHECKPOINT DE PAUSA & PLANO DE RETOMADA (01/09/2026)
+
+### 9.1. O que foi Concluído e Validado Hoje:
+1. **Auditoria Visual & Micro-interações:**
+   * Transições bidirecionais suaves (`0fr ➔ 1fr ➔ 0fr`) implementadas com CSS Grid em todos os acordeões e gavetas (`BatchDashboard`, `DataBridgeCopilot`, `DualFileUploadZone`, `ItemsTable`).
+   * Rotação suave de 180° dos chevrons e alinhamento à direita dos selos/badges nos mini-cards de detalhe do item.
+   * Correção do hover de alto contraste nos botões SEFAZ/Sintegra/Receita.
+2. **Estudo Integral da Integração Procenge Pirâmide:**
+   * Análise do manual oficial de 426 páginas (`docs/modelos-de-integracao-2.pdf`).
+   * Validação do **Método C (TIs no Oracle)** como arquitetura oficial.
+   * Confirmação dos sistemas integrados em `TI_SISTEMA` (`docs/testes/4_consultas.csv`).
+3. **Mapeamento de Banco de Dados de Homologação (Servidor `.61`):**
+   * Estrutura de colunas de `TI_ITEM_ENTRADA_LOTE` e `TI_ITEM_NOTA_FISCAL_ENTRADA` confirmada via `user_tab_cols`.
+   * Empresas confirmadas: `001` (QUESALON Matriz) e `003` (INFAN S/A).
+   * Almoxarifados confirmados: `GQ`, `ALMOX`, `AVCD`, `AVARIA`, `CQ`, `EXPEDI`, `DESCAR`, `PENHOR`, `REFUGO`, `NORLOG`.
+4. **Motor de Geração de Script PL/SQL:**
+   * Criada a função `generatePiramideOracleTiInsertScript` em `src/services/piramideService.ts` para carga transacional direta com tratamento de erros.
+
+### 9.2. Onde Paramos & Plano de Ação para a Retomada:
+1. **Ajuste Fino das Colunas no PL/SQL Developer:**
+   * Executar no servidor de homologação `.61` a consulta completa de colunas de `TI_NOTA_FISCAL_ENTRADA`.
+2. **Botão de Integração Direta no Frontend:**
+   * Conectar a geração do script SQL ao botão *"Copiar Script PL/SQL (Oracle TI)"* no `DataBridgeCopilot` e, futuramente, envio via conector direto.
+3. **Testes de Lançamento Real:**
+   * Testar a inserção de um registro de devolução na base de testes `.61` e acompanhar a execução do Job do Pirâmide para validar a mudança de status de `'NP'` para `'P'`.
 

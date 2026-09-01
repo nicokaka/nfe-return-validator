@@ -124,8 +124,8 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
           </span>
         </div>
 
-        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsCollapsed(false)}>
-          <ChevronDown className="icon-xs" /> Gerenciar Notas Carregadas
+        <button type="button" className="btn btn-secondary btn-sm btn-manage-drawer" onClick={() => setIsCollapsed(false)}>
+          <ChevronDown className="icon-xs chevron-animated" /> Gerenciar Notas Carregadas
         </button>
       </div>
     );

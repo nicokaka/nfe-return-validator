@@ -6,6 +6,8 @@ import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { calculateExpectedIcms, identifyCompany } from '../data/companyData';
 import { findProductByEan, findProductByCode } from '../data/productCatalog';
 import { auditIcmsStProportionality } from './pharmaFiscalEngine';
+import { validateCnpjChecksum } from './cnpjValidator';
+import { validateNFeKey } from './sefazStatusService';
 
 export function runExhaustiveTestSuite(): { total: number; passed: number; failed: number; log: string[] } {
   const log: string[] = [];
@@ -271,6 +273,52 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
 
     // T7.10: Reforma Tributária (IBS e CBS) & DFeReferenciado
     assert(res.taxReformSummary !== undefined, 'T7.10: Resumo e Telemetria da Reforma Tributária (IBS/CBS) gerados');
+
+    // 8. Novas Diretrizes da Gerência Fiscal (Desconto Embutido, CFOP NFO Estrito, CC-e e CNPJ)
+    // T8.1: Desconto Embutido no Preço Unitário (vUnCom R$85.36 sem tag vDesc, original venda R$99.25 com R$13.89 de desconto)
+    const embeddedDiscNfdXml = sampleNfdXml
+      .replace('<vUnCom>99.2500000000</vUnCom>', '<vUnCom>85.3600000000</vUnCom>')
+      .replace('<vProd>297.75</vProd>', '<vProd>256.08</vProd>')
+      .replace('<vDesc>41.68</vDesc>', '<vDesc>0.00</vDesc>');
+    const docEmbeddedDisc = parseNFeXml(embeddedDiscNfdXml, 'NFD_EmbeddedDisc.xml');
+    const resEmbedded = reconcileNFeDocuments(docEmbeddedDisc, docNfo);
+    const itemEmbedded = resEmbedded.itemComparisons.find(c => c.nfdItem.cEAN === '7896685304945');
+    assert(
+      itemEmbedded?.discountAudit?.isEmbeddedInUnitPrice === true && !itemEmbedded?.issues.some(i => i.code === 'UNIT_PRICE_MISMATCH'),
+      'T8.1: Reconhecimento Inteligente de Desconto Embutido no Preço Unitário (Sem Falso Erro de Preço)'
+    );
+
+    // T8.2: CFOP Incorreto Enviado pelo Cliente (Dispara Alerta de CC-e e Mantém Entrada Pirâmide 2.202)
+    const badCfopNfdXml = sampleNfdXml.replace('<CFOP>6202</CFOP>', '<CFOP>6102</CFOP>');
+    const docBadCfop = parseNFeXml(badCfopNfdXml, 'NFD_BadCfop.xml');
+    const resBadCfop = reconcileNFeDocuments(docBadCfop, docNfo);
+    const itemBadCfop = resBadCfop.itemComparisons[0];
+    assert(
+      itemBadCfop?.issues.some(i => i.code === 'CFOP_CLIENT_MISMATCH') && resBadCfop.ndoSuggestion?.cfop === '2.202',
+      'T8.2: CFOP Incorreto do Cliente Dispara Alerta de CC-e e Mantém NDO/CFOP 2.202 Correto na Entrada'
+    );
+
+    // T8.3: Validação de CNPJ Módulo 11 (Rejeição de CNPJ Inválido com Dígito Incorreto)
+    const invalidCnpjCheck = validateCnpjChecksum('04792134000199'); // DVs corretos seriam 43
+    const validCnpjCheck = validateCnpjChecksum('04792134000143');
+    assert(
+      invalidCnpjCheck.isValidChecksum === false && validCnpjCheck.isValidChecksum === true,
+      'T8.3: Validador de CNPJ Módulo 11 da Receita Federal Aprovando CNPJ Válido e Rejeitando Inválido'
+    );
+
+    // T8.4: Validação de Chave de Acesso SEFAZ (44 dígitos e Módulo 11 da Chave)
+    const keyCheck = validateNFeKey(docNfd.chNFe);
+    assert(
+      keyCheck.isValidLength === true && keyCheck.isValidChecksum === true,
+      'T8.4: Validação Estrutural e Dígito Verificador Módulo 11 da Chave de Acesso da SEFAZ (44 dígitos)'
+    );
+
+    // T8.5: Fonte Única da Verdade para o CFOP da Devolução (getExpectedReturnCfop derivado 100% da NFO)
+    const expectedCfop6102 = res.itemComparisons[0]?.expectedClientCfop;
+    assert(
+      expectedCfop6102 === '6202',
+      'T8.5: Determinação do CFOP de Devolução Esperado Baseada Exclusivamente na Nota de Origem (6102 ➔ 6202)'
+    );
 
   } catch (err: any) {
     failed++;

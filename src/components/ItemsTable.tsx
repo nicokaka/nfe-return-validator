@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
-import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck } from './Icons';
+import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck, ShieldCheck, DollarSign, Package } from './Icons';
 import { formatFiscalDate } from '../utils/dateUtils';
 import { normalizeUnit } from '../services/reconciliationEngine';
 
@@ -144,6 +144,11 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                         {nfdItem.cfop && (
                           <>
                             {' | '}CFOP: <span className="font-mono">{nfdItem.cfop}</span>
+                            {c.issues.some(i => i.code === 'CFOP_CLIENT_MISMATCH') && (
+                              <span className="badge-tag ml-1 badge-tag-warn" title="CFOP divergente da NFO. Solicite Carta de Correção (CC-e) ao cliente">
+                                ⚠️ Pedir CC-e (Esperado {c.expectedClientCfop})
+                              </span>
+                            )}
                           </>
                         )}
                       </div>
@@ -295,8 +300,12 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                     </td>
 
                     <td className="cell-center">
-                      <button type="button" className="btn-icon" title="Ver detalhes do item">
-                        {isExpanded ? <ChevronUp className="icon-xs" /> : <ChevronDown className="icon-xs" />}
+                      <button
+                        type="button"
+                        className={`btn-icon chevron-toggle ${isExpanded ? 'is-rotated' : ''}`}
+                        title="Ver detalhes do item"
+                      >
+                        <ChevronDown className="icon-xs chevron-animated" />
                       </button>
                     </td>
                   </tr>
@@ -391,10 +400,20 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                           <div className="item-detail-grid mt-3 mb-2">
                             {/* Card 1: Tributação do Item */}
                             <div className="item-detail-card">
-                              <h6 className="detail-card-header flex items-center justify-between">
-                                <span>Tributação do Item</span>
-                                <span className="badge-pill-success text-xs">✓ Conforme</span>
+                              <h6 className="detail-card-header">
+                                <span><ShieldCheck className="icon-xs text-primary" /> Tributação & CFOP</span>
+                                {c.expectedClientCfop && nfdItem.cfop.replace(/\D/g, '') === c.expectedClientCfop.replace(/\D/g, '') ? (
+                                  <span className="badge-pill-success">✓ CFOP Conforme</span>
+                                ) : (
+                                  <span className="badge-pill-neutral" style={{ background: '#fef3c7', color: '#92400e' }}>⚠️ Pedir CC-e</span>
+                                )}
                               </h6>
+                              <div className="detail-field">
+                                <span>CFOP Devolução:</span>
+                                <strong>
+                                  {nfdItem.cfop} <span className="text-xs opacity-75">(Esperado: {c.expectedClientCfop || '6202'})</span>
+                                </strong>
+                              </div>
                               <div className="detail-field">
                                 <span>ICMS Alíquota / CST:</span>
                                 <strong>{(nfdItem.icms?.pICMS || 12).toFixed(2)}% (CST {nfdItem.icms?.cst || '00'})</strong>
@@ -416,35 +435,50 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
 
                             {/* Card 2: Precificação & Desconto */}
                             <div className="item-detail-card">
-                              <h6 className="detail-card-header flex items-center justify-between">
-                                <span>Preço & Desconto</span>
-                                {c.discountAudit?.isProportional && (
-                                  <span className="badge-pill-success text-xs">✓ Proporcional</span>
-                                )}
+                              <h6 className="detail-card-header">
+                                <span><DollarSign className="icon-xs text-primary" /> Preço & Desconto</span>
+                                {c.discountAudit?.isEmbeddedInUnitPrice ? (
+                                  <span className="badge-pill-success">✓ Desc. Embutido</span>
+                                ) : c.discountAudit?.isProportional ? (
+                                  <span className="badge-pill-success">✓ Proporcional</span>
+                                ) : null}
                               </h6>
                               <div className="detail-field">
-                                <span>Preço Unitário:</span>
+                                <span>Preço Informado:</span>
                                 <strong>{formatCurrency(nfdItem.vUnCom)} / {normalizeUnit(nfdItem.uCom)}</strong>
                               </div>
+                              {c.discountAudit?.isEmbeddedInUnitPrice ? (
+                                <div className="detail-field">
+                                  <span>Desconto Embutido:</span>
+                                  <strong className="text-success">
+                                    {formatCurrency(c.discountAudit.embeddedUnitPriceDiff || 0)} / {normalizeUnit(nfdItem.uCom)} (Líquido OK)
+                                  </strong>
+                                </div>
+                              ) : (
+                                <div className="detail-field">
+                                  <span>Desconto Rateado:</span>
+                                  <strong className="text-success">
+                                    {formatCurrency(nfdItem.vDesc ? nfdItem.vDesc / nfdItem.qCom : 0)} / {normalizeUnit(nfdItem.uCom)}
+                                  </strong>
+                                </div>
+                              )}
                               <div className="detail-field">
-                                <span>Desconto Rateado:</span>
-                                <strong className="text-success">
-                                  {formatCurrency(nfdItem.vDesc ? nfdItem.vDesc / nfdItem.qCom : 0)} / {normalizeUnit(nfdItem.uCom)}
-                                </strong>
-                              </div>
-                              <div className="detail-field">
-                                <span>Preço Líquido:</span>
+                                <span>Preço Líquido Efetivo:</span>
                                 <strong className="font-mono">
-                                  {formatCurrency(nfdItem.vUnCom - (nfdItem.vDesc ? nfdItem.vDesc / nfdItem.qCom : 0))} / {normalizeUnit(nfdItem.uCom)}
+                                  {formatCurrency(
+                                    c.discountAudit?.isEmbeddedInUnitPrice
+                                      ? nfdItem.vUnCom
+                                      : nfdItem.vUnCom - (nfdItem.vDesc ? nfdItem.vDesc / nfdItem.qCom : 0)
+                                  )} / {normalizeUnit(nfdItem.uCom)}
                                 </strong>
                               </div>
                             </div>
 
                             {/* Card 3: Rastreabilidade & Almoxarifado */}
                             <div className="item-detail-card">
-                              <h6 className="detail-card-header flex items-center justify-between">
-                                <span>Rastreabilidade & Destino</span>
-                                <span className="badge-pill-neutral text-xs">Pirâmide</span>
+                              <h6 className="detail-card-header">
+                                <span><Package className="icon-xs text-primary" /> Rastreabilidade & Destino</span>
+                                <span className="badge-pill-neutral">Pirâmide</span>
                               </h6>
                               <div className="detail-field">
                                 <span>Lote / Validade:</span>

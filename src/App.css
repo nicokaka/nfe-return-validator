@@ -1427,8 +1427,87 @@
   border-bottom: none;
 }
 
-.smart-tax-row:hover {
+.smart-tax-thead-triad,
+.smart-tax-row-triad {
+  grid-template-columns: 1.6fr 1.2fr 1.2fr 1.4fr 1.4fr;
+  gap: 8px;
+}
+
+.col-tax-expected {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.card-footer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-sefaz-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-primary, #4f46e5);
+  background-color: var(--bg-surface-elevated, #f1f5f9);
+  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 5px 10px;
+  border-radius: var(--radius-sm, 6px);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-sefaz-action:hover {
+  background-color: var(--accent-primary, #4f46e5);
+  color: #ffffff !important;
+  border-color: var(--accent-primary, #4f46e5);
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-sefaz-action:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.2);
+}
+
+.btn-icon-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon-copy:hover {
+  color: var(--accent-primary, #4f46e5);
+  border-color: var(--accent-primary, #4f46e5);
   background-color: var(--bg-surface-hover);
+}
+
+.copy-feedback-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .badge-tag {
@@ -1440,6 +1519,18 @@
   color: var(--text-muted);
   border: 1px solid var(--border-color);
   margin-left: 4px;
+}
+
+.badge-tag-warn {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #d97706 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.match-chip-warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-reduction {
@@ -3189,6 +3280,127 @@ svg.search-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.expand-toggle:hover {
+  color: var(--primary-color);
+}
+
+/* ==========================================================================
+   SMOOTH & SUBTLE TRANSITIONS & ACCORDION ANIMATIONS
+   ========================================================================== */
+
+/* Animated Rotating Chevron (Smooth 0.25s) */
+.chevron-animated {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+  transform-origin: center center;
+}
+
+.is-rotated .chevron-animated,
+.is-expanded .chevron-animated,
+.chevron-toggle.is-rotated .chevron-animated,
+.btn-copilot-toggle.is-rotated .chevron-animated,
+.expand-toggle.is-rotated .chevron-animated {
+  transform: rotate(180deg);
+}
+
+/* Dual-way (Expand & Collapse) CSS Grid Transitions (Smooth Open & Close) */
+.pair-accordion-collapse,
+.copilot-accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease;
+  overflow: hidden;
+}
+
+.pair-accordion-collapse.is-open,
+.copilot-accordion-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.pair-accordion-inner,
+.copilot-accordion-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Smooth Accordion Slide Down with Subtly Eased Opacity */
+@keyframes smoothExpandDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pair-expanded-body,
+.pair-expanded-animated,
+.copilot-collapsible-content,
+.expanded-detail-box,
+.batch-populated-panel {
+  animation: smoothExpandDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top center;
+}
+
+/* Batch Collapsed Bar Hover Smooth Lift */
+.batch-collapsed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.batch-collapsed-bar:hover {
+  background-color: var(--bg-surface-elevated);
+  border-color: var(--primary-color);
+  box-shadow: 0 3px 12px rgba(99, 102, 241, 0.12);
+  transform: translateY(-1px);
+}
+
+.batch-collapsed-bar:hover .chevron-animated {
+  transform: translateY(2px);
+}
+
+/* Batch Pair Card Hover & Expand Smoothness */
+.batch-pair-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.batch-pair-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.pair-card-header {
+  transition: background-color 0.18s ease;
+}
+
+.pair-card-header:hover {
+  background-color: var(--bg-surface-elevated);
+}
+
+.expanded-detail-row {
+  animation: smoothExpandDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-manage-drawer {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-manage-drawer:hover .chevron-animated {
+  transform: translateY(2px);
 }
 
 .pair-expanded-content {
@@ -3198,6 +3410,108 @@ svg.search-icon {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* ==========================================================================
+   ITEM EXPANDED MINI-CARDS (3 Columns with Right-Aligned Badges & Values)
+   ========================================================================== */
+
+.item-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 1024px) {
+  .item-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.item-detail-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.item-detail-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.detail-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100%;
+  margin: 0 0 4px 0 !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: var(--text-primary) !important;
+}
+
+.detail-card-header > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-card-header .badge-pill-success,
+.detail-card-header .badge-pill-neutral,
+.detail-card-header .badge-tag {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.badge-pill-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-pill-neutral {
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.detail-field {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 11.5px !important;
+  gap: 12px !important;
+  padding: 2px 0;
+}
+
+.detail-field > span:first-child {
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.detail-field > strong,
+.detail-field > span:last-child {
+  text-align: right;
+  color: var(--text-primary);
+  font-weight: 600;
+  word-break: break-word;
 }
 
 /* ==========================================================================

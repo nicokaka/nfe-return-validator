@@ -17,6 +17,8 @@
   --accent-primary: #6366f1;
   --accent-primary-hover: #4f46e5;
   --accent-primary-alpha: rgba(99, 102, 241, 0.12);
+  --primary-color: #6366f1;
+  --primary-color-hover: #4f46e5;
   
   --color-success: #10b981;
   --color-success-bg: rgba(16, 185, 129, 0.08);
@@ -83,6 +85,8 @@
   --accent-primary: #4f46e5;
   --accent-primary-hover: #4338ca;
   --accent-primary-alpha: rgba(79, 70, 229, 0.08);
+  --primary-color: #4f46e5;
+  --primary-color-hover: #4338ca;
   
   --color-success: #059669;
   --color-success-bg: #ecfdf5;
