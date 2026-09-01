@@ -9,27 +9,27 @@
 
 ## 🏭 1. ESTRUTURA CORPORATIVA DO GRUPO HEBRON
 
-A **Hebron** é uma indústria farmacêutica nacional de alta relevância com mais de 30 anos de mercado, atuando tanto na **Saúde Humana** quanto na **Saúde Animal (HebronVet)**.
+A **Hebron** é uma indústria farmacêutica 100% brasileira fundada pelo farmacêutico e empresário Josimar Henrique da Silva, com mais de 35 anos de história, pioneira no desenvolvimento de fitomedicamentos a partir da biodiversidade brasileira, medicamentos sintéticos de prescrição, suplementos e produtos veterinários (**HebronVet**).
 
 ### Divisões Fiscais e Razões Sociais Operadas no Validador:
-1. **🏭 INFAN INDÚSTRIA QUÍMICA FARMACÊUTICA NACIONAL S/A (Paraíba):**
-   * **Papel:** Unidade Fabril e Indústria Farmacêutica.
-   * **UF:** Paraíba (PB).
-   * **Alíquota Interna de ICMS:** **20,50%**.
+1. **🏭 INFAN INDÚSTRIA QUÍMICA FARMACÊUTICA NACIONAL S/A (Matriz Fabril & Distribuição):**
+   * **Papel:** Razão social industrial do laboratório Hebron, detentora dos registros ANVISA de medicamentos e fitoterápicos.
+   * **UF:** Paraíba (PB) / Pernambuco (PE) — CNPJs do grupo: `08.939.548/0001-03`, `08.825.857/xxxx-xx`.
+   * **Alíquota Interna de ICMS (PB):** **20,50%**.
    * **Benefício de Redução de Base de ICMS:**
-     * **Medicamentos (NCM 3004):** Redução fiscal de **9,90%** $\rightarrow$ **Base Efetiva = 90,10%** do valor da mercadoria ($\text{vBC} = \text{vProdLiq} \times 0,901$).
-     * **Cosméticos, Sabonetes e Higiene (NCMs 3401.20.10, 3304.99.10, 3307.90.00, 3401.30.00):** Redução fiscal de **10,49%** $\rightarrow$ **Base Efetiva = 89,51%** ($\text{vBC} = \text{vProdLiq} \times 0,8951$).
+     * **Medicamentos (NCM 3004):** Redução fiscal de **9,90%** $\rightarrow$ **Base Efetiva = 90,10%** ($\text{vBC} = \text{vProdLiq} \times 0,901$).
+     * **Cosméticos, Higiene e Sabonetes (NCMs 3401.20.10, 3304.99.10, 3307.90.00, 3401.30.00):** Redução fiscal de **10,49%** $\rightarrow$ **Base Efetiva = 89,51%** ($\text{vBC} = \text{vProdLiq} \times 0,8951$).
      * **Demais NCMs:** Base Cheia (100%).
    * **Operações Interestaduais:** Alíquota padrão de **12,00%**.
 
 2. **🏢 QUESALON DISTRIBUIDORA DE PRODUTOS FARMACÊUTICOS LTDA (Matriz PB):**
-   * **Papel:** Centro de Distribuição e Logística Farmacêutica.
+   * **Papel:** Centro de Distribuição e Logística Farmacêutica para o Nordeste.
    * **UF:** Paraíba (PB) — CNPJ Base: `04.792.134/0001-43`.
    * **Alíquota Interna de ICMS:** **20,00%** com **Base Cheia (100%)** para toda a linha.
    * **Operações Interestaduais:** Alíquota padrão de **12,00%** para todo o território nacional.
 
 3. **🏢 QUESALON DISTRIBUIDORA DE PRODUTOS FARMACÊUTICOS LTDA (Filial Extrema - MG):**
-   * **Papel:** Centro de Distribuição Estratégico para Regiões Sudeste, Sul, Centro-Oeste e Norte.
+   * **Papel:** Centro de Distribuição Estratégico para as Regiões Sudeste, Sul, Centro-Oeste e Norte.
    * **UF:** Minas Gerais (MG) — CNPJ Base: `04.792.134/0004-96`.
    * **Alíquota Interna de ICMS:** **12,00%** ou **18,00%** conforme Termo de Acordo firmado com a SEF/MG.
    * **Operações Interestaduais:**
@@ -41,11 +41,22 @@ A **Hebron** é uma indústria farmacêutica nacional de alta relevância com ma
    * **UF:** Alagoas (AL).
    * **Operações:** Foco interestadual com alíquota de **12,00%**.
 
-5. **🐾 LINHA HEBRONVET (Saúde Animal & Medicina Veterinária):**
-   * **Papel:** Linha de medicamentos veterinários, suplementos nutricionais animais e produtos de suporte clínico veterinário.
-   * **Regulação:** Ministério da Agricultura e Pecuária (MAPA) e SEFAZ.
-   * **Classificações:** NCMs do Capítulo 30 (medicamentos de uso veterinário), Capítulo 23 (preparações para alimentação animal) e Capítulo 29 (vitaminas para uso veterinário).
-   * **Rastreabilidade:** Controle rigoroso de número de partida / lote e data de validade.
+5. **🐾 DIVISÃO HEBRONVET (Saúde & Bem-Estar Animal):**
+   * **Papel:** Divisão da Hebron dedicada à medicina veterinária, suplementação de alta performance e terapêutica para cães, gatos e animais de criação.
+   * **Regulação Sanitária:** Ministério da Agricultura e Pecuária (**MAPA**) e SEFAZ.
+   * **Classificação Fiscal:** NCMs dos Capítulos 30 (medicamentos veterinários), 23 (preparações para alimentação animal) e 29 (vitaminas/suplementos).
+   * **Portfólio HebronVet Notável:**
+     * **Diarril:** Probiótico e antidiarreico de alta eficácia para cães e gatos.
+     * **Imunizan:** Imunomodulador e ativador do sistema imunológico veterinário.
+     * **Proplac:** Spray bucal e antisséptico para higiene oral de pets.
+     * **Arba Vet:** Sabonete dermatológico e terapêutico veterinário.
+     * **Rimpax:** Suporte à função renal e metabólica de animais.
+
+### Portfólio Farmacêutico Humano Notável:
+* **Gastroenterologia:** **Florax** (probiótico de *Saccharomyces cerevisiae* em flaconetes — carro-chefe da empresa), Bromoprida, Giamebil, Pleo, Gastrobion, Enzyfor.
+* **Imunologia & Suplementos:** **Imunoglucan / Imunoglucan DS** (beta-glucana de levedura + zinco + vitamina C), Vitaminas D3, complexos minerais.
+* **Respiratória & Fitoterapia:** **Bromelin** (mucolítico natural de abacaxi), **Kronel / Kronos** (fitoterápico ginecológico pioneiro de *Schinus terebinthifolius* / aroeira), Ansiofito (valeriana).
+* **Pediatria & Clínica:** Endorus, Gamax, analgésicos e correlatos regulados pela ANVISA.
 
 ---
 
