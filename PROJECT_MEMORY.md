@@ -396,7 +396,14 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
   * Injeção preventiva de `ALTER SESSION SET CURRENT_SCHEMA = PIRAMIDE` nas transações do conector para garantir execução imediata sem risco de `ORA-00942`.
 
 ### 12.3. Estado Atual para Homologação com a Gerência Fiscal (Polliana)
-* **Objetivo Imediato:** Deploy no servidor corporativo **`97.10:5001`** para teste das funcionalidades centrais de auditoria fiscal e regras tributárias (NFO x NFD em lote, proporcionalidade de descontos, ICMS-ST, reduções da base de cálculo INFAN/Quesalon e alertas SEFAZ) diretamente com a Gerência Fiscal.
+* **Servidor de Produção/Homologação:** `vm-debian-vf` (Host: `192.169.97.10:5001` / `5002`).
+* **Usuário Linux:** `nicolas`.
+* **Diretório da Aplicação:** `~/nfe-return-validator`.
+* **Comando Oficial de Deploy (One-Liner Docker):**
+  ```bash
+  cd ~/nfe-return-validator && git pull origin main && docker compose build --no-cache && docker compose up -d --force-recreate
+  ```
+* **Objetivo Imediato:** Teste das funcionalidades centrais de auditoria fiscal e regras tributárias (NFO x NFD em lote, proporcionalidade de descontos, ICMS-ST, reduções da base de cálculo INFAN/Quesalon e alertas SEFAZ) diretamente com a Gerência Fiscal (Polliana).
 * **Testes Automatizados:** **62/62 aprovados (100% verde)**.
 * **Compilação de Produção:** Build Vite/TypeScript aprovado em **1.44s**.
 
