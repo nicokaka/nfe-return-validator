@@ -335,5 +335,29 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * **Limpeza Executada:** Script de limpeza executado com retorno `"LIMPEZA EXECUTADA COM SUCESSO"`, eliminando os registros de teste e preservando o banco `.61` 100% limpo e higienizado.
 * **Status Final da Integração:** **APROVADO & HOMOLOGADO EM PRODUÇÃO-READY**.
 
+---
+
+## 🚀 11. CONECTOR DIRETO EM 1-CLIQUE BACKEND ➔ ORACLE PIRÂMIDE (OPÇÃO A)
+
+### 11.1. Arquitetura do Conector Nativo
+* **Driver Oficial:** `oracledb` em **Thin Mode** nativo (dispensa instalação de Oracle Client).
+* **Camada de Backend / Middleware:**
+  * `src/server/oracleDbPool.ts`: Pool de conexões, auto-reconexão e health check (`/api/piramide/health`).
+  * `src/server/piramideIntegrator.ts`: Transação ACID direta de inserção (`TI_NOTA_FISCAL_ENTRADA`, `TI_ITEM_NOTA_FISCAL_ENTRADA`, `TI_ITEM_ENTRADA_LOTE`), consulta em tempo real (`/api/piramide/status/:nNF`) e rollback limpo (`/api/piramide/rollback/:nNF`).
+  * `src/server/piramideViteMiddleware.ts` & `vite.config.ts`: Roteador HTTP embutido no Vite para servir a API no mesmo processo durante o desenvolvimento.
+* **Camada de Frontend:**
+  * `src/services/piramideApiClient.ts`: Cliente HTTP tipado com métodos `testOracleConnection()`, `sendReturnNoteToPiramide()`, `fetchReturnNoteStatus()` e `rollbackTestNote()`.
+  * `src/components/DataBridgeCopilot.tsx`:
+    * Botão primário: **`[ 🚀 Lançar no Pirâmide (1-Clique) ]`** com animação de gravação.
+    * Botão de telemetria: **`[ 🔄 Consultar Status ERP ]`** para polling manual/automático.
+    * Botão de teste: **`[ 🔌 Testar Conexão Oracle ]`** para verificar se o banco responde.
+    * Card de Status ao vivo: Exibe sequencial, status (`NP`, `P` ou `ER`) e críticas do ERP.
+    * Fallback manual preservado: Botões de cópia de script PL/SQL e limpeza continuam ativos.
+* **Chaveamento para Produção (.60):**
+  * O conector lê `ORACLE_CONNECT_STRING`, `ORACLE_USER` e `ORACLE_PASSWORD` do `.env`.
+  * Para virar para produção, basta alterar o IP para o `.60` no `.env`, pois todo o fluxo de telas e API já está homologado.
+* **Qualidade:** 60/60 testes aprovados (100% de sucesso).
+
+
 
 

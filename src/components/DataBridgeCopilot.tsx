@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
-import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck, ChevronDown, Database, Trash2 } from './Icons';
+import { 
+  Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, 
+  ShieldCheck, ChevronDown, Database, Trash2, Send, Loader2, Server, RefreshCw 
+} from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
 import { generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript } from '../services/piramideService';
+import { 
+  sendReturnNoteToPiramide, fetchReturnNoteStatus, rollbackTestNote, testOracleConnection,
+  DirectIntegrationResult, ReturnNoteStatusResult, OracleConnectionStatus 
+} from '../services/piramideApiClient';
 
 interface DataBridgeCopilotProps {
   result: ReconciliationResult;
@@ -25,6 +32,17 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     initialPiramideResolution?.isAutomatic ? initialPiramideResolution.almoxarifado : 'ALMOX'
   );
 
+  // Direct Oracle Integration states
+  const [isLaunching, setIsLaunching] = useState<boolean>(false);
+  const [isCheckingLiveStatus, setIsCheckingLiveStatus] = useState<boolean>(false);
+  const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
+  const [isTestingConnection, setIsTestingConnection] = useState<boolean>(false);
+  
+  const [integrationResult, setIntegrationResult] = useState<DirectIntegrationResult | null>(null);
+  const [liveStatus, setLiveStatus] = useState<ReturnNoteStatusResult | null>(null);
+  const [oracleHealth, setOracleHealth] = useState<OracleConnectionStatus | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
   const currentMotivo = PIRAMIDE_MOTIVOS.find(m => m.code === selectedMotivoCode);
 
   const handleMotivoChange = (code: string) => {
@@ -32,6 +50,135 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     const m = PIRAMIDE_MOTIVOS.find(item => item.code === code);
     if (m && m.isAutomatic) {
       setSelectedWarehouse(m.almoxarifado);
+    }
+  };
+
+  // Actions for direct 1-click launch to Oracle Pirâmide
+  const handleDirectLaunch = async () => {
+    setIsLaunching(true);
+    setActionFeedback(null);
+    try {
+      const res = await sendReturnNoteToPiramide(result, {
+        warehouseOverride: selectedWarehouse,
+        ndoOverride: ndoSuggestion?.ndoCode,
+      });
+      setIntegrationResult(res);
+      if (res.success) {
+        setActionFeedback({
+          type: 'success',
+          message: `✅ Nota ${nfd.nNF} gravada com sucesso nas tabelas de integração do Pirâmide! Status: NP.`,
+        });
+        // Consulta o status inicial após 1 segundo
+        setTimeout(() => handleCheckLiveStatus(), 1000);
+      } else {
+        setActionFeedback({
+          type: 'error',
+          message: `❌ ${res.message || res.error}`,
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        message: `Falha na integração direta: ${err.message}`,
+      });
+    } finally {
+      setIsLaunching(false);
+    }
+  };
+
+  const handleCheckLiveStatus = async () => {
+    setIsCheckingLiveStatus(true);
+    try {
+      const res = await fetchReturnNoteStatus(nfd.nNF);
+      setLiveStatus(res);
+      if (res.found) {
+        if (res.status === 'P') {
+          setActionFeedback({
+            type: 'success',
+            message: `🎉 Parabéns! A nota ${nfd.nNF} foi PROCESSADA com sucesso pelo Job do ERP Pirâmide!`,
+          });
+        } else if (res.status === 'ER') {
+          setActionFeedback({
+            type: 'error',
+            message: `⚠️ ERP Pirâmide rejeitou o registro: ${res.errorMessage || 'Verifique as regras cadastrais no Pirâmide'}`,
+          });
+        } else {
+          setActionFeedback({
+            type: 'info',
+            message: `⏳ Nota ${nfd.nNF} está na fila de processamento (Status: NP). O Job do Pirâmide roda a cada ~60s.`,
+          });
+        }
+      } else {
+        setActionFeedback({
+          type: 'info',
+          message: `Nota ${nfd.nNF} não consta atualmente nas tabelas de integração TI.`,
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        message: `Erro ao consultar status no Pirâmide: ${err.message}`,
+      });
+    } finally {
+      setIsCheckingLiveStatus(false);
+    }
+  };
+
+  const handleDirectRollback = async () => {
+    if (!window.confirm(`Tem certeza que deseja apagar os registros da nota ${nfd.nNF} das tabelas de integração para limpar o banco?`)) {
+      return;
+    }
+    setIsCleaningUp(true);
+    setActionFeedback(null);
+    try {
+      const res = await rollbackTestNote(nfd.nNF);
+      if (res.success) {
+        setIntegrationResult(null);
+        setLiveStatus(null);
+        setActionFeedback({
+          type: 'success',
+          message: `🧹 ${res.message}`,
+        });
+      } else {
+        setActionFeedback({
+          type: 'error',
+          message: `Falha na limpeza: ${res.message}`,
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        message: `Erro ao limpar nota: ${err.message}`,
+      });
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    setActionFeedback(null);
+    try {
+      const res = await testOracleConnection();
+      setOracleHealth(res);
+      if (res.success) {
+        setActionFeedback({
+          type: 'success',
+          message: `🟢 ${res.message} (${res.serverVersion || 'Oracle'})`,
+        });
+      } else {
+        setActionFeedback({
+          type: 'error',
+          message: `🔴 ${res.message}`,
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        message: `Erro no teste de conexão: ${err.message}`,
+      });
+    } finally {
+      setIsTestingConnection(false);
     }
   };
 
@@ -671,43 +818,161 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
         <div className="batch-header">
           <div>
             <h4 className="copilot-block-title">
-              <Database className="icon-xs" /> 5. Carga Direta nas Tabelas de Integração (TI Oracle)
+              <Database className="icon-xs" /> 5. Integração Direta com ERP Pirâmide (Oracle TI)
             </h4>
             <p className="batch-sub">
-              Gera o script PL/SQL transacional pronto para o <strong>PL/SQL Developer</strong> (Servidor .61) com amarração automática de Cabeçalho, Itens, Lotes e NDO.
+              Lançamento automatizado em 1-clique nas Tabelas de Integração da Procenge (Servidor <strong>.61</strong> / Standby para <strong>.60</strong>).
             </p>
           </div>
 
           <div className="batch-actions-group">
             <button
               type="button"
-              className={`btn btn-secondary ${copiedKey === 'tiRollback' ? 'btn-danger' : ''}`}
-              onClick={() => copyToClipboard(generatePiramideOracleTiDeleteScript(result), 'tiRollback')}
-              title="Copia o script para deletar/limpar a nota de teste do banco Oracle sem deixar resíduos"
+              className="btn btn-secondary text-xs"
+              onClick={handleTestConnection}
+              disabled={isTestingConnection}
+              title="Testa a conectividade com o banco Oracle no host configurado"
             >
-              <Trash2 className="icon-xs" />
-              {copiedKey === 'tiRollback' ? 'Script de Limpeza Copiado!' : 'Copiar Script Limpeza (Rollback)'}
+              {isTestingConnection ? <Loader2 className="icon-xs animate-spin" /> : <Server className="icon-xs" />}
+              {isTestingConnection ? 'Testando...' : 'Testar Conexão Oracle'}
             </button>
 
             <button
               type="button"
-              className={`btn btn-accent ${copiedKey === 'tiScript' ? 'btn-success' : ''}`}
-              onClick={() => copyToClipboard(generatePiramideOracleTiInsertScript(result, { selectedWarehouse }), 'tiScript')}
-              title="Gera e copia o bloco PL/SQL completo com INSERTs em TI_NOTA_FISCAL_ENTRADA, TI_ITEM e TI_LOTE"
+              className="btn btn-secondary text-xs"
+              onClick={handleCheckLiveStatus}
+              disabled={isCheckingLiveStatus}
+              title="Consulta em tempo real o status de processamento da nota no ERP Pirâmide"
             >
-              {copiedKey === 'tiScript' ? <Check className="icon-xs" /> : <Database className="icon-xs" />}
-              {copiedKey === 'tiScript' ? 'Script PL/SQL Copiado!' : 'Copiar Script PL/SQL (Oracle TI)'}
+              {isCheckingLiveStatus ? <Loader2 className="icon-xs animate-spin" /> : <RefreshCw className="icon-xs" />}
+              {isCheckingLiveStatus ? 'Consultando...' : 'Consultar Status ERP'}
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-accent btn-launch-piramide"
+              onClick={handleDirectLaunch}
+              disabled={isLaunching}
+              title="Conecta diretamente no Oracle e grava o Cabeçalho, Itens e Lotes com status NP"
+            >
+              {isLaunching ? <Loader2 className="icon-xs animate-spin" /> : <Send className="icon-xs" />}
+              {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide (1-Clique)'}
             </button>
           </div>
         </div>
 
-        <div className="ti-status-banner">
-          <span className="badge badge-info font-mono">SISTEMA: 'VAL'</span>
-          <span className="badge badge-neutral font-mono">STATUS: 'NP'</span>
-          <span className="badge badge-purple font-mono">ALMOXARIFADO: {selectedWarehouse}</span>
-          <span className="text-muted text-xs">
-            💡 Cole na SQL Window do PL/SQL Developer e pressione <strong>F8</strong>. O Job do Pirâmide assumirá o processamento em ~60s.
-          </span>
+        {/* Feedback Interativo da Ação */}
+        {actionFeedback && (
+          <div className={`copilot-action-alert alert-${actionFeedback.type} mt-3`}>
+            <div className="flex items-center gap-2">
+              {actionFeedback.type === 'success' && <Check className="icon-xs success" />}
+              {actionFeedback.type === 'error' && <AlertTriangle className="icon-xs text-danger" />}
+              {actionFeedback.type === 'info' && <RefreshCw className="icon-xs text-info" />}
+              <span className="text-xs font-weight-600">{actionFeedback.message}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Card de Telemetria e Status ao Vivo da TI */}
+        {(integrationResult || liveStatus?.found) && (
+          <div className="ti-live-tracker-card mt-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted font-weight-600">STATUS NO ERP:</span>
+                {(liveStatus?.status === 'NP' || (!liveStatus && integrationResult?.status === 'NP')) && (
+                  <span className="badge badge-warning font-mono flex items-center gap-1 animate-pulse">
+                    🟡 NP: NA FILA DE PROCESSAMENTO (DBMS_JOB ~60s)
+                  </span>
+                )}
+                {liveStatus?.status === 'P' && (
+                  <span className="badge badge-success font-mono flex items-center gap-1">
+                    🟢 P: PROCESSADO COM SUCESSO NO PIRÂMIDE!
+                  </span>
+                )}
+                {liveStatus?.status === 'ER' && (
+                  <span className="badge badge-danger font-mono flex items-center gap-1">
+                    🔴 ER: REJEITADO PELO ERP PIRÂMIDE
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="btn-text-action text-xs text-danger flex items-center gap-1"
+                  onClick={handleDirectRollback}
+                  disabled={isCleaningUp}
+                  title="Remove todos os registros desta nota de teste das tabelas TI"
+                >
+                  {isCleaningUp ? <Loader2 className="icon-xs animate-spin" /> : <Trash2 className="icon-xs" />}
+                  {isCleaningUp ? 'Limpando...' : 'Excluir Nota de Teste (Rollback)'}
+                </button>
+              </div>
+            </div>
+
+            <div className="ti-live-details-grid mt-2">
+              <div>
+                <span className="text-muted text-xs block">Nº Sequencial Entrada:</span>
+                <strong className="font-mono text-xs">{liveStatus?.seqEntrada || integrationResult?.seqEntrada || 'N/A'}</strong>
+              </div>
+              <div>
+                <span className="text-muted text-xs block">Nota Fiscal / Série:</span>
+                <strong className="font-mono text-xs">NF {nfd.nNF} (Série {nfd.serie})</strong>
+              </div>
+              <div>
+                <span className="text-muted text-xs block">Filial / Sistema:</span>
+                <strong className="font-mono text-xs">{liveStatus?.filial || '001'} / 'VAL'</strong>
+              </div>
+              <div>
+                <span className="text-muted text-xs block">Almoxarifado / NDO:</span>
+                <strong className="font-mono text-xs">{selectedWarehouse} / {ndoSuggestion?.ndoCode || 'COM032'}</strong>
+              </div>
+            </div>
+
+            {liveStatus?.errorMessage && (
+              <div className="mt-2 p-2 rounded bg-danger-subtle text-danger text-xs font-mono">
+                <strong>CRÍTICA DO ERP:</strong> {liveStatus.errorMessage}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rodapé Informativo e Fallback Manual */}
+        <div className="ti-status-banner mt-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="badge badge-info font-mono">SISTEMA: 'VAL'</span>
+            <span className="badge badge-purple font-mono">ALMOXARIFADO: {selectedWarehouse}</span>
+            {oracleHealth && (
+              <span className={`badge ${oracleHealth.success ? 'badge-success' : 'badge-danger'} font-mono text-xs`}>
+                {oracleHealth.success ? `ORACLE: ${oracleHealth.serverVersion || 'ONLINE'}` : 'ORACLE OFFLINE'}
+              </span>
+            )}
+            <span className="text-muted text-xs">
+              Servidor Atual: <strong>.61 (Homologação)</strong> • Standby: <strong>.60 (Produção)</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={`btn btn-secondary text-xs ${copiedKey === 'tiScript' ? 'btn-success' : ''}`}
+              onClick={() => copyToClipboard(generatePiramideOracleTiInsertScript(result, { selectedWarehouse }), 'tiScript')}
+              title="Copiar script PL/SQL como fallback para o PL/SQL Developer"
+            >
+              {copiedKey === 'tiScript' ? <Check className="icon-xs" /> : <Database className="icon-xs" />}
+              {copiedKey === 'tiScript' ? 'Script Copiado!' : 'Copiar Script PL/SQL'}
+            </button>
+
+            <button
+              type="button"
+              className={`btn btn-secondary text-xs ${copiedKey === 'tiRollback' ? 'btn-danger' : ''}`}
+              onClick={() => copyToClipboard(generatePiramideOracleTiDeleteScript(result), 'tiRollback')}
+              title="Copiar script de limpeza como fallback para o PL/SQL Developer"
+            >
+              <Trash2 className="icon-xs" />
+              {copiedKey === 'tiRollback' ? 'Limpeza Copiada!' : 'Copiar Limpeza'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

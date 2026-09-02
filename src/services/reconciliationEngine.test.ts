@@ -8,6 +8,7 @@ import { findProductByEan, findProductByCode } from '../data/productCatalog';
 import { auditIcmsStProportionality } from './pharmaFiscalEngine';
 import { validateCnpjChecksum } from './cnpjValidator';
 import { validateNFeKey } from './sefazStatusService';
+import { generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript } from './piramideService';
 
 export function runExhaustiveTestSuite(): { total: number; passed: number; failed: number; log: string[] } {
   const log: string[] = [];
@@ -318,6 +319,42 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     assert(
       expectedCfop6102 === '6202',
       'T8.5: Determinação do CFOP de Devolução Esperado Baseada Exclusivamente na Nota de Origem (6102 ➔ 6202)'
+    );
+
+    // =========================================================================
+    // SUÍTE 9: CONECTOR & INTEGRAÇÃO DIRETA ERP PIRÂMIDE (ORACLE TI)
+    // =========================================================================
+    const tiScript = generatePiramideOracleTiInsertScript(res, { selectedWarehouse: 'GQ' });
+    const tiDeleteScript = generatePiramideOracleTiDeleteScript(res);
+
+    // T9.1: Presença obrigatória de COD_UNIDADE_NEGOCIO_ORIGEM no Cabeçalho
+    assert(
+      tiScript.includes('COD_UNIDADE_NEGOCIO_ORIGEM') && tiScript.includes('TI_NOTA_FISCAL_ENTRADA'),
+      'T9.1: Inclusão obrigatória de COD_UNIDADE_NEGOCIO_ORIGEM no cabeçalho da TI'
+    );
+
+    // T9.2: Presença obrigatória de VAL_OUTRAS_DESPESAS na tabela de Itens
+    assert(
+      tiScript.includes('VAL_OUTRAS_DESPESAS') && tiScript.includes('TI_ITEM_NOTA_FISCAL_ENTRADA'),
+      'T9.2: Inclusão obrigatória de VAL_OUTRAS_DESPESAS nos itens da TI conforme constraint NOT NULL'
+    );
+
+    // T9.3: Script de Rollback seguro com amarração por subquery sequencial
+    assert(
+      tiDeleteScript.includes('NUM_SEQUENCIAL_ENTRADA_ORIGEM IN') && tiDeleteScript.includes('TI_ITEM_NOTA_FISCAL_ENTRADA'),
+      'T9.3: Script de limpeza/rollback usando subquery segura de sequencial sem erro de ORA-00904'
+    );
+
+    // T9.4: Rastreabilidade de Lotes com amarração de TI_ITEM_ENTRADA_LOTE
+    assert(
+      tiScript.includes('TI_ITEM_ENTRADA_LOTE') && tiScript.includes('2606039'),
+      'T9.4: Rastreabilidade de Lote e Validade gerada para TI_ITEM_ENTRADA_LOTE'
+    );
+
+    // T9.5: Identificador Oficial do Sistema 'VAL' no Cabeçalho e Itens
+    assert(
+      tiScript.includes("'VAL'") && tiScript.includes("'NP'"),
+      "T9.5: Carga nas TIs parametrizada com Sistema Integrante 'VAL' e status 'NP'"
     );
 
   } catch (err: any) {
