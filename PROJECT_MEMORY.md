@@ -361,7 +361,45 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * **Chaveamento para Produção (.60):**
   * O conector lê `ORACLE_CONNECT_STRING`, `ORACLE_USER` e `ORACLE_PASSWORD` do `.env`.
   * Para virar para produção, basta alterar o IP para o `.60` no `.env`, pois todo o fluxo de telas e API já está homologado.
-* **Qualidade:** 60/60 testes aprovados (100% de sucesso).
+* **Qualidade:** 62/62 testes aprovados (100% de sucesso).
+
+---
+
+## 🌟 12. CHECKPOINT 23: REDESIGN DE ELITE, CONFIRMAÇÃO DE SCHEMA NO ORACLE E DEPLOY NO 97.10:5001
+
+### 12.1. Redesign de Elite do Cockpit Executivo (Padrão Linear / Stripe / Tier-1 Enterprise)
+* **Abas Segmentadas (Modo Dual):**
+  * `[ 🚀 Lançamento Automático (Direto no Oracle) - RECOMENDADO ]` ➔ Visão executiva ultra-limpa de 3 segundos, eliminando sobrecarga cognitiva.
+  * `[ 📋 Lançamento Manual (Cópia Campo a Campo) - CONTINGÊNCIA ]` ➔ Seções 1, 2, 3 e 4 completas com cópia de campos individuais e blocos para Excel/Pirâmide.
+* **3 Cards Executivos de Parâmetros (`.elite-param-card`):**
+  * Filial Hebron (`001 • QUESALON PB` / `003 • INFAN S/A`).
+  * NDO e Operação (`2.202 • COM206` / `COM032`).
+  * Almoxarifado (`11 • AVARIA`, `GQ`, etc.) com custom select moderno.
+* **Banner de Conformidade Esmeralda (`.elite-compliance-banner`):**
+  * Faixa limpa com selo de aprovação alinhado à direita: `[ ✓ 100% AUDITADO ]`.
+* **Deck de Ação Heroica (`.elite-action-deck`):**
+  * Ações secundárias organizadas à esquerda (`Testar Conexão`, `Consultar Status`).
+  * Hero Button em destaque no canto direito: **`[ 🚀 Lançar no Pirâmide ]`** com gradiente esmeralda e micro-interação.
+* **Rodapé Minimalista com Gaveta DBA:**
+  * Telemetria limpa (`SISTEMA: VAL`, `ALMOX: AVARIA`, `SERVIDOR .61`).
+  * Botão chip retrátil para exibir scripts PL/SQL de contingência apenas se o operador desejar.
+
+### 12.2. Confirmação do Schema e Tabelas no Oracle Hebron (Servidor .61)
+* **Owner Oficial Mapeado:** **`PIRAMIDE`**.
+* **Tabelas de Integração Confirmadas no Catálogo (`all_tables`):**
+  * `PIRAMIDE.TI_NOTA_FISCAL_ENTRADA` (Cabeçalho de Entrada - com `COD_UNIDADE_NEGOCIO_ORIGEM` NOT NULL confirmada).
+  * `PIRAMIDE.TI_ITEM_NOTA_FISCAL_ENTRADA` (Itens de Entrada - com `VAL_OUTRAS_DESPESAS` NOT NULL confirmada).
+  * `PIRAMIDE.TI_ITEM_ENTRADA_LOTE` (Rastreabilidade de Lotes e Validades ANVISA).
+* **Tabela de Arquivos/GED Mapeada:**
+  * `PIRAMIDE.PIR_DOCUMENTO_ENTRADA` (Tabela de armazenamento de arquivos binários BLOB e XMLs anexos).
+* **Blindagem no Backend Node.js:**
+  * Injeção preventiva de `ALTER SESSION SET CURRENT_SCHEMA = PIRAMIDE` nas transações do conector para garantir execução imediata sem risco de `ORA-00942`.
+
+### 12.3. Estado Atual para Homologação com a Gerência Fiscal (Polliana)
+* **Objetivo Imediato:** Deploy no servidor corporativo **`97.10:5001`** para teste das funcionalidades centrais de auditoria fiscal e regras tributárias (NFO x NFD em lote, proporcionalidade de descontos, ICMS-ST, reduções da base de cálculo INFAN/Quesalon e alertas SEFAZ) diretamente com a Gerência Fiscal.
+* **Testes Automatizados:** **62/62 aprovados (100% verde)**.
+* **Compilação de Produção:** Build Vite/TypeScript aprovado em **1.44s**.
+
 
 
 

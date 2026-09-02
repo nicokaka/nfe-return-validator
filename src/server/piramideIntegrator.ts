@@ -87,6 +87,12 @@ export async function integrateReturnNoteToPiramide(
   try {
     connection = await pool.getConnection();
 
+    try {
+      await connection.execute(`ALTER SESSION SET CURRENT_SCHEMA = PIRAMIDE`);
+    } catch {
+      // continua caso já esteja no schema PIRAMIDE
+    }
+
     // 1. Limpeza preventiva se a mesma nota já existir na TI como 'NP' ou 'ER'
     try {
       await connection.execute(
@@ -369,6 +375,12 @@ export async function getReturnNoteStatusFromPiramide(notaFiscal: string): Promi
   try {
     connection = await pool.getConnection();
 
+    try {
+      await connection.execute(`ALTER SESSION SET CURRENT_SCHEMA = PIRAMIDE`);
+    } catch {
+      // continua caso já esteja no schema PIRAMIDE
+    }
+
     const sql = `
       SELECT 
         COD_FILIAL_ORIGEM,
@@ -481,6 +493,12 @@ export async function rollbackReturnNoteFromPiramide(notaFiscal: string): Promis
 
   try {
     connection = await pool.getConnection();
+
+    try {
+      await connection.execute(`ALTER SESSION SET CURRENT_SCHEMA = PIRAMIDE`);
+    } catch {
+      // continua caso já esteja no schema PIRAMIDE
+    }
 
     await connection.execute(
       `DELETE FROM TI_ITEM_ENTRADA_LOTE 
