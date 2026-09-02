@@ -16,7 +16,7 @@ export function getOracleConfig(): OracleConfig {
   return {
     user: process.env.ORACLE_USER || 'PIRAMIDE',
     password: process.env.ORACLE_PASSWORD || '',
-    connectString: process.env.ORACLE_CONNECT_STRING || '192.168.0.61:1521/PIRAMIDE',
+    connectString: process.env.ORACLE_CONNECT_STRING || '192.169.97.61:1521/PIRAMIDE',
     poolMin: parseInt(process.env.ORACLE_POOL_MIN || '1', 10),
     poolMax: parseInt(process.env.ORACLE_POOL_MAX || '4', 10),
     timeoutMs: parseInt(process.env.ORACLE_TIMEOUT_MS || '15000', 10),
