@@ -329,4 +329,11 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
   3. `TI_ITEM_ENTRADA_LOTE` (Lote `2606039`, Validade `2028-06-30`, Fabricante `001`).
 * **Transação:** Comitada com sucesso sem violação de constraints ou chaves estrangeiras.
 
+### 10.5. Ciclo Completo Homologado: Carga, Validação e Limpeza Total (Rollback)
+* **Data:** 02/09/2026 10:14
+* **Validação em Banco:** A nota `663338` foi visualizada diretamente nas consultas de `TI_NOTA_FISCAL_ENTRADA` e `TI_ITEM_NOTA_FISCAL_ENTRADA` com todos os atributos preenchidos com exatidão fiscal.
+* **Limpeza Executada:** Script de limpeza executado com retorno `"LIMPEZA EXECUTADA COM SUCESSO"`, eliminando os registros de teste e preservando o banco `.61` 100% limpo e higienizado.
+* **Status Final da Integração:** **APROVADO & HOMOLOGADO EM PRODUÇÃO-READY**.
+
+
 
