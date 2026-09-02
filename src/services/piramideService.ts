@@ -156,6 +156,7 @@ export function generatePiramideOracleTiInsertScript(
   sql += `  -- 1. CABEÇALHO DA NOTA FISCAL DE ENTRADA (TI_NOTA_FISCAL_ENTRADA)\n`;
   sql += `  INSERT INTO TI_NOTA_FISCAL_ENTRADA (\n`;
   sql += `    COD_FILIAL_ORIGEM,\n`;
+  sql += `    COD_UNIDADE_NEGOCIO_ORIGEM,\n`;
   sql += `    NUM_SEQUENCIAL_ENTRADA_ORIGEM,\n`;
   sql += `    COD_SISTEMA_ORIGEM,\n`;
   sql += `    COD_EMPRESA_ORIGEM,\n`;
@@ -179,6 +180,7 @@ export function generatePiramideOracleTiInsertScript(
   sql += `    COD_PROTOCOLO_NFEL,\n`;
   sql += `    COD_CLASSIFICACAO_ENTRADA\n`;
   sql += `  ) VALUES (\n`;
+  sql += `    '${filial}',\n`;
   sql += `    '${filial}',\n`;
   sql += `    v_seq_entrada,\n`;
   sql += `    '${sistema}',\n`;
@@ -238,6 +240,7 @@ export function generatePiramideOracleTiInsertScript(
     sql += `    VAL_ITEM,\n`;
     sql += `    VAL_PRECO_UNITARIO_ITEM,\n`;
     sql += `    VAL_DESCONTO_ITEM,\n`;
+    sql += `    VAL_OUTRAS_DESPESAS,\n`;
     sql += `    VAL_CONTABIL_ESTOQUE,\n`;
     sql += `    COD_NOTA_FISCAL_SAIDA,\n`;
     sql += `    COD_SERIE_NOTA_FISCAL_SAIDA,\n`;
@@ -266,6 +269,7 @@ export function generatePiramideOracleTiInsertScript(
     sql += `    ${vProd},\n`;
     sql += `    ${vUn},\n`;
     sql += `    ${vDescItem},\n`;
+    sql += `    0,\n`;
     sql += `    ${vProd},\n`;
     sql += `    '${nfo.nNF}',\n`;
     sql += `    '${nfo.serie}',\n`;
