@@ -321,3 +321,12 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * **Pessoas/Entidades:** `PESSOA`.
 * **Staging `TI_NOTA_FISCAL_ENTRADA`:** Totalmente limpa e pronta para receber as cargas de devolução.
 
+### 10.4. Marco Histórico: Primeira Carga Completa Homologada com Sucesso no Oracle (.61)
+* **Data:** 02/09/2026 10:07
+* **Resultado:** Execução do bloco PL/SQL com **100% de sucesso** nas 3 tabelas de staging:
+  1. `TI_NOTA_FISCAL_ENTRADA` (Cabeçalho com `COD_UNIDADE_NEGOCIO_ORIGEM = '001'`, `COD_SISTEMA_ORIGEM = 'VAL'`, status `'NP'`).
+  2. `TI_ITEM_NOTA_FISCAL_ENTRADA` (Item com `VAL_OUTRAS_DESPESAS = 0`, NDO `COM032`, CFOP `2.202`, Almoxarifado `GQ`).
+  3. `TI_ITEM_ENTRADA_LOTE` (Lote `2606039`, Validade `2028-06-30`, Fabricante `001`).
+* **Transação:** Comitada com sucesso sem violação de constraints ou chaves estrangeiras.
+
+
