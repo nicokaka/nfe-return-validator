@@ -314,3 +314,10 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * **Gerenciador de Fila:** `USER_JOBS` (`DBMS_JOB`).
 * **Frequência de Processamento:** Intervalo ultra-rápido de **60 segundos (`SYSDATE + 60/(24*60*60)`)**.
 * **Status das Packages de Integração:** 100% Válidas (`PCK_PIR_BASE_INTEGRA`, `PCK_PIR_BASE_NFE`, `PCK_PIR_ATRIBUTO_ENTRADA`, `PCK_PIR_CONST_INTEGRA`, `PCK_PIR_INTEGRA_BAIXA_TREC_NDO`).
+
+### 10.3. Tabelas Cadastrais Confirmadas no Schema
+* **Clientes:** `CLIENTES` (e tabelas filhas `CLIENTE_EMPRESA`, `CLIENTE_CONTATO`, `ENDERECO_CLIENTE`).
+* **Fornecedores:** `FORNEC` (e `FORNEC_CONTA`, `FORNEC_EMPRESA`).
+* **Pessoas/Entidades:** `PESSOA`.
+* **Staging `TI_NOTA_FISCAL_ENTRADA`:** Totalmente limpa e pronta para receber as cargas de devolução.
+

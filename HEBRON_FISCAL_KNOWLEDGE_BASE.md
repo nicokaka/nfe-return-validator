@@ -344,6 +344,14 @@ Conforme extração direta da tabela `NDO` no Oracle de Homologação (`.61`), a
   * `PCK_PIR_INTEGRA_BAIXA_TREC_NDO` (`VALID`)
 
 
+---
+
+### 7. Tabelas Cadastrais de Entidades no Oracle Pirâmide
+* **Tabela de Clientes:** **`CLIENTES`** (com extensões `CLIENTE_EMPRESA`, `CLIENTE_CONTATO`, `ENDERECO_CLIENTE`, `PIR_ATRIBUTO_CLIENTE`).
+* **Tabela de Fornecedores:** **`FORNEC`** (com extensões `FORNEC_CONTA`, `FORNEC_EMPRESA`, `FORNEC_SEGMENTO`, `PIR_ATRIBUTO_FORNECEDOR`).
+* **Tabela Central de Entidades:** **`PESSOA`**.
+* **Mapeamento de Entrada:** O campo `COD_CLIENTE_ORIGEM` da `TI_NOTA_FISCAL_ENTRADA` aceita o CNPJ numérico do emitente da NFD e o Pirâmide faz a amarração com a tabela `CLIENTES`.
+
 ## 🚀 10. PROTOCOLOS DE DESENVOLVIMENTO & VALIDAÇÃO DO ENGENHEIRO SENIOR
 
 Para garantir estabilidade máxima e zero regressões:
