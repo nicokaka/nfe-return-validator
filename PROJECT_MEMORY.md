@@ -353,10 +353,16 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
     * Botão de teste: **`[ 🔌 Testar Conexão Oracle ]`** para verificar se o banco responde.
     * Card de Status ao vivo: Exibe sequencial, status (`NP`, `P` ou `ER`) e críticas do ERP.
     * Fallback manual preservado: Botões de cópia de script PL/SQL e limpeza continuam ativos.
+* **Parâmetros Oficiais de Homologação (.61):**
+  * `HOST`: `192.169.97.61`
+  * `PORT`: `1521`
+  * `SERVICE_NAME`: `TESTE`
+  * `CONNECT_STRING`: `192.169.97.61:1521/TESTE`
 * **Chaveamento para Produção (.60):**
   * O conector lê `ORACLE_CONNECT_STRING`, `ORACLE_USER` e `ORACLE_PASSWORD` do `.env`.
   * Para virar para produção, basta alterar o IP para o `.60` no `.env`, pois todo o fluxo de telas e API já está homologado.
 * **Qualidade:** 60/60 testes aprovados (100% de sucesso).
+
 
 
 
