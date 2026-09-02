@@ -396,9 +396,10 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
   * Injeção preventiva de `ALTER SESSION SET CURRENT_SCHEMA = PIRAMIDE` nas transações do conector para garantir execução imediata sem risco de `ORA-00942`.
 
 ### 12.3. Estado Atual para Homologação com a Gerência Fiscal (Polliana)
-* **Servidor de Produção/Homologação:** `vm-debian-vf` (Host: `192.169.97.10:5001` / `5002`).
+* **Servidor de Produção/Homologação:** `vm-debian-vf` (URL Oficial: **`http://192.168.97.10:5002/`**).
 * **Usuário Linux:** `nicolas`.
 * **Diretório da Aplicação:** `~/nfe-return-validator`.
+* **Porta Docker Mapeada:** `5002:80` (`docker-compose.yml`).
 * **Comando Oficial de Deploy (One-Liner Docker):**
   ```bash
   cd ~/nfe-return-validator && git pull origin main && docker compose build --no-cache && docker compose up -d --force-recreate
