@@ -52,6 +52,10 @@ export async function integrateReturnNoteToPiramide(
     filialOverride?: string;
     warehouseOverride?: string;
     ndoOverride?: string;
+    overrideData?: {
+      approver: string;
+      justification: string;
+    };
   }
 ): Promise<IntegrationResponse> {
   const config = getOracleConfig();

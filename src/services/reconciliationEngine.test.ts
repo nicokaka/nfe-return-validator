@@ -357,6 +357,32 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       "T9.5: Carga nas TIs parametrizada com Sistema Integrante 'VAL' e status 'NP'"
     );
 
+    // =========================================================================
+    // SUÍTE 10: GOVERNANÇA FISCAL & CIRCUITO DE BLOQUEIO (CIRCUIT BREAKER)
+    // =========================================================================
+    // T10.1: Nota com divergência crítica de preço unitário é bloqueada pelo circuito de segurança
+    const badPriceNfdXml = sampleNfdXml.replace('<vUnCom>99.2500000000</vUnCom>', '<vUnCom>120.0000000000</vUnCom>');
+    const docBadPrice = parseNFeXml(badPriceNfdXml, 'NFD_BadPrice.xml');
+    const resBadPrice = reconcileNFeDocuments(docBadPrice, docNfo);
+    const criticalsBadPrice = [
+      ...resBadPrice.headerValidation.issues.filter(i => i.severity === 'CRITICAL'),
+      ...resBadPrice.itemComparisons.flatMap(c => c.issues.filter(i => i.severity === 'CRITICAL')),
+    ];
+    assert(
+      criticalsBadPrice.length > 0 && criticalsBadPrice.some(i => i.code === 'UNIT_PRICE_MISMATCH'),
+      'T10.1: Circuito de Segurança bloqueia nota com divergência crítica de preço unitário (R$ 120 vs R$ 99,25)'
+    );
+
+    // T10.2: Nota em conformidade (amostra homologada) possui zero inconsistências críticas e é liberada
+    const criticalsApproved = [
+      ...res.headerValidation.issues.filter(i => i.severity === 'CRITICAL'),
+      ...res.itemComparisons.flatMap(c => c.issues.filter(i => i.severity === 'CRITICAL')),
+    ];
+    assert(
+      criticalsApproved.length === 0,
+      'T10.2: Nota 100% auditada possui zero divergências críticas e obtém liberação direta no Pirâmide'
+    );
+
   } catch (err: any) {
     failed++;
     log.push(`❌ Exceção não capturada durante a execução da suíte: ${err.message}`);

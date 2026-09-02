@@ -3,7 +3,8 @@ import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
 import { 
   Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, 
-  ShieldCheck, ChevronDown, Database, Trash2, Send, Loader2, Server, RefreshCw 
+  ShieldCheck, ChevronDown, Database, Trash2, Send, Loader2, Server, RefreshCw,
+  Lock, ShieldAlert 
 } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
@@ -12,6 +13,7 @@ import {
   sendReturnNoteToPiramide, fetchReturnNoteStatus, rollbackTestNote, testOracleConnection,
   DirectIntegrationResult, ReturnNoteStatusResult, OracleConnectionStatus 
 } from '../services/piramideApiClient';
+import { FiscalOverrideModal } from './FiscalOverrideModal';
 
 interface DataBridgeCopilotProps {
   result: ReconciliationResult;
@@ -37,11 +39,19 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
   const [isCheckingLiveStatus, setIsCheckingLiveStatus] = useState<boolean>(false);
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
   const [isTestingConnection, setIsTestingConnection] = useState<boolean>(false);
+  const [showOverrideModal, setShowOverrideModal] = useState<boolean>(false);
   
   const [integrationResult, setIntegrationResult] = useState<DirectIntegrationResult | null>(null);
   const [liveStatus, setLiveStatus] = useState<ReturnNoteStatusResult | null>(null);
   const [oracleHealth, setOracleHealth] = useState<OracleConnectionStatus | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  // Fiscal Safety Circuit Breaker: Verifica inconsistências críticas impeditivas
+  const criticalIssues = [
+    ...result.headerValidation.issues.filter(i => i.severity === 'CRITICAL'),
+    ...result.itemComparisons.flatMap(c => c.issues.filter(i => i.severity === 'CRITICAL')),
+  ];
+  const isFiscalCompliant = criticalIssues.length === 0;
 
   const currentMotivo = PIRAMIDE_MOTIVOS.find(m => m.code === selectedMotivoCode);
 
@@ -53,20 +63,32 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     }
   };
 
-  // Actions for direct 1-click launch to Oracle Pirâmide
-  const handleDirectLaunch = async () => {
+  // Actions for direct launch to Oracle Pirâmide with pre-flight check and override support
+  const handleDirectLaunch = async (overrideData?: { approver: string; justification: string }) => {
+    if (!isFiscalCompliant && !overrideData) {
+      setActionFeedback({
+        type: 'error',
+        message: `⛔ Lançamento bloqueado: Esta nota possui ${criticalIssues.length} divergência(s) fiscal(is) crítica(s). Utilize a "Liberação com Ressalva Fiscal" caso autorizada pela supervisão.`,
+      });
+      return;
+    }
+
     setIsLaunching(true);
     setActionFeedback(null);
     try {
       const res = await sendReturnNoteToPiramide(result, {
         warehouseOverride: selectedWarehouse,
         ndoOverride: ndoSuggestion?.ndoCode,
+        overrideData,
       });
       setIntegrationResult(res);
       if (res.success) {
+        setShowOverrideModal(false);
         setActionFeedback({
           type: 'success',
-          message: `✅ Nota ${nfd.nNF} gravada com sucesso nas tabelas de integração do Pirâmide! Status: NP.`,
+          message: overrideData
+            ? `✅ Nota ${nfd.nNF} gravada com RESSALVA FISCAL (Autorizada por: ${overrideData.approver}) nas tabelas de integração do Pirâmide!`
+            : `✅ Nota ${nfd.nNF} gravada com sucesso nas tabelas de integração do Pirâmide! Status: NP.`,
         });
         // Consulta o status inicial após 1 segundo
         setTimeout(() => handleCheckLiveStatus(), 1000);
@@ -821,11 +843,11 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
               <Database className="icon-xs" /> 5. Integração Direta com ERP Pirâmide (Oracle TI)
             </h4>
             <p className="batch-sub">
-              Lançamento automatizado em 1-clique nas Tabelas de Integração da Procenge (Servidor <strong>.61</strong> / Standby para <strong>.60</strong>).
+              Lançamento automatizado nas Tabelas de Integração da Procenge (Servidor <strong>.61</strong> / Standby para <strong>.60</strong>).
             </p>
           </div>
 
-          <div className="batch-actions-group">
+          <div className="batch-actions-group flex items-center gap-2 flex-wrap">
             <button
               type="button"
               className="btn btn-secondary text-xs"
@@ -848,18 +870,90 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
               {isCheckingLiveStatus ? 'Consultando...' : 'Consultar Status ERP'}
             </button>
 
-            <button
-              type="button"
-              className="btn btn-accent btn-launch-piramide"
-              onClick={handleDirectLaunch}
-              disabled={isLaunching}
-              title="Conecta diretamente no Oracle e grava o Cabeçalho, Itens e Lotes com status NP"
-            >
-              {isLaunching ? <Loader2 className="icon-xs animate-spin" /> : <Send className="icon-xs" />}
-              {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide'}
-            </button>
+            {isFiscalCompliant ? (
+              <button
+                type="button"
+                className="btn btn-accent btn-launch-piramide"
+                onClick={() => handleDirectLaunch()}
+                disabled={isLaunching}
+                title="Conecta diretamente no Oracle e grava o Cabeçalho, Itens e Lotes com status NP"
+              >
+                {isLaunching ? <Loader2 className="icon-xs animate-spin" /> : <Send className="icon-xs" />}
+                {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide'}
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="btn btn-secondary text-xs cursor-not-allowed opacity-75"
+                  disabled={true}
+                  title="Lançamento bloqueado devido a divergências fiscais com a NFO"
+                >
+                  <Lock className="icon-xs text-danger" />
+                  Lançamento Bloqueado
+                </button>
+
+                <button
+                  type="button"
+                  className="btn text-xs font-weight-700 flex items-center gap-1.5 shadow-sm"
+                  onClick={() => setShowOverrideModal(true)}
+                  disabled={isLaunching}
+                  title="Abre o protocolo de governança para liberação fiscal com ressalva contábil"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    color: '#ffffff',
+                    border: '1px solid #fbbf24',
+                    boxShadow: '0 2px 10px rgba(245, 158, 11, 0.35)',
+                  }}
+                >
+                  <ShieldAlert className="icon-xs" />
+                  ⚠️ Liberar com Ressalva Fiscal
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Banner de Pre-Flight Checks: Conformidade vs Bloqueio Fiscal */}
+        {isFiscalCompliant ? (
+          <div className="copilot-preflight-ok-banner mt-3 p-2 px-3 rounded border flex items-center gap-2" style={{ borderColor: 'rgba(16, 185, 129, 0.35)', background: 'rgba(16, 185, 129, 0.08)' }}>
+            <ShieldCheck className="icon-xs success" />
+            <span className="text-xs font-weight-600 text-success">
+              Conformidade Fiscal Auditada: Zero divergências impeditivas. Liberado para lançamento direto no ERP Pirâmide.
+            </span>
+          </div>
+        ) : (
+          <div className="copilot-preflight-blocked-card mt-3 p-3 rounded border" style={{ borderColor: 'rgba(239, 68, 68, 0.35)', background: 'rgba(239, 68, 68, 0.08)' }}>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="badge badge-danger font-mono flex items-center gap-1">
+                  <Lock className="icon-xs" /> BLOQUEIO DE GOVERNANÇA FISCAL
+                </span>
+                <span className="text-xs text-danger font-weight-600">
+                  {criticalIssues.length} inconsistência(s) crítica(s) impedem o lançamento padrão
+                </span>
+              </div>
+              <button
+                type="button"
+                className="text-xs text-warning hover:underline font-weight-600 flex items-center gap-1"
+                onClick={() => setShowOverrideModal(true)}
+              >
+                <ShieldAlert className="icon-xs" /> Solicitar Liberação com Ressalva &rarr;
+              </button>
+            </div>
+            <div className="mt-2 flex flex-col gap-1 text-xs text-muted">
+              {criticalIssues.slice(0, 3).map((iss, i) => (
+                <div key={i} className="flex items-start gap-1.5 font-mono text-xs text-danger">
+                  <span className="font-weight-700">•</span>
+                  <span><strong>{iss.title}:</strong> {iss.description}</span>
+                </div>
+              ))}
+              {criticalIssues.length > 3 && (
+                <span className="text-muted text-xs italic">+ {criticalIssues.length - 3} outra(s) divergência(s)...</span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Feedback Interativo da Ação */}
         {actionFeedback && (
@@ -975,6 +1069,17 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           </div>
         </div>
       </div>
+
+      {/* Modal de Governança e Liberação Fiscal com Ressalva */}
+      {showOverrideModal && (
+        <FiscalOverrideModal
+          result={result}
+          criticalIssues={criticalIssues}
+          isLaunching={isLaunching}
+          onConfirm={overrideData => handleDirectLaunch(overrideData)}
+          onClose={() => setShowOverrideModal(false)}
+        />
+      )}
     </div>
   );
 };

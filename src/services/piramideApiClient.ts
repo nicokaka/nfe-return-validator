@@ -79,6 +79,10 @@ export async function sendReturnNoteToPiramide(
     filialOverride?: string;
     warehouseOverride?: string;
     ndoOverride?: string;
+    overrideData?: {
+      approver: string;
+      justification: string;
+    };
   }
 ): Promise<DirectIntegrationResult> {
   try {
