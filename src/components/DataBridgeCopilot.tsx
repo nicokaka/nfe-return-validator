@@ -856,7 +856,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
               title="Conecta diretamente no Oracle e grava o Cabeçalho, Itens e Lotes com status NP"
             >
               {isLaunching ? <Loader2 className="icon-xs animate-spin" /> : <Send className="icon-xs" />}
-              {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide (1-Clique)'}
+              {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide'}
             </button>
           </div>
         </div>
