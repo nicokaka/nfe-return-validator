@@ -297,11 +297,20 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 4. **Motor de Geração de Script PL/SQL:**
    * Criada a função `generatePiramideOracleTiInsertScript` em `src/services/piramideService.ts` para carga transacional direta com tratamento de erros.
 
-### 9.2. Onde Paramos & Plano de Ação para a Retomada:
-1. **Ajuste Fino das Colunas no PL/SQL Developer:**
-   * Executar no servidor de homologação `.61` a consulta completa de colunas de `TI_NOTA_FISCAL_ENTRADA`.
-2. **Botão de Integração Direta no Frontend:**
-   * Conectar a geração do script SQL ao botão *"Copiar Script PL/SQL (Oracle TI)"* no `DataBridgeCopilot` e, futuramente, envio via conector direto.
-3. **Testes de Lançamento Real:**
-   * Testar a inserção de um registro de devolução na base de testes `.61` e acompanhar a execução do Job do Pirâmide para validar a mudança de status de `'NP'` para `'P'`.
+---
 
+## 📌 10. DESCOBERTAS CRÍTICAS DE ENGENHARIA & HOMOLOGAÇÃO ORACLE (02/09/2026)
+
+### 10.1. Mapeamento Oficial das NDOs da Hebron (Tabela `NDO`)
+* **Estrutura Real da Tabela `NDO`:** Colunas `CODIGO`, `DESCRICAO`, `ESTOQUE`, `FINANCEIRO`, `CONTABIL`, `IND_NDO_COMPRA`.
+* **Códigos Mnemônicos Oficiais de Devolução:**
+  * **`COM206`:** `INFAN- RETORNO NOSSA NF_ PRODUTO ACABADO C MOV EST_ INTERESTADUAL (ICMS 7%) 2.949` (`ESTOQUE = S`, `FINANCEIRO = N`, `CONTABIL = S`).
+  * **`COM032`:** `QUESALON - RETORNO DE AG POR DEVOLUCAO` (`ESTOQUE = S`, `FINANCEIRO = N`, `CONTABIL = S`).
+  * **`COM033`:** `QUESALON - RETORNO DE LITERATURA POR DEVOLUCAO INTERESTADUAL` (`ESTOQUE = S`, `FINANCEIRO = N`, `CONTABIL = S`).
+  * **`COM200`:** `INFAN - ENTRADA EM BONIFICAÇÃO MP, ME, MA 2.910 ICMS 7%` (`ESTOQUE = S`, `FINANCEIRO = N`, `CONTABIL = S`).
+  * **`DEV008` / `DEV009` / `DEV010`:** `INFAN- DEVOLUCAO DE MAT LABORATORIO` (`ESTOQUE = S`, `FINANCEIRO = N`, `CONTABIL = S`).
+
+### 10.2. Diagnóstico da Esteira de Jobs e Packages Oracle Pirâmide
+* **Gerenciador de Fila:** `USER_JOBS` (`DBMS_JOB`).
+* **Frequência de Processamento:** Intervalo ultra-rápido de **60 segundos (`SYSDATE + 60/(24*60*60)`)**.
+* **Status das Packages de Integração:** 100% Válidas (`PCK_PIR_BASE_INTEGRA`, `PCK_PIR_BASE_NFE`, `PCK_PIR_ATRIBUTO_ENTRADA`, `PCK_PIR_CONST_INTEGRA`, `PCK_PIR_INTEGRA_BAIXA_TREC_NDO`).

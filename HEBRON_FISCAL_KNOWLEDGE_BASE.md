@@ -313,6 +313,37 @@ O Pirâmide opera com 3 métodos de integração:
 
 ---
 
+### 5. Catálogo Oficial de Naturezas de Operação (NDO) do Pirâmide da Hebron
+
+Conforme extração direta da tabela `NDO` no Oracle de Homologação (`.61`), a Hebron utiliza códigos mnemônicos estruturados com regras fiscais e contábeis integradas:
+
+| Código NDO | Descrição Oficial Hebron | Estoque | Financeiro | Contábil | Aplicação Operacional |
+|---|---|:---:|:---:|:---:|---|
+| **`COM206`** | **INFAN- RETORNO NOSSA NF_ PRODUTO ACABADO C MOV EST_ INTERESTADUAL (ICMS 7%) 2.949** | **SIM** | NÃO | **SIM** | **Devolução Comercial / Retorno de Produto Acabado INFAN** |
+| **`COM032`** | **QUESALON - RETORNO DE AG POR DEVOLUCAO** | **SIM** | NÃO | **SIM** | **Devolução Comercial / Retorno QUESALON Matriz** |
+| **`COM033`** | **QUESALON - RETORNO DE LITERATURA POR DEVOLUCAO INTERESTADUAL** | **SIM** | NÃO | **SIM** | **Devolução Interestadual QUESALON** |
+| **`COM200`** | **INFAN - ENTRADA EM BONIFICAÇÃO MP, ME, MA 2.910 ICMS 7%** | **SIM** | NÃO | **SIM** | **Retorno / Entrada de Bonificações** |
+| **`DEV008`** | **INFAN- DEVOLUCAO DE MAT LABORATORIO _INTERNA** | **SIM** | NÃO | **SIM** | **Devolução Interna de Materiais INFAN** |
+| **`DEV009`** | **INFAN- DEVOLUCAO DE MAT LAB _INTERESTADUAL** | **SIM** | NÃO | **SIM** | **Devolução Interestadual Materiais INFAN** |
+| **`DEV010`** | **INFAN- DEVOLUCAO DE MAT LAB _INTERESTADUAL (SUL/SUDESTE)** | **SIM** | NÃO | **SIM** | **Devolução Interestadual Materiais INFAN** |
+| `COM030` | QUESALON - COMPRA COSMETICO COM IPI 3,25% | SIM | SIM | SIM | Entrada de Cosméticos |
+| `COM034` | INFAN - COMPRA EMBALAGEM _MP ESTADUAL 0% | SIM | SIM | SIM | Compra Matéria-Prima/Embalagem PB |
+| `COM036` | INFAN - COMPRA MP _ EMBALAGEM ESTADUAL ICMS 20,5% | SIM | SIM | SIM | Compra Matéria-Prima 20,5% PB |
+| `COM037` | INFAN - COMPRA EMBALAGEM _MP INTEREST. 12% | SIM | SIM | SIM | Compra Interestadual 12% |
+
+---
+
+### 6. Mecanismo de Execução de Jobs no Oracle Pirâmide (`USER_JOBS`)
+* **Gerenciador:** `DBMS_JOB` clássico da Procenge.
+* **Frequência de Varredura:** Intervalo de **60 segundos (`SYSDATE + 60/(24*60*60)`)**.
+* **Packages Oficiais Compiladas e Válidas:**
+  * `PCK_PIR_BASE_INTEGRA` (`VALID`)
+  * `PCK_PIR_BASE_NFE` (`VALID`)
+  * `PCK_PIR_ATRIBUTO_ENTRADA` (`VALID`)
+  * `PCK_PIR_CONST_INTEGRA` (`VALID`)
+  * `PCK_PIR_INTEGRA_BAIXA_TREC_NDO` (`VALID`)
+
+
 ## 🚀 10. PROTOCOLOS DE DESENVOLVIMENTO & VALIDAÇÃO DO ENGENHEIRO SENIOR
 
 Para garantir estabilidade máxima e zero regressões:

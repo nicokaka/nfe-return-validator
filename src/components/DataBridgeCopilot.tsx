@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
 import { useClipboard } from '../hooks/useClipboard';
-import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck, ChevronDown } from './Icons';
+import { Copy, Check, Sparkles, Building2, PackageCheck, AlertTriangle, Layers, Tag, ShieldCheck, ChevronDown, Database, Trash2 } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
+import { generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript } from '../services/piramideService';
 
 interface DataBridgeCopilotProps {
   result: ReconciliationResult;
@@ -662,6 +663,51 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
         </div>
       </div>
           </div>
+        </div>
+      </div>
+
+      {/* Seção 5: Integração Direta ERP Pirâmide (Oracle TI) */}
+      <div className="copilot-block copilot-ti-integration-block">
+        <div className="batch-header">
+          <div>
+            <h4 className="copilot-block-title">
+              <Database className="icon-xs" /> 5. Carga Direta nas Tabelas de Integração (TI Oracle)
+            </h4>
+            <p className="batch-sub">
+              Gera o script PL/SQL transacional pronto para o <strong>PL/SQL Developer</strong> (Servidor .61) com amarração automática de Cabeçalho, Itens, Lotes e NDO.
+            </p>
+          </div>
+
+          <div className="batch-actions-group">
+            <button
+              type="button"
+              className={`btn btn-secondary ${copiedKey === 'tiRollback' ? 'btn-danger' : ''}`}
+              onClick={() => copyToClipboard(generatePiramideOracleTiDeleteScript(result), 'tiRollback')}
+              title="Copia o script para deletar/limpar a nota de teste do banco Oracle sem deixar resíduos"
+            >
+              <Trash2 className="icon-xs" />
+              {copiedKey === 'tiRollback' ? 'Script de Limpeza Copiado!' : 'Copiar Script Limpeza (Rollback)'}
+            </button>
+
+            <button
+              type="button"
+              className={`btn btn-accent ${copiedKey === 'tiScript' ? 'btn-success' : ''}`}
+              onClick={() => copyToClipboard(generatePiramideOracleTiInsertScript(result, { selectedWarehouse }), 'tiScript')}
+              title="Gera e copia o bloco PL/SQL completo com INSERTs em TI_NOTA_FISCAL_ENTRADA, TI_ITEM e TI_LOTE"
+            >
+              {copiedKey === 'tiScript' ? <Check className="icon-xs" /> : <Database className="icon-xs" />}
+              {copiedKey === 'tiScript' ? 'Script PL/SQL Copiado!' : 'Copiar Script PL/SQL (Oracle TI)'}
+            </button>
+          </div>
+        </div>
+
+        <div className="ti-status-banner">
+          <span className="badge badge-info font-mono">SISTEMA: 'VAL'</span>
+          <span className="badge badge-neutral font-mono">STATUS: 'NP'</span>
+          <span className="badge badge-purple font-mono">ALMOXARIFADO: {selectedWarehouse}</span>
+          <span className="text-muted text-xs">
+            💡 Cole na SQL Window do PL/SQL Developer e pressione <strong>F8</strong>. O Job do Pirâmide assumirá o processamento em ~60s.
+          </span>
         </div>
       </div>
     </div>

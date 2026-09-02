@@ -313,3 +313,43 @@ export function generatePiramideOracleTiInsertScript(
 
   return sql;
 }
+
+/**
+ * Gera o Script PL/SQL de Limpeza / Delete seguro nas Tabelas de Integração (TI)
+ * para remover a nota de teste sem deixar registros órfãos no banco Oracle.
+ */
+export function generatePiramideOracleTiDeleteScript(result: ReconciliationResult): string {
+  const nfd = result.nfd;
+  return `-- =========================================================================
+-- SCRIPT DE LIMPEZA / DELETE DA NOTA DE TESTE NAS TABELAS DE INTEGRAÇÃO (TI)
+-- Nota de Devolução: NF nº ${nfd.nNF} (Série ${nfd.serie})
+-- =========================================================================
+BEGIN
+  -- 1. Deleta os lotes
+  DELETE FROM TI_ITEM_ENTRADA_LOTE 
+  WHERE COD_ENTRADA_ORIGEM IN (
+    SELECT NUM_SEQUENCIAL_ENTRADA_ORIGEM 
+    FROM TI_NOTA_FISCAL_ENTRADA 
+    WHERE COD_SISTEMA_ORIGEM = 'VAL' AND COD_NOTA_FISCAL = '${nfd.nNF}'
+  );
+
+  -- 2. Deleta os itens
+  DELETE FROM TI_ITEM_NOTA_FISCAL_ENTRADA 
+  WHERE COD_SISTEMA_ORIGEM = 'VAL' AND COD_NOTA_FISCAL = '${nfd.nNF}';
+
+  -- 3. Deleta o cabeçalho
+  DELETE FROM TI_NOTA_FISCAL_ENTRADA 
+  WHERE COD_SISTEMA_ORIGEM = 'VAL' AND COD_NOTA_FISCAL = '${nfd.nNF}';
+
+  COMMIT;
+  DBMS_OUTPUT.PUT_LINE('LIMPEZA CONCLUÍDA: Registros da nota ${nfd.nNF} excluídos da TI com sucesso.');
+EXCEPTION
+  WHEN OTHERS THEN
+    ROLLBACK;
+    DBMS_OUTPUT.PUT_LINE('ERRO NA LIMPEZA: ' || SQLERRM);
+    RAISE;
+END;
+/
+`;
+}
+
