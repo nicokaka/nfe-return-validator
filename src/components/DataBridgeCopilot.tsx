@@ -34,6 +34,10 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     initialPiramideResolution?.isAutomatic ? initialPiramideResolution.almoxarifado : 'ALMOX'
   );
 
+  // Modo Operacional: 'auto' (Cockpit 1-clique) vs 'manual' (Cópia campo a campo)
+  const [launchMode, setLaunchMode] = useState<'auto' | 'manual'>('auto');
+  const [showPlSqlScripts, setShowPlSqlScripts] = useState<boolean>(false);
+
   // Direct Oracle Integration states
   const [isLaunching, setIsLaunching] = useState<boolean>(false);
   const [isCheckingLiveStatus, setIsCheckingLiveStatus] = useState<boolean>(false);
@@ -52,6 +56,9 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     ...result.itemComparisons.flatMap(c => c.issues.filter(i => i.severity === 'CRITICAL')),
   ];
   const isFiscalCompliant = criticalIssues.length === 0;
+
+  const cnpjClean = (nfd.emit?.cnpj || '').replace(/\D/g, '');
+  const isQuesalon = cnpjClean.startsWith('04443354') || (nfd.dest?.cnpj || '').replace(/\D/g, '').startsWith('04443354');
 
   const currentMotivo = PIRAMIDE_MOTIVOS.find(m => m.code === selectedMotivoCode);
 
@@ -284,8 +291,318 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
       <div className={`copilot-accordion-collapse ${isExpanded ? 'is-open' : ''}`}>
         <div className="copilot-accordion-inner">
           <div className="copilot-collapsible-content">
-          {/* Seção 1: Dados Mestres do Cabeçalho Pirâmide */}
-          <div className="copilot-block">
+            {/* Seletor de Modo Operacional (Abas Segmentadas: Automático vs Manual) */}
+            <div className="mode-segmented-tabs">
+              <button
+                type="button"
+                className={`mode-tab-btn ${launchMode === 'auto' ? 'active auto-mode' : ''}`}
+                onClick={() => setLaunchMode('auto')}
+              >
+                <Send className="icon-xs" />
+                <span>🚀 Lançamento Automático (Direto no Oracle)</span>
+                <span className="mode-badge-rec">RECOMENDADO</span>
+              </button>
+
+              <button
+                type="button"
+                className={`mode-tab-btn ${launchMode === 'manual' ? 'active manual-mode' : ''}`}
+                onClick={() => setLaunchMode('manual')}
+              >
+                <Copy className="icon-xs" />
+                <span>📋 Lançamento Manual (Cópia Campo a Campo)</span>
+                <span className="mode-badge-contingency">CONTINGÊNCIA</span>
+              </button>
+            </div>
+
+            {launchMode === 'auto' ? (
+              /* COCKPIT EXECUTIVO DO MODO AUTOMÁTICO */
+              <div className="copilot-auto-cockpit">
+                {/* 1. Card de Configuração e Direcionamento Logístico & Fiscal */}
+                <div className="auto-cockpit-config-card">
+                  <div className="cockpit-config-grid">
+                    <div className="cockpit-config-item">
+                      <span className="cockpit-config-label">Empresa / Filial Hebron</span>
+                      <div className="cockpit-config-value font-mono">
+                        <Building2 className="icon-xs text-info" />
+                        <span>{isQuesalon ? '001 - QUESALON MATRIZ (PB)' : '003 - INFAN QUÍMICA (PB)'}</span>
+                      </div>
+                    </div>
+
+                    <div className="cockpit-config-item">
+                      <span className="cockpit-config-label">Operação / NDO Pirâmide</span>
+                      <div className="cockpit-config-value font-mono">
+                        <Tag className="icon-xs text-purple" />
+                        <span>{ndoSuggestion?.cfop || '2.202'} - {ndoSuggestion?.ndoCode || 'COM032'}</span>
+                      </div>
+                    </div>
+
+                    <div className="cockpit-config-item">
+                      <span className="cockpit-config-label">Almoxarifado de Destino</span>
+                      <div className="cockpit-config-select-wrapper">
+                        <select
+                          value={selectedMotivoCode}
+                          onChange={e => handleMotivoChange(e.target.value)}
+                          className="field-input text-xs font-weight-600 font-mono w-full"
+                        >
+                          {PIRAMIDE_MOTIVOS.map(m => (
+                            <option key={m.code} value={m.code}>
+                              {m.code} - {m.description} ({m.almoxarifado})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Banner de Pre-Flight Checks: Conformidade vs Bloqueio Fiscal */}
+                {isFiscalCompliant ? (
+                  <div className="copilot-preflight-ok-banner mt-3 p-3 rounded border flex items-center justify-between gap-3" style={{ borderColor: 'rgba(16, 185, 129, 0.35)', background: 'rgba(16, 185, 129, 0.08)' }}>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="icon-sm success flex-shrink-0" />
+                      <div>
+                        <strong className="text-xs text-success block">Conformidade Fiscal Auditada: Zero Divergências</strong>
+                        <span className="text-xs text-muted">Preço unitário, impostos e quantidades validados com a nota original. Liberado para integração direta.</span>
+                      </div>
+                    </div>
+                    <span className="badge badge-success font-mono">100% AUDITADO</span>
+                  </div>
+                ) : (
+                  <div className="copilot-preflight-blocked-card mt-3 p-3 rounded border" style={{ borderColor: 'rgba(239, 68, 68, 0.35)', background: 'rgba(239, 68, 68, 0.08)' }}>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-danger font-mono flex items-center gap-1">
+                          <Lock className="icon-xs" /> BLOQUEIO DE GOVERNANÇA FISCAL
+                        </span>
+                        <span className="text-xs text-danger font-weight-600">
+                          {criticalIssues.length} inconsistência(s) crítica(s) impedem o lançamento padrão
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs text-warning hover:underline font-weight-600 flex items-center gap-1"
+                        onClick={() => setShowOverrideModal(true)}
+                      >
+                        <ShieldAlert className="icon-xs" /> Solicitar Liberação com Ressalva &rarr;
+                      </button>
+                    </div>
+                    <div className="mt-2 flex flex-col gap-1 text-xs text-muted">
+                      {criticalIssues.slice(0, 3).map((iss, i) => (
+                        <div key={i} className="flex items-start gap-1.5 font-mono text-xs text-danger">
+                          <span className="font-weight-700">•</span>
+                          <span><strong>{iss.title}:</strong> {iss.description}</span>
+                        </div>
+                      ))}
+                      {criticalIssues.length > 3 && (
+                        <span className="text-muted text-xs italic">+ {criticalIssues.length - 3} outra(s) divergência(s)...</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Hero Action Bar */}
+                <div className="auto-cockpit-hero-bar mt-3 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      className="btn btn-secondary text-xs"
+                      onClick={handleTestConnection}
+                      disabled={isTestingConnection}
+                      title="Testa a conectividade com o banco Oracle no host configurado"
+                    >
+                      {isTestingConnection ? <Loader2 className="icon-xs animate-spin" /> : <Server className="icon-xs" />}
+                      {isTestingConnection ? 'Testando Conexão...' : 'Testar Conexão Oracle'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary text-xs"
+                      onClick={handleCheckLiveStatus}
+                      disabled={isCheckingLiveStatus}
+                      title="Consulta em tempo real o status de processamento da nota no ERP Pirâmide"
+                    >
+                      {isCheckingLiveStatus ? <Loader2 className="icon-xs animate-spin" /> : <RefreshCw className="icon-xs" />}
+                      {isCheckingLiveStatus ? 'Consultando...' : 'Consultar Status ERP'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isFiscalCompliant ? (
+                      <button
+                        type="button"
+                        className="btn btn-accent btn-launch-piramide"
+                        onClick={() => handleDirectLaunch()}
+                        disabled={isLaunching}
+                        title="Conecta diretamente no Oracle e grava o Cabeçalho, Itens e Lotes com status NP"
+                      >
+                        {isLaunching ? <Loader2 className="icon-xs animate-spin" /> : <Send className="icon-xs" />}
+                        {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide'}
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-secondary text-xs cursor-not-allowed opacity-75"
+                          disabled={true}
+                          title="Lançamento bloqueado devido a divergências fiscais com a NFO"
+                        >
+                          <Lock className="icon-xs text-danger" />
+                          Lançamento Bloqueado
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn text-xs font-weight-700 flex items-center gap-1.5 shadow-sm"
+                          onClick={() => setShowOverrideModal(true)}
+                          disabled={isLaunching}
+                          title="Abre o protocolo de governança para liberação fiscal com ressalva contábil"
+                          style={{
+                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                            color: '#ffffff',
+                            border: '1px solid #fbbf24',
+                            boxShadow: '0 2px 10px rgba(245, 158, 11, 0.35)',
+                          }}
+                        >
+                          <ShieldAlert className="icon-xs" />
+                          ⚠️ Liberar com Ressalva Fiscal
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. Feedback Interativo da Ação */}
+                {actionFeedback && (
+                  <div className={`copilot-action-alert alert-${actionFeedback.type} mt-3`}>
+                    <div className="flex items-center gap-2">
+                      {actionFeedback.type === 'success' && <Check className="icon-xs success" />}
+                      {actionFeedback.type === 'error' && <AlertTriangle className="icon-xs text-danger" />}
+                      {actionFeedback.type === 'info' && <RefreshCw className="icon-xs text-info" />}
+                      <span className="text-xs font-weight-600">{actionFeedback.message}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Card de Telemetria e Status ao Vivo da TI */}
+                {(integrationResult || liveStatus?.found) && (
+                  <div className="ti-live-tracker-card mt-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted font-weight-600">STATUS NO ERP:</span>
+                        {(liveStatus?.status === 'NP' || (!liveStatus && integrationResult?.status === 'NP')) && (
+                          <span className="badge badge-warning font-mono flex items-center gap-1 animate-pulse">
+                            🟡 NP: NA FILA DE PROCESSAMENTO (DBMS_JOB ~60s)
+                          </span>
+                        )}
+                        {liveStatus?.status === 'P' && (
+                          <span className="badge badge-success font-mono flex items-center gap-1">
+                            🟢 P: PROCESSADO COM SUCESSO NO PIRÂMIDE!
+                          </span>
+                        )}
+                        {liveStatus?.status === 'ER' && (
+                          <span className="badge badge-danger font-mono flex items-center gap-1">
+                            🔴 ER: REJEITADO PELO ERP PIRÂMIDE
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn-text-action text-xs text-danger flex items-center gap-1"
+                          onClick={handleDirectRollback}
+                          disabled={isCleaningUp}
+                          title="Remove todos os registros desta nota de teste das tabelas TI"
+                        >
+                          {isCleaningUp ? <Loader2 className="icon-xs animate-spin" /> : <Trash2 className="icon-xs" />}
+                          {isCleaningUp ? 'Limpando...' : 'Excluir Nota de Teste (Rollback)'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ti-live-details-grid mt-2">
+                      <div>
+                        <span className="text-muted text-xs block">Nº Sequencial Entrada:</span>
+                        <strong className="font-mono text-xs">{liveStatus?.seqEntrada || integrationResult?.seqEntrada || 'N/A'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-muted text-xs block">Nota Fiscal / Série:</span>
+                        <strong className="font-mono text-xs">NF {nfd.nNF} (Série {nfd.serie})</strong>
+                      </div>
+                      <div>
+                        <span className="text-muted text-xs block">Filial / Sistema:</span>
+                        <strong className="font-mono text-xs">{liveStatus?.filial || '001'} / 'VAL'</strong>
+                      </div>
+                      <div>
+                        <span className="text-muted text-xs block">Almoxarifado / NDO:</span>
+                        <strong className="font-mono text-xs">{selectedWarehouse} / {ndoSuggestion?.ndoCode || 'COM032'}</strong>
+                      </div>
+                    </div>
+
+                    {liveStatus?.errorMessage && (
+                      <div className="mt-2 p-2 rounded bg-danger-subtle text-danger text-xs font-mono">
+                        <strong>CRÍTICA DO ERP:</strong> {liveStatus.errorMessage}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 6. Rodapé Minimalista com Scripts PL/SQL Retráteis */}
+                <div className="auto-cockpit-footer mt-3 pt-3 border-t">
+                  <div className="flex items-center justify-between flex-wrap gap-2 text-xs text-muted">
+                    <div className="ti-status-tags flex items-center gap-2 flex-wrap">
+                      <span className="badge badge-info font-mono">SISTEMA: 'VAL'</span>
+                      <span className="badge badge-purple font-mono">ALMOXARIFADO: {selectedWarehouse}</span>
+                      {oracleHealth && (
+                        <span className={`badge ${oracleHealth.success ? 'badge-success' : 'badge-danger'} font-mono text-xs`}>
+                          {oracleHealth.success ? `ORACLE: ${oracleHealth.serverVersion || 'ONLINE'}` : 'ORACLE OFFLINE'}
+                        </span>
+                      )}
+                      <span>Servidor: <strong>.61 (Homologação TESTE)</strong> • Standby: <strong>.60 (Produção)</strong></span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="text-xs text-accent hover:underline flex items-center gap-1 font-weight-600"
+                      onClick={() => setShowPlSqlScripts(!showPlSqlScripts)}
+                    >
+                      <Database className="icon-xs" />
+                      {showPlSqlScripts ? 'Ocultar Scripts PL/SQL ▴' : 'Exibir Scripts PL/SQL para DBA ▾'}
+                    </button>
+                  </div>
+
+                  {showPlSqlScripts && (
+                    <div className="mt-3 p-3 rounded bg-surface border flex items-center justify-between gap-3 flex-wrap animate-fadeIn">
+                      <div className="text-xs text-muted">
+                        💡 Scripts transacionais gerados para execução manual no <strong>PL/SQL Developer</strong> caso a rede interna esteja inacessível:
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className={`btn btn-secondary text-xs ${copiedKey === 'tiScript' ? 'btn-success' : ''}`}
+                          onClick={() => copyToClipboard(generatePiramideOracleTiInsertScript(result, { selectedWarehouse }), 'tiScript')}
+                        >
+                          {copiedKey === 'tiScript' ? <Check className="icon-xs" /> : <Database className="icon-xs" />}
+                          {copiedKey === 'tiScript' ? 'Script Copiado!' : 'Copiar Script PL/SQL'}
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn btn-secondary text-xs ${copiedKey === 'tiRollback' ? 'btn-danger' : ''}`}
+                          onClick={() => copyToClipboard(generatePiramideOracleTiDeleteScript(result), 'tiRollback')}
+                        >
+                          <Trash2 className="icon-xs" />
+                          {copiedKey === 'tiRollback' ? 'Limpeza Copiada!' : 'Copiar Limpeza'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* MODO MANUAL (Seções 1, 2, 3 e 4) */
+              <div className="copilot-manual-mode">
+                {/* Seção 1: Dados Mestres do Cabeçalho Pirâmide */}
+                <div className="copilot-block">
         <h4 className="copilot-block-title">
           <Building2 className="icon-xs" /> 1. Dados de Cabeçalho da Nota de Devolução (NFD)
         </h4>
@@ -831,241 +1148,8 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
           </table>
         </div>
       </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção 5: Integração Direta ERP Pirâmide (Oracle TI) */}
-      <div className="copilot-block copilot-ti-integration-block">
-        <div className="batch-header">
-          <div>
-            <h4 className="copilot-block-title">
-              <Database className="icon-xs" /> 5. Integração Direta com ERP Pirâmide (Oracle TI)
-            </h4>
-            <p className="batch-sub">
-              Lançamento automatizado nas Tabelas de Integração da Procenge (Servidor <strong>.61</strong> / Standby para <strong>.60</strong>).
-            </p>
-          </div>
-
-          <div className="batch-actions-group flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              className="btn btn-secondary text-xs"
-              onClick={handleTestConnection}
-              disabled={isTestingConnection}
-              title="Testa a conectividade com o banco Oracle no host configurado"
-            >
-              {isTestingConnection ? <Loader2 className="icon-xs animate-spin" /> : <Server className="icon-xs" />}
-              {isTestingConnection ? 'Testando...' : 'Testar Conexão Oracle'}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-secondary text-xs"
-              onClick={handleCheckLiveStatus}
-              disabled={isCheckingLiveStatus}
-              title="Consulta em tempo real o status de processamento da nota no ERP Pirâmide"
-            >
-              {isCheckingLiveStatus ? <Loader2 className="icon-xs animate-spin" /> : <RefreshCw className="icon-xs" />}
-              {isCheckingLiveStatus ? 'Consultando...' : 'Consultar Status ERP'}
-            </button>
-
-            {isFiscalCompliant ? (
-              <button
-                type="button"
-                className="btn btn-accent btn-launch-piramide"
-                onClick={() => handleDirectLaunch()}
-                disabled={isLaunching}
-                title="Conecta diretamente no Oracle e grava o Cabeçalho, Itens e Lotes com status NP"
-              >
-                {isLaunching ? <Loader2 className="icon-xs animate-spin" /> : <Send className="icon-xs" />}
-                {isLaunching ? 'Gravando nas TIs...' : '🚀 Lançar no Pirâmide'}
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-secondary text-xs cursor-not-allowed opacity-75"
-                  disabled={true}
-                  title="Lançamento bloqueado devido a divergências fiscais com a NFO"
-                >
-                  <Lock className="icon-xs text-danger" />
-                  Lançamento Bloqueado
-                </button>
-
-                <button
-                  type="button"
-                  className="btn text-xs font-weight-700 flex items-center gap-1.5 shadow-sm"
-                  onClick={() => setShowOverrideModal(true)}
-                  disabled={isLaunching}
-                  title="Abre o protocolo de governança para liberação fiscal com ressalva contábil"
-                  style={{
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    color: '#ffffff',
-                    border: '1px solid #fbbf24',
-                    boxShadow: '0 2px 10px rgba(245, 158, 11, 0.35)',
-                  }}
-                >
-                  <ShieldAlert className="icon-xs" />
-                  ⚠️ Liberar com Ressalva Fiscal
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Banner de Pre-Flight Checks: Conformidade vs Bloqueio Fiscal */}
-        {isFiscalCompliant ? (
-          <div className="copilot-preflight-ok-banner mt-3 p-2 px-3 rounded border flex items-center gap-2" style={{ borderColor: 'rgba(16, 185, 129, 0.35)', background: 'rgba(16, 185, 129, 0.08)' }}>
-            <ShieldCheck className="icon-xs success" />
-            <span className="text-xs font-weight-600 text-success">
-              Conformidade Fiscal Auditada: Zero divergências impeditivas. Liberado para lançamento direto no ERP Pirâmide.
-            </span>
-          </div>
-        ) : (
-          <div className="copilot-preflight-blocked-card mt-3 p-3 rounded border" style={{ borderColor: 'rgba(239, 68, 68, 0.35)', background: 'rgba(239, 68, 68, 0.08)' }}>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <span className="badge badge-danger font-mono flex items-center gap-1">
-                  <Lock className="icon-xs" /> BLOQUEIO DE GOVERNANÇA FISCAL
-                </span>
-                <span className="text-xs text-danger font-weight-600">
-                  {criticalIssues.length} inconsistência(s) crítica(s) impedem o lançamento padrão
-                </span>
-              </div>
-              <button
-                type="button"
-                className="text-xs text-warning hover:underline font-weight-600 flex items-center gap-1"
-                onClick={() => setShowOverrideModal(true)}
-              >
-                <ShieldAlert className="icon-xs" /> Solicitar Liberação com Ressalva &rarr;
-              </button>
-            </div>
-            <div className="mt-2 flex flex-col gap-1 text-xs text-muted">
-              {criticalIssues.slice(0, 3).map((iss, i) => (
-                <div key={i} className="flex items-start gap-1.5 font-mono text-xs text-danger">
-                  <span className="font-weight-700">•</span>
-                  <span><strong>{iss.title}:</strong> {iss.description}</span>
-                </div>
-              ))}
-              {criticalIssues.length > 3 && (
-                <span className="text-muted text-xs italic">+ {criticalIssues.length - 3} outra(s) divergência(s)...</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Feedback Interativo da Ação */}
-        {actionFeedback && (
-          <div className={`copilot-action-alert alert-${actionFeedback.type} mt-3`}>
-            <div className="flex items-center gap-2">
-              {actionFeedback.type === 'success' && <Check className="icon-xs success" />}
-              {actionFeedback.type === 'error' && <AlertTriangle className="icon-xs text-danger" />}
-              {actionFeedback.type === 'info' && <RefreshCw className="icon-xs text-info" />}
-              <span className="text-xs font-weight-600">{actionFeedback.message}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Card de Telemetria e Status ao Vivo da TI */}
-        {(integrationResult || liveStatus?.found) && (
-          <div className="ti-live-tracker-card mt-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted font-weight-600">STATUS NO ERP:</span>
-                {(liveStatus?.status === 'NP' || (!liveStatus && integrationResult?.status === 'NP')) && (
-                  <span className="badge badge-warning font-mono flex items-center gap-1 animate-pulse">
-                    🟡 NP: NA FILA DE PROCESSAMENTO (DBMS_JOB ~60s)
-                  </span>
-                )}
-                {liveStatus?.status === 'P' && (
-                  <span className="badge badge-success font-mono flex items-center gap-1">
-                    🟢 P: PROCESSADO COM SUCESSO NO PIRÂMIDE!
-                  </span>
-                )}
-                {liveStatus?.status === 'ER' && (
-                  <span className="badge badge-danger font-mono flex items-center gap-1">
-                    🔴 ER: REJEITADO PELO ERP PIRÂMIDE
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="btn-text-action text-xs text-danger flex items-center gap-1"
-                  onClick={handleDirectRollback}
-                  disabled={isCleaningUp}
-                  title="Remove todos os registros desta nota de teste das tabelas TI"
-                >
-                  {isCleaningUp ? <Loader2 className="icon-xs animate-spin" /> : <Trash2 className="icon-xs" />}
-                  {isCleaningUp ? 'Limpando...' : 'Excluir Nota de Teste (Rollback)'}
-                </button>
-              </div>
-            </div>
-
-            <div className="ti-live-details-grid mt-2">
-              <div>
-                <span className="text-muted text-xs block">Nº Sequencial Entrada:</span>
-                <strong className="font-mono text-xs">{liveStatus?.seqEntrada || integrationResult?.seqEntrada || 'N/A'}</strong>
-              </div>
-              <div>
-                <span className="text-muted text-xs block">Nota Fiscal / Série:</span>
-                <strong className="font-mono text-xs">NF {nfd.nNF} (Série {nfd.serie})</strong>
-              </div>
-              <div>
-                <span className="text-muted text-xs block">Filial / Sistema:</span>
-                <strong className="font-mono text-xs">{liveStatus?.filial || '001'} / 'VAL'</strong>
-              </div>
-              <div>
-                <span className="text-muted text-xs block">Almoxarifado / NDO:</span>
-                <strong className="font-mono text-xs">{selectedWarehouse} / {ndoSuggestion?.ndoCode || 'COM032'}</strong>
-              </div>
-            </div>
-
-            {liveStatus?.errorMessage && (
-              <div className="mt-2 p-2 rounded bg-danger-subtle text-danger text-xs font-mono">
-                <strong>CRÍTICA DO ERP:</strong> {liveStatus.errorMessage}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Rodapé Informativo e Fallback Manual */}
-        <div className="ti-status-banner mt-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="badge badge-info font-mono">SISTEMA: 'VAL'</span>
-            <span className="badge badge-purple font-mono">ALMOXARIFADO: {selectedWarehouse}</span>
-            {oracleHealth && (
-              <span className={`badge ${oracleHealth.success ? 'badge-success' : 'badge-danger'} font-mono text-xs`}>
-                {oracleHealth.success ? `ORACLE: ${oracleHealth.serverVersion || 'ONLINE'}` : 'ORACLE OFFLINE'}
-              </span>
-            )}
-            <span className="text-muted text-xs">
-              Servidor Atual: <strong>.61 (Homologação)</strong> • Standby: <strong>.60 (Produção)</strong>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className={`btn btn-secondary text-xs ${copiedKey === 'tiScript' ? 'btn-success' : ''}`}
-              onClick={() => copyToClipboard(generatePiramideOracleTiInsertScript(result, { selectedWarehouse }), 'tiScript')}
-              title="Copiar script PL/SQL como fallback para o PL/SQL Developer"
-            >
-              {copiedKey === 'tiScript' ? <Check className="icon-xs" /> : <Database className="icon-xs" />}
-              {copiedKey === 'tiScript' ? 'Script Copiado!' : 'Copiar Script PL/SQL'}
-            </button>
-
-            <button
-              type="button"
-              className={`btn btn-secondary text-xs ${copiedKey === 'tiRollback' ? 'btn-danger' : ''}`}
-              onClick={() => copyToClipboard(generatePiramideOracleTiDeleteScript(result), 'tiRollback')}
-              title="Copiar script de limpeza como fallback para o PL/SQL Developer"
-            >
-              <Trash2 className="icon-xs" />
-              {copiedKey === 'tiRollback' ? 'Limpeza Copiada!' : 'Copiar Limpeza'}
-            </button>
+    </div>
+  )}
           </div>
         </div>
       </div>

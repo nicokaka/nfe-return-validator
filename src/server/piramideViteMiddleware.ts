@@ -57,7 +57,7 @@ export function createPiramideApiMiddleware() {
       // 1. Health check: GET /api/piramide/health
       if (url === '/api/piramide/health' && req.method === 'GET') {
         const result = await testOracleConnection();
-        return sendJson(res, result.success ? 200 : 500, result);
+        return sendJson(res, 200, result);
       }
 
       // 2. Integração: POST /api/piramide/integrate
@@ -70,7 +70,7 @@ export function createPiramideApiMiddleware() {
           });
         }
         const integrationResult = await integrateReturnNoteToPiramide(body.result, body.options);
-        return sendJson(res, integrationResult.success ? 200 : 500, integrationResult);
+        return sendJson(res, 200, integrationResult);
       }
 
       // 3. Status: GET /api/piramide/status/:notaFiscal
