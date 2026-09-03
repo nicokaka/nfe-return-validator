@@ -566,6 +566,33 @@ Conforme solicitação direta para facilitar a referência operacional entre ope
 * Suporte completo em **Dark Mode** e **Light Mode** com bordas refinadas e alto contraste.
 * **`76/76 testes aprovados (100% VERDE)`** e compilação de produção Vite impecável.
 
+---
+
+## 🏛️ 18. TRÍADE FISCAL DE ICMS E APLICAÇÃO DA BASE CORRETA NO DETALHE DOS ITENS (HOMOLOGAÇÃO POLLIANA)
+
+### 18.1. Diagnóstico e Homologação das Solicitações da Gerência Fiscal
+Polliana validou positivamente:
+1. **Desconto Comercial Proporcional:** 100% aprovado (bateu com os R$ 191,13 de diferença calculados manualmente).
+2. **Numeração de Descontos Unitários por Item:** 100% aprovado.
+3. **Cálculo da Redução de Base no Topo (Cabeçalho da Nota):** 100% aprovado.
+
+E apontou duas correções essenciais de usabilidade e precisão fiscal:
+1. **Tríade de ICMS no Comparativo Tributário Inteligente (`ExecutiveSummary.tsx`):**
+   * O sistema exibia apenas a alíquota em % e a base em R$. Faltava a terceira métrica indispensável para todo auditor fiscal: **o Valor do ICMS Próprio em Reais (R$)**!
+   * A ordem das linhas foi reestruturada na sequência lógica dos auditores fiscais:
+     1. **Base de Cálculo do ICMS** (em R$)
+     2. **Alíquota do ICMS & CST** (em %)
+     3. **Valor do ICMS Próprio (R$)** (calculado pela Base Esperada × Alíquota)
+2. **Aplicação da Redução de Base no Detalhamento do Item (`ItemsTable.tsx`):**
+   * **Causa-raiz:** O card `Impostos Item` exibia `nfdItem.icms?.vBC`, puxando diretamente o valor bruto do XML do cliente (ex: R$ 1.769,78 com Base Cheia), em vez de exibir a **Base de Cálculo Correta Esperada com Redução (R$ 1.594,57)**.
+   * **Correção:** O card agora exibe em destaque a **Base de Cálculo Esperada** (R$ 1.594,57 `[Red. 9,90%]`), aponta em aviso de alerta a **Base Informada Cliente** (R$ 1.769,78 `⚠️ Base Cheia`), e compara o **ICMS Esperado** (R$ 191,35) com o **ICMS Destacado Cliente** (R$ 212,37).
+   * Na tabela principal, foi adicionada a badge de alerta visual no produto: `⚠️ Redução Omitida (Esperado R$ X)`.
+
+### 18.2. Qualidade e Testes
+* **Status Global da Aplicação:** **`76/76 testes aprovados (100% VERDE)`**.
+* **Vite Build:** Compilação de produção aprovada com sucesso.
+
+
 
 
 
