@@ -48,39 +48,48 @@ export function useReconciliation() {
 
   const addXmlFiles = useCallback(async (files: FileList | File[]) => {
     setError(null);
-    const newLoaded: LoadedFile[] = [];
+    const fileList = Array.from(files);
+    const parsedResults = await Promise.all(
+      fileList.map(async file => {
+        const ext = file.name.toLowerCase();
+        const isSupported = SUPPORTED_EXTENSIONS.some(e => ext.endsWith(e));
 
-    for (const file of Array.from(files)) {
-      const ext = file.name.toLowerCase();
-      const isSupported = SUPPORTED_EXTENSIONS.some(e => ext.endsWith(e));
-
-      if (!isSupported) {
-        setError(
-          `Formato não suportado: "${file.name}". ` +
-          `Formatos aceitos: XML, PDF, TXT, JSON.`
-        );
-        continue;
-      }
-
-      try {
-        let doc: NFeDocument;
-        if (ext.endsWith('.pdf')) {
-          const buffer = await file.arrayBuffer();
-          doc = await parseDanfePdf(buffer, file.name);
-        } else {
-          const rawText = await file.text();
-          const xmlContent = extractXmlFromContent(rawText, file.name);
-          doc = parseNFeXml(xmlContent, file.name);
+        if (!isSupported) {
+          return {
+            error: `Formato não suportado: "${file.name}". Formatos aceitos: XML, PDF, TXT, JSON.`,
+          };
         }
 
-        newLoaded.push({
-          id: `${file.name}-${Date.now()}-${Math.random()}`,
-          name: file.name,
-          doc,
-        });
-      } catch (err: any) {
-        setError(`Erro no arquivo "${file.name}": ${err.message || 'Arquivo inválido.'}`);
-      }
+        try {
+          let doc: NFeDocument;
+          if (ext.endsWith('.pdf')) {
+            const buffer = await file.arrayBuffer();
+            doc = await parseDanfePdf(buffer, file.name);
+          } else {
+            const rawText = await file.text();
+            const xmlContent = extractXmlFromContent(rawText, file.name);
+            doc = parseNFeXml(xmlContent, file.name);
+          }
+
+          return {
+            item: {
+              id: `${file.name}-${Date.now()}-${Math.random()}`,
+              name: file.name,
+              doc,
+            },
+          };
+        } catch (err: any) {
+          return {
+            error: `Erro no arquivo "${file.name}": ${err.message || 'Arquivo inválido.'}`,
+          };
+        }
+      })
+    );
+
+    const newLoaded: LoadedFile[] = [];
+    for (const res of parsedResults) {
+      if (res.item) newLoaded.push(res.item);
+      if (res.error) setError(res.error);
     }
 
     if (newLoaded.length > 0) {

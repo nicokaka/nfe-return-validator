@@ -158,8 +158,8 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
 
           <h3 className="dropzone-main-title">Arraste suas Notas Fiscais em Lote aqui</h3>
           <p className="dropzone-sub-title">
-            Suporta até <strong>250 notas fiscais misturadas</strong> (Venda NFO e Devolução NFD).
-            O robô classifica e pareia automaticamente por referência fiscal.
+            Suporta até <strong>250 notas fiscais (XML da SEFAZ ou DANFE em PDF)</strong> misturadas.
+            O robô classifica, extrai lotes/impostos e pareia automaticamente por referência fiscal.
           </p>
 
           <div className="dropzone-actions-group">
