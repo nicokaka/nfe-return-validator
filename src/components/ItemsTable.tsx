@@ -172,6 +172,17 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                           )}
                         </div>
                       )}
+                      {/* Badge de Redução de Base Omitida */}
+                      {c.icmsAudit?.baseReductionApplied && Math.abs((nfdItem.icms?.vBC || 0) - (c.icmsAudit?.vBcExpected || 0)) > 0.15 && (
+                        <div className="mt-1">
+                          <span
+                            className="badge-tag badge-tag-warn"
+                            title={`Cliente destacou Base Cheia R$ ${(nfdItem.icms?.vBC || 0).toFixed(2)}. Base correta com redução da INFAN: ${formatCurrency(c.icmsAudit.vBcExpected)}`}
+                          >
+                            ⚠️ Redução Omitida (Esperado {formatCurrency(c.icmsAudit.vBcExpected)})
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="font-mono text-sm">{nfdItem.cEAN || 'Sem GTIN'}</td>
@@ -427,22 +438,47 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                 </strong>
                               </div>
                               <div className="detail-field">
-                                <span>ICMS Alíquota / CST:</span>
-                                <strong>{(nfdItem.icms?.pICMS || 12).toFixed(2)}% (CST {nfdItem.icms?.cst || '00'})</strong>
-                              </div>
-                              <div className="detail-field">
-                                <span>Base de Cálculo:</span>
+                                <span>ICMS Alíquota:</span>
                                 <strong>
-                                  {formatCurrency(nfdItem.icms?.vBC || (nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0)))}
-                                  {c.icmsAudit?.baseReductionApplied && (
-                                    <span className="badge-reduction ml-1">Red. {c.icmsAudit.reductionPercentage.toFixed(2)}%</span>
-                                  )}
+                                  {(nfdItem.icms?.pICMS || c.icmsAudit?.expectedRate || 12).toFixed(2)}%
+                                  <span className="text-xs opacity-75 ml-1 font-mono">
+                                    (CST {c.icmsAudit?.baseReductionApplied ? '20' : (nfdItem.icms?.cst || '00')})
+                                  </span>
                                 </strong>
                               </div>
                               <div className="detail-field">
-                                <span>ICMS Destacado:</span>
-                                <strong className="text-primary font-mono">{formatCurrency(nfdItem.icms?.vICMS || 0)}</strong>
+                                <span>Base de Cálculo Esperada:</span>
+                                <strong className="text-primary font-mono font-bold">
+                                  {formatCurrency(c.icmsAudit?.vBcExpected !== undefined ? c.icmsAudit.vBcExpected : (nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0)))}
+                                  {c.icmsAudit?.baseReductionApplied ? (
+                                    <span className="badge-reduction ml-1">Red. {c.icmsAudit.reductionPercentage.toFixed(2)}%</span>
+                                  ) : (
+                                    <span className="badge-tag ml-1">Base Cheia</span>
+                                  )}
+                                </strong>
                               </div>
+                              {c.icmsAudit?.baseReductionApplied && Math.abs((nfdItem.icms?.vBC || 0) - (c.icmsAudit?.vBcExpected || 0)) > 0.15 && (
+                                <div className="detail-field text-warning">
+                                  <span>Base Informada Cliente:</span>
+                                  <strong className="text-warning font-mono">
+                                    {formatCurrency(nfdItem.icms?.vBC || 0)} <span className="badge-pill-neutral ml-1">⚠️ Base Cheia (Omitiu Redução)</span>
+                                  </strong>
+                                </div>
+                              )}
+                              <div className="detail-field">
+                                <span>ICMS Esperado (Sistema):</span>
+                                <strong className="text-primary font-mono font-bold">
+                                  {formatCurrency(c.icmsAudit?.vIcmsExpected !== undefined ? c.icmsAudit.vIcmsExpected : (c.icmsAudit?.vBcExpected || 0) * (nfdItem.icms?.pICMS || 12) / 100)}
+                                </strong>
+                              </div>
+                              {Math.abs((nfdItem.icms?.vICMS || 0) - (c.icmsAudit?.vIcmsExpected || 0)) > 0.10 && (
+                                <div className="detail-field text-warning">
+                                  <span>ICMS Destacado Cliente:</span>
+                                  <strong className="text-warning font-mono">
+                                    {formatCurrency(nfdItem.icms?.vICMS || 0)}
+                                  </strong>
+                                </div>
+                              )}
                             </div>
 
                             {/* Card 2: Precificação & Desconto */}

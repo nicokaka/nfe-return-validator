@@ -91,6 +91,10 @@ export function auditIcmsAndBaseReduction(
     }
   }
 
+  const rateToApply = nfoItem && nfoRate > 0 ? nfoRate / 100 : expectedRate;
+  const vIcmsExpected = Math.round(vBcExpected * rateToApply * 100) / 100;
+  const vIcmsActual = nfdItem.icms?.vICMS || 0;
+
   return {
     icmsAudit: {
       company: comp.tradeName,
@@ -101,6 +105,8 @@ export function auditIcmsAndBaseReduction(
       baseReductionApplied,
       vBcExpected,
       vBcActual: nfdVBc,
+      vIcmsExpected,
+      vIcmsActual,
       isRateMatching,
       isBaseMatching,
       issues,

@@ -386,37 +386,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               );
             })()}
 
-            {/* Linha: ICMS Próprio */}
-            {(() => {
-              const pIcmsNfo = nfo.items[0]?.icms?.pICMS || 12;
-              const pIcmsNfd = nfd.items[0]?.icms?.pICMS || 12;
-              const isRateMatch = Math.abs(pIcmsNfo - pIcmsNfd) < 0.01;
-
-              return (
-                <div className="smart-tax-row smart-tax-row-triad">
-                  <div className="col-tax-name font-weight-600">
-                    ICMS Próprio (Alíquota & CST)
-                  </div>
-                  <div className="col-tax-nfo font-mono">
-                    {pIcmsNfo.toFixed(2)}% <span className="badge-tag">CST {nfo.items[0]?.icms?.cst || '00'}</span>
-                  </div>
-                  <div className="col-tax-nfd font-mono">
-                    {pIcmsNfd.toFixed(2)}% <span className="badge-tag">CST {nfd.items[0]?.icms?.cst || '00'}</span>
-                  </div>
-                  <div className="col-tax-expected font-mono text-primary">
-                    {pIcmsNfo.toFixed(2)}% <span className="badge-tag">Espelho</span>
-                  </div>
-                  <div className="col-tax-status">
-                    <span className={`match-chip ${isRateMatch ? 'match-chip-ok' : 'match-chip-error'}`}>
-                      {isRateMatch ? <CheckCircle2 className="icon-xs" /> : <XCircle className="icon-xs" />}
-                      {isRateMatch ? `100% Batendo (${pIcmsNfd.toFixed(1)}%)` : 'Alíquota Divergente'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Linha: Base de Cálculo de ICMS */}
+            {/* 1. Linha: Base de Cálculo de ICMS */}
             {(() => {
               const totalExpectedVBc = result.itemComparisons.reduce((acc, c) => {
                 if (c.icmsAudit?.vBcExpected !== undefined) {
@@ -452,6 +422,78 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
                     <span className={`match-chip ${isBaseMatch ? 'match-chip-ok' : 'match-chip-warn'}`}>
                       {isBaseMatch ? <CheckCircle2 className="icon-xs" /> : <AlertTriangle className="icon-xs" />}
                       {isBaseMatch ? 'Base Conforme' : 'Base Divergente'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 2. Linha: Alíquota de ICMS & CST */}
+            {(() => {
+              const pIcmsNfo = nfo.items[0]?.icms?.pICMS || 12;
+              const pIcmsNfd = nfd.items[0]?.icms?.pICMS || 12;
+              const isRateMatch = Math.abs(pIcmsNfo - pIcmsNfd) < 0.01;
+
+              return (
+                <div className="smart-tax-row smart-tax-row-triad">
+                  <div className="col-tax-name font-weight-600">
+                    Alíquota do ICMS & CST
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    {pIcmsNfo.toFixed(2)}% <span className="badge-tag">CST {nfo.items[0]?.icms?.cst || '00'}</span>
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    {pIcmsNfd.toFixed(2)}% <span className="badge-tag">CST {nfd.items[0]?.icms?.cst || '00'}</span>
+                  </div>
+                  <div className="col-tax-expected font-mono text-primary">
+                    {pIcmsNfo.toFixed(2)}% <span className="badge-tag">Espelho</span>
+                  </div>
+                  <div className="col-tax-status">
+                    <span className={`match-chip ${isRateMatch ? 'match-chip-ok' : 'match-chip-error'}`}>
+                      {isRateMatch ? <CheckCircle2 className="icon-xs" /> : <XCircle className="icon-xs" />}
+                      {isRateMatch ? `100% Batendo (${pIcmsNfd.toFixed(1)}%)` : 'Alíquota Divergente'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 3. Linha: Valor do ICMS Próprio (R$) */}
+            {(() => {
+              const totalExpectedVIcms = result.itemComparisons.reduce((acc, c) => {
+                if (c.icmsAudit?.vIcmsExpected !== undefined) {
+                  return acc + c.icmsAudit.vIcmsExpected;
+                }
+                const vBc = c.icmsAudit?.vBcExpected ?? Math.max(0, (c.nfdItem.vProd || 0) - (c.nfdItem.vDesc || 0));
+                const rate = (c.nfoItem?.icms?.pICMS || c.nfdItem.icms?.pICMS || 12) / 100;
+                return acc + (vBc * rate);
+              }, 0);
+
+              const actualNfdVIcms = nfd.totals.vICMS || 0;
+              const hasBaseReduction = result.itemComparisons.some(c => c.icmsAudit?.baseReductionApplied);
+              const isIcmsMatch = Math.abs(actualNfdVIcms - totalExpectedVIcms) <= 0.25 || actualNfdVIcms === 0;
+
+              return (
+                <div className="smart-tax-row smart-tax-row-triad">
+                  <div className="col-tax-name font-weight-600">
+                    Valor do ICMS Próprio (R$)
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    {formatCurrency(nfo.totals.vICMS)} <span className="badge-tag">Total Venda</span>
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    {formatCurrency(actualNfdVIcms)}
+                  </div>
+                  <div className="col-tax-expected font-mono text-primary">
+                    {formatCurrency(totalExpectedVIcms)}{' '}
+                    <span className="badge-tag">
+                      {hasBaseReduction ? 'Com Redução' : 'Rateio Exato'}
+                    </span>
+                  </div>
+                  <div className="col-tax-status">
+                    <span className={`match-chip ${isIcmsMatch ? 'match-chip-ok' : 'match-chip-warn'}`}>
+                      {isIcmsMatch ? <CheckCircle2 className="icon-xs" /> : <AlertTriangle className="icon-xs" />}
+                      {isIcmsMatch ? 'Valor Conforme' : 'Valor Divergente'}
                     </span>
                   </div>
                 </div>

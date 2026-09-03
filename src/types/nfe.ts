@@ -231,6 +231,8 @@ export interface IcmsAudit {
   baseReductionApplied: boolean;
   vBcExpected: number;
   vBcActual: number;
+  vIcmsExpected?: number;
+  vIcmsActual?: number;
   isRateMatching: boolean;
   isBaseMatching: boolean;
   issues: ValidationIssue[];
