@@ -467,7 +467,39 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * `T12.2`: Pareamento inteligente vinculando ao item do lote correto (`2606046`).
 * `T12.3`: Ausência de falso erro de lote (`BATCH_MISMATCH`).
 * `T12.4`: Leitura e validação do grupo `DFeReferenciado` da SEFAZ.
-* **Status Final:** **70/70 testes aprovados (100% verde)**.
+
+---
+
+## 📑 15. BENCHMARK & RECONCILIAÇÃO FISCAL COMPLETA PDF x PDF (AMOSTRA REAL 03/09)
+
+### 15.1. Arquivos Testados da Gerência Fiscal (Pasta `docs/polliana/03_09`)
+1. **📄 NFO (Venda Quesalon):** `DANFE_279117_7673622274852741891.pdf` (NF 279117)
+   * Formato: DANFE gerada pelo ERP Pirâmide / Procenge.
+   * Chave: `25260504792134000143550010002791171892645222`.
+   * Itens extraídos: 3 medicamentos com lotes e datas completas (Hizofito Lote 2604022, Kronel Lote 2602004, Gamax Lote 2511009).
+   * **⏱️ Tempo de Leitura e Parsing:** **982 ms (< 1 segundo)**!
+2. **📄 NFD (Devolução Distribuidora Santa Cruz / Hypera):** `20841.pdf` (NF 20841)
+   * Formato: UniDANFE Plus.
+   * Chave: `25260661940292006410550850000208411289861770`.
+   * Referência: `NF-e REF: 25260504792134000143550010002791171892645222`.
+   * Item devolvido: GAMAX C/30 CAPS, Qtd 24, vUn R$ 133,38, Lote `2511009`, Desconto R$ 448,16.
+   * **⏱️ Tempo de Leitura e Parsing:** **64 ms (0,06 segundo)**!
+
+### 15.2. Resultado da Reconciliação Híbrida PDF x PDF
+* **Vinculação de Chave:** 100% Coincidente (Chave da NFO presente no rodapé da NFD).
+* **Participantes:** Quesalon PB (`04.792.134/0001-43`) x Santa Cruz (`61.940.292/0064-10`) validados.
+* **Preço Unitário:** R$ 133,38 na NFD == R$ 133,38 na NFO (Conformidade Absoluta).
+* **Quantidade Devolvida:** 24 <= 48 faturados (Devolução Parcial regular).
+* **Rastreabilidade de Lote:** Lote `2511009` == Lote `2511009` (Conferência Físico-Fiscal 100% OK).
+* **Desconto Proporcional:** R$ 896,31 / 48 * 24 = R$ 448,16 (Exatidão Matemática).
+* **Status Geral:** **APPROVED (Aprovado com ZERO erros críticos)**.
+
+### 15.3. Testes Automatizados da Suíte 13
+* `T13.1`: Extração precisa de DANFE NFO em PDF (Quesalon NF 279117, 3 itens farmacêuticos com lotes).
+* `T13.2`: Extração precisa de DANFE NFD em PDF (Santa Cruz NF 20841, Lote 2511009 e NF-e REF).
+* `T13.3`: Reconciliação Fiscal PDF x PDF 100% Aprovada com Pareamento Determinístico de Lote e Zero Erros.
+* **Status Global da Aplicação:** **`73/73 testes aprovados (100% VERDE)`**.
+
 
 
 

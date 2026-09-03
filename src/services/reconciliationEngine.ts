@@ -278,16 +278,19 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
         baseScore += 400;
       }
 
-      // 5. Similaridade de Descrição + NCM
+      // 5. Similaridade de Descrição + NCM ou Contenção de Nome
       const sim = calculateStringSimilarity(nfdItem.xProd, candItem.xProd);
       const isSameNcm = nfdItem.ncm && candItem.ncm && nfdItem.ncm === candItem.ncm;
+      const upperNfd = nfdItem.xProd.toUpperCase();
+      const upperCand = candItem.xProd.toUpperCase();
+      const isSubstrMatch = upperNfd.length >= 5 && upperCand.length >= 5 && (upperNfd.includes(upperCand) || upperCand.includes(upperNfd));
 
-      if ((isSameNcm && sim >= 0.70) || sim >= 0.85) {
+      if ((isSameNcm && (sim >= 0.70 || isSubstrMatch)) || sim >= 0.85 || isSubstrMatch) {
         if (!candMatchType) {
           candMatchType = 'DESCRIPTION_SIMILARITY';
-          candConfidence = sim;
+          candConfidence = isSubstrMatch ? 0.90 : sim;
         }
-        baseScore += Math.round(sim * 300);
+        baseScore += Math.round((isSubstrMatch ? 0.90 : sim) * 300);
       }
 
       // Se este item da NFO é um candidato para o produto da devolução:

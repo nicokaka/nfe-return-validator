@@ -4,6 +4,7 @@ import { reconcileNFeDocuments, reconcileNFdAgainstMultipleNfos } from './reconc
 import { executeBatchPairing } from './batchPairingEngine';
 import { sampleNfdXml, sampleNfoXml } from '../data/sampleXmls';
 import { sampleDanfePdfText } from '../data/sampleDanfeText';
+import { samplePollianaDanfeNfoText, samplePollianaDanfeNfdText } from '../data/samplePollianaDanfeText';
 import { samplePollianaNfdXml, samplePollianaNfoXml } from '../data/samplePolliana0309';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { calculateExpectedIcms, identifyCompany } from '../data/companyData';
@@ -475,6 +476,49 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       prostokosDfeRef?.nItem === 2 &&
       prostokosDfeRef?.chaveAcesso === '26260808939548000103550010000826911840270693',
       'T12.4: Leitura precisa do grupo DFeReferenciado (nItem=2) conforme NT SEFAZ 2024.002 / RTC VC02-14'
+    );
+
+    // =========================================================================
+    // SUÍTE 13: RECONCILIAÇÃO FISCAL COMPLETA DE DANFE PDF x DANFE PDF
+    // (Amostra Real Quesalon NF 279117 x Santa Cruz / Hypera NF 20841)
+    // =========================================================================
+    // T13.1: Parsing da DANFE NFO de Saída da Quesalon (NF 279117)
+    const docPollianaDanfeNfo = parseDanfeText(samplePollianaDanfeNfoText, 'DANFE_279117.pdf');
+    assert(
+      docPollianaDanfeNfo.chNFe === '25260504792134000143550010002791171892645222' &&
+      docPollianaDanfeNfo.nNF === '279117' &&
+      docPollianaDanfeNfo.nfeType === 'NFO' &&
+      docPollianaDanfeNfo.items.length === 3 &&
+      docPollianaDanfeNfo.items.some(it => it.xProd.includes('GAMAX') && it.batches[0]?.nLote === '2511009'),
+      'T13.1: Extração precisa de DANFE NFO em PDF (Quesalon NF 279117, 3 itens farmacêuticos com lotes)'
+    );
+
+    // T13.2: Parsing da DANFE NFD de Devolução do Cliente (NF 20841)
+    const docPollianaDanfeNfd = parseDanfeText(samplePollianaDanfeNfdText, '20841.pdf');
+    assert(
+      docPollianaDanfeNfd.chNFe === '25260661940292006410550850000208411289861770' &&
+      docPollianaDanfeNfd.nNF === '20841' &&
+      docPollianaDanfeNfd.nfeType === 'NFD' &&
+      docPollianaDanfeNfd.refNFeList.includes('25260504792134000143550010002791171892645222') &&
+      docPollianaDanfeNfd.items.length === 1 &&
+      docPollianaDanfeNfd.items[0].xProd.includes('GAMAX') &&
+      docPollianaDanfeNfd.items[0].batches[0]?.nLote === '2511009',
+      'T13.2: Extração precisa de DANFE NFD em PDF (Santa Cruz NF 20841, Lote 2511009 e NF-e REF)'
+    );
+
+    // T13.3: Reconciliação Fiscal Híbrida PDF x PDF 100% Aprovada
+    const resPollianaPdf = reconcileNFeDocuments(docPollianaDanfeNfd, docPollianaDanfeNfo);
+    const criticalIssuesPdf = [
+      ...resPollianaPdf.headerValidation.issues.filter(i => i.severity === 'CRITICAL'),
+      ...resPollianaPdf.itemComparisons.flatMap(c => c.issues.filter(i => i.severity === 'CRITICAL')),
+    ];
+    assert(
+      resPollianaPdf.headerValidation.isRefKeyMatching &&
+      resPollianaPdf.headerValidation.isParticipantsMatching &&
+      criticalIssuesPdf.length === 0 &&
+      resPollianaPdf.summary.overallStatus === 'APPROVED' &&
+      resPollianaPdf.itemComparisons[0].nfoItem !== undefined,
+      'T13.3: Reconciliação Fiscal PDF x PDF 100% Aprovada com Pareamento Determinístico de Lote e Zero Erros'
     );
 
   } catch (err: any) {
