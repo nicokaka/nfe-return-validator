@@ -542,6 +542,31 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * `T14.3`: Alerta de Redução de Base de 9,90% Omitida pelo Cliente (CST 00 vs esperado CST 20) com Base Esperada Auditada.
 * **Status Global da Aplicação:** **`76/76 testes aprovados (100% VERDE)`**.
 
+---
+
+## 🎨 17. PADRONIZAÇÃO DE TÍTULOS CORPORATIVOS DA INTERFACE (GERAL, IMPOSTOS, ITENS, IMPOSTOS ITEM)
+
+### 17.1. Hierarquia Visual e Nomenclatura dos Módulos
+Conforme solicitação direta para facilitar a referência operacional entre operadores fiscais (Glécia/Polliana) e homologação gerencial:
+1. **📌 1. `Geral`:**
+   * Localizado no topo da comparação cadastral das notas fiscais (`ExecutiveSummary.tsx`), acima dos cards lado a lado da **NFO (Saída Hebron)** e **NFD (Devolução Cliente)**.
+   * Elemento: `.section-title-premium` com bullet visual de identificação e subtítulo *"Conferência Cadastral e Cabeçalho das Notas Fiscais (NFO x NFD)"*.
+2. **📌 2. `Impostos`:**
+   * Localizado na seção do Comparativo Tributário Inteligente (`ExecutiveSummary.tsx`), acima da tabela com a Tríade Comparativa (1. Faturado Origem x 2. Informado Cliente x 3. Correto Esperável do Sistema).
+   * Elemento: `.section-title-premium` com subtítulo *"Comparativo Tributário Inteligente (Visualização Tripla: Origem x Devolução x Esperado)"*.
+3. **📌 3. `Itens`:**
+   * Localizado na barra de cabeçalho da tabela de produtos (`ItemsTable.tsx`).
+   * Elemento: `.table-header-bar` com o título de destaque **ITENS** e subtítulo explicativo *"Matriz de Validação de Produtos (Item a Item) • Auditoria de preços, descontos, lotes e almoxarifados do Pirâmide."*.
+4. **📌 4. `Impostos Item`:**
+   * Localizado na abertura/expansão de cada item individual (`ItemsTable.tsx`), acima dos cards de diagnóstico e detalhes tributários.
+   * Elemento: `.item-details-section-header` com o título **IMPOSTOS ITEM** e subtítulo *"CFOP de Devolução, Alíquotas de ICMS, Base de Cálculo Reduzida/Cheia e Destaque Fiscal"*.
+   * O card de tributação também foi atualizado para **"Impostos Item • CFOP & ICMS"**.
+
+### 17.2. Qualidade e Compatibilidade
+* Suporte completo em **Dark Mode** e **Light Mode** com bordas refinadas e alto contraste.
+* **`76/76 testes aprovados (100% VERDE)`** e compilação de produção Vite impecável.
+
+
 
 
 
