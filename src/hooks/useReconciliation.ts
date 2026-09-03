@@ -18,6 +18,13 @@ export function useReconciliation() {
   const [error, setError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [isReadingFiles, setIsReadingFiles] = useState(false);
+  const [readingProgress, setReadingProgress] = useState<{
+    current: number;
+    total: number;
+    fileName: string;
+    stage: 'reading' | 'extracting_pdf' | 'parsing_xml';
+  } | null>(null);
 
   const SUPPORTED_EXTENSIONS = ['.xml', '.pdf', '.txt', '.json'];
 
@@ -49,42 +56,54 @@ export function useReconciliation() {
   const addXmlFiles = useCallback(async (files: FileList | File[]) => {
     setError(null);
     const fileList = Array.from(files);
-    const parsedResults = await Promise.all(
-      fileList.map(async file => {
-        const ext = file.name.toLowerCase();
-        const isSupported = SUPPORTED_EXTENSIONS.some(e => ext.endsWith(e));
+    if (fileList.length === 0) return;
 
-        if (!isSupported) {
-          return {
-            error: `Formato não suportado: "${file.name}". Formatos aceitos: XML, PDF, TXT, JSON.`,
-          };
+    setIsReadingFiles(true);
+    const parsedResults = [];
+
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      const ext = file.name.toLowerCase();
+      const isSupported = SUPPORTED_EXTENSIONS.some(e => ext.endsWith(e));
+
+      setReadingProgress({
+        current: i + 1,
+        total: fileList.length,
+        fileName: file.name,
+        stage: ext.endsWith('.pdf') ? 'extracting_pdf' : 'parsing_xml',
+      });
+
+      if (!isSupported) {
+        parsedResults.push({
+          error: `Formato não suportado: "${file.name}". Formatos aceitos: XML, PDF, TXT, JSON.`,
+        });
+        continue;
+      }
+
+      try {
+        let doc: NFeDocument;
+        if (ext.endsWith('.pdf')) {
+          const buffer = await file.arrayBuffer();
+          doc = await parseDanfePdf(buffer, file.name);
+        } else {
+          const rawText = await file.text();
+          const xmlContent = extractXmlFromContent(rawText, file.name);
+          doc = parseNFeXml(xmlContent, file.name);
         }
 
-        try {
-          let doc: NFeDocument;
-          if (ext.endsWith('.pdf')) {
-            const buffer = await file.arrayBuffer();
-            doc = await parseDanfePdf(buffer, file.name);
-          } else {
-            const rawText = await file.text();
-            const xmlContent = extractXmlFromContent(rawText, file.name);
-            doc = parseNFeXml(xmlContent, file.name);
-          }
-
-          return {
-            item: {
-              id: `${file.name}-${Date.now()}-${Math.random()}`,
-              name: file.name,
-              doc,
-            },
-          };
-        } catch (err: any) {
-          return {
-            error: `Erro no arquivo "${file.name}": ${err.message || 'Arquivo inválido.'}`,
-          };
-        }
-      })
-    );
+        parsedResults.push({
+          item: {
+            id: `${file.name}-${Date.now()}-${Math.random()}`,
+            name: file.name,
+            doc,
+          },
+        });
+      } catch (err: any) {
+        parsedResults.push({
+          error: `Erro no arquivo "${file.name}": ${err.message || 'Arquivo inválido.'}`,
+        });
+      }
+    }
 
     const newLoaded: LoadedFile[] = [];
     for (const res of parsedResults) {
@@ -95,6 +114,9 @@ export function useReconciliation() {
     if (newLoaded.length > 0) {
       setLoadedFiles(prev => [...prev, ...newLoaded]);
     }
+
+    setIsReadingFiles(false);
+    setReadingProgress(null);
   }, []);
 
   const removeFile = useCallback((id: string) => {
@@ -167,6 +189,8 @@ export function useReconciliation() {
     error,
     isAnalyzing,
     progress,
+    isReadingFiles,
+    readingProgress,
     addXmlFiles,
     removeFile,
     clearAll,

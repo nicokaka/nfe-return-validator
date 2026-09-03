@@ -613,6 +613,28 @@ E apontou duas correções essenciais de usabilidade e precisão fiscal:
 * **`76/76 testes aprovados (100% VERDE)`**.
 * Compilação Vite de produção executada com sucesso.
 
+---
+
+## 🏛️ 20. FEEDBACK VISUAL DE LEITURA, VERSÃO CORPORATIVA & REALCE DE CONTRASTE WCAG AA+
+
+### 20.1. Implementações Realizadas
+1. **Feedback Visual de Leitura de DANFEs / XMLs em Tempo Real (`DualFileUploadZone.tsx` & `useReconciliation.ts`):**
+   * Eliminado o vácuo de resposta onde o usuário soltava os arquivos e a tela ficava estática até a conclusão.
+   * Criado o componente animado `.pdf-reading-overlay` com card em destaque, ícone de refresh girando suavemente (`icon-spin`), barra de progresso com gradiente e identificação do arquivo processado no momento (`current` de `total`).
+   * Mensagens didáticas: *"Extraindo texto do DANFE em PDF via OCR vetorial... Identificando produtos, lotes ANVISA e tributos..."* ou *"Decodificando estrutura XML da NF-e..."*.
+2. **Identificação Oficial de Versão & Atualização (`App.tsx`):**
+   * **Header:** Badge com ponto verde pulsante `.version-status-dot` exibindo: **`v2.4.0 • Atualizado em 03/09/2026`**.
+   * **Footer:** Rodapé corporativo com identificação institucional Hebron Farmacêutica, ERP Pirâmide, Versão 2.4.0 Enterprise e data de homologação (`03/09/2026`).
+3. **Realce e Alto Contraste para Textos/Palavras Cinzas (Dark & Light Mode):**
+   * Subtítulos corporativos (`.section-heading-sub`, `.smart-tax-subtitle`, `.table-header-bar p`) ajustados de cinza apagado para cores nítidas e legíveis (`#334155` no Light Mode com peso 600, e `#cbd5e1` no Dark Mode com peso 500).
+   * Labels e metadados dos cards NFO x NFD (`.entity-label`, `.entity-name`, `.card-date`, `.metric-label`, `.info-key`, `.info-val`) reestilizados para contraste rigoroso sem esforço visual.
+   * Títulos das colunas do Comparativo Tributário (`.smart-tax-thead`) com peso 800 e fundo diferenciado no Light Mode.
+
+### 20.2. Qualidade e Testes
+* **`76/76 testes aprovados (100% VERDE)`**.
+* Compilação de produção Vite aprovada com sucesso (`3.29s`).
+
+
 
 
 

@@ -27,6 +27,8 @@ export function App() {
     batchResult,
     error,
     isAnalyzing,
+    isReadingFiles,
+    readingProgress,
     addXmlFiles,
     removeFile,
     clearAll,
@@ -70,7 +72,9 @@ export function App() {
           <div>
             <h1 className="brand-title">
               Validador Fiscal de Devoluções
-              <span className="brand-badge">Enterprise v2.0</span>
+              <span className="brand-badge brand-badge-version" title="Versão oficial homologada pela Gerência Fiscal Hebron">
+                <span className="version-status-dot" /> v2.4.0 • Atualizado em 03/09/2026
+              </span>
             </h1>
             <p className="brand-subtitle">Auditoria Tributária em Lote (NFO x NFD) • ERP Pirâmide & NT 2021.004</p>
           </div>
@@ -161,6 +165,8 @@ export function App() {
           onLoadSamples={handleLoadSamples}
           isAnalyzing={isAnalyzing}
           hasResult={!!batchResult}
+          isReadingFiles={isReadingFiles}
+          readingProgress={readingProgress}
         />
 
         {/* Batch Results Dashboard */}
@@ -188,9 +194,18 @@ export function App() {
 
       {/* Footer */}
       <footer className="app-footer">
-        <p>
-          Validador Fiscal de Devoluções v2.0 • Automação Operacional de Devoluções em Lote (Quesalon)
-        </p>
+        <div className="footer-content">
+          <div className="footer-brand">
+            <span className="footer-company">🏛️ HEBRON FARMACÊUTICA</span>
+            <span className="footer-separator">•</span>
+            <span>Validador Fiscal de Devoluções (NFO x NFD) & ERP Pirâmide</span>
+          </div>
+          <div className="footer-meta">
+            <span className="footer-badge-version">v2.4.0 Enterprise</span>
+            <span className="footer-separator">•</span>
+            <span className="footer-date">Última Atualização: <strong>03/09/2026</strong> (Homologado Polliana / Glécia)</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

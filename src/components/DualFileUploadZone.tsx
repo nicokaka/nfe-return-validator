@@ -1,5 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, Trash2, Sparkles, CheckCircle2, Bot, ArrowRight, ArrowLeft, Cpu, X, Layers, ChevronDown, ChevronUp, Zap, ShieldCheck, Building2 } from './Icons';
+import {
+  UploadCloud,
+  Trash2,
+  Sparkles,
+  CheckCircle2,
+  Bot,
+  ArrowRight,
+  ArrowLeft,
+  Cpu,
+  X,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  ShieldCheck,
+  Building2,
+  RefreshCw,
+} from './Icons';
 import { LoadedFile } from '../hooks/useReconciliation';
 
 interface DualFileUploadZoneProps {
@@ -11,6 +28,13 @@ interface DualFileUploadZoneProps {
   onLoadSamples: () => void;
   isAnalyzing: boolean;
   hasResult?: boolean;
+  isReadingFiles?: boolean;
+  readingProgress?: {
+    current: number;
+    total: number;
+    fileName: string;
+    stage: 'reading' | 'extracting_pdf' | 'parsing_xml';
+  } | null;
 }
 
 export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
@@ -22,6 +46,8 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
   onLoadSamples,
   isAnalyzing,
   hasResult = false,
+  isReadingFiles = false,
+  readingProgress = null,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -141,6 +167,38 @@ export const DualFileUploadZone: React.FC<DualFileUploadZoneProps> = ({
         accept=".xml,.pdf,.txt,.json"
         style={{ display: 'none' }}
       />
+
+      {/* Overlay Animado de Leitura de Arquivos (Feedback Visual Imediato) */}
+      {isReadingFiles && (
+        <div className="pdf-reading-overlay">
+          <div className="pdf-reading-card">
+            <div className="pdf-reading-spinner-box">
+              <RefreshCw className="icon-spin text-primary" />
+            </div>
+            <div className="pdf-reading-info">
+              <div className="pdf-reading-title">
+                Lendo e Processando Documento Fiscal ({readingProgress?.current || 1} de {readingProgress?.total || 1})
+              </div>
+              <div className="pdf-reading-filename font-mono">
+                📄 {readingProgress?.fileName || 'Carregando arquivo...'}
+              </div>
+              <div className="pdf-reading-desc">
+                {readingProgress?.stage === 'extracting_pdf'
+                  ? '⚡ Extraindo texto do DANFE em PDF via OCR vetorial... Identificando produtos, lotes ANVISA e tributos...'
+                  : '⚡ Decodificando estrutura XML da NF-e e validando chaves de acesso da SEFAZ...'}
+              </div>
+              <div className="pdf-reading-progress-bar">
+                <div
+                  className="pdf-reading-progress-fill"
+                  style={{
+                    width: `${Math.round(((readingProgress?.current || 1) / (readingProgress?.total || 1)) * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loadedFiles.length === 0 ? (
         /* Empty State Drop Zone */
