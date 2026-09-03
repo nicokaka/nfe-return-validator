@@ -46,9 +46,9 @@ function parseParticipant(partEl: Element | null): NFeParticipant {
   return { cnpj, xNome, xFant, ie, uf, xMun, fone, email };
 }
 
-function parseBatches(prodEl: Element): NFeBatch[] {
+function parseBatches(detEl: Element): NFeBatch[] {
   const batches: NFeBatch[] = [];
-  const rastroEls = Array.from(prodEl.getElementsByTagName('rastro')) as Element[];
+  const rastroEls = Array.from(detEl.getElementsByTagName('rastro')) as Element[];
 
   for (const rastro of rastroEls) {
     const nLote = getTagText(rastro, ['nLote']);
@@ -58,6 +58,24 @@ function parseBatches(prodEl: Element): NFeBatch[] {
 
     if (nLote) {
       batches.push({ nLote, qLote, dFab, dVal });
+    }
+  }
+
+  // Fallback: se não houver tag rastro, busca lote e validade em infAdProd
+  if (batches.length === 0) {
+    const infAdProd = getTagText(detEl, ['infAdProd']);
+    if (infAdProd) {
+      const loteMatch = infAdProd.match(/(?:LOTE|LT|N LT)[\.:\s]*([A-Z0-9]+)/i);
+      const fabMatch = infAdProd.match(/(?:FAB|DATA FAB)[\.:\s]*(\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4})/i);
+      const valMatch = infAdProd.match(/(?:VAL|DATA VAL)[\.:\s]*(\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4})/i);
+      if (loteMatch) {
+        batches.push({
+          nLote: loteMatch[1],
+          qLote: 0,
+          dFab: fabMatch ? fabMatch[1] : undefined,
+          dVal: valMatch ? valMatch[1] : undefined,
+        });
+      }
     }
   }
 
@@ -180,12 +198,26 @@ function parseItem(detEl: Element, index: number): NFeItem {
   const nItemPed = getTagText(prodEl, ['nItemPed']);
   const infAdProd = getTagText(detEl, ['infAdProd']);
 
-  const batches = parseBatches(prodEl);
+  const batches = parseBatches(detEl);
   const med = parseMed(prodEl);
   const { icms, icmsST } = parseICMS(impostoEl);
   const ipi = parseIPI(impostoEl);
   const pis = parsePIS(impostoEl);
   const cofins = parseCOFINS(impostoEl);
+
+  const dfeRefEl = detEl.getElementsByTagName('DFeReferenciado')[0];
+  let dfeReferenciado: { chaveAcesso?: string; nItem?: number } | undefined;
+  if (dfeRefEl) {
+    const chaveAcesso = getTagText(dfeRefEl, ['chaveAcesso', 'chAcesso']);
+    const nItemRaw = getTagText(dfeRefEl, ['nItem']);
+    const nItemRef = nItemRaw ? parseInt(nItemRaw, 10) : undefined;
+    if (chaveAcesso || (nItemRef !== undefined && !isNaN(nItemRef))) {
+      dfeReferenciado = {
+        chaveAcesso: chaveAcesso || undefined,
+        nItem: nItemRef !== undefined && !isNaN(nItemRef) ? nItemRef : undefined,
+      };
+    }
+  }
 
   return {
     nItem,
@@ -210,6 +242,7 @@ function parseItem(detEl: Element, index: number): NFeItem {
     pis,
     cofins,
     infAdProd,
+    dfeReferenciado,
   };
 }
 

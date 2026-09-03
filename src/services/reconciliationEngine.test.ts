@@ -4,6 +4,7 @@ import { reconcileNFeDocuments, reconcileNFdAgainstMultipleNfos } from './reconc
 import { executeBatchPairing } from './batchPairingEngine';
 import { sampleNfdXml, sampleNfoXml } from '../data/sampleXmls';
 import { sampleDanfePdfText } from '../data/sampleDanfeText';
+import { samplePollianaNfdXml, samplePollianaNfoXml } from '../data/samplePolliana0309';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { calculateExpectedIcms, identifyCompany } from '../data/companyData';
 import { findProductByEan, findProductByCode } from '../data/productCatalog';
@@ -429,6 +430,51 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       hybridCriticals.length === 0 &&
       hybridReconciliation.itemComparisons.length === 2,
       'T11.4: Reconciliação Híbrida 100% Aprovada: DANFE PDF de Devolução (663338) x XML de Origem (280748)'
+    );
+
+    // =========================================================================
+    // SUÍTE 12: PAREAMENTO INTELIGENTE MULTI-LOTE & CASO REAL GERÊNCIA FISCAL
+    // (Amostra INFAN NF 82691 x Devolução Medicamental NF 154693)
+    // =========================================================================
+    const docPollianaNfd = parseNFeXml(samplePollianaNfdXml, 'NFD_Medicamental_154693.xml');
+    const docPollianaNfo = parseNFeXml(samplePollianaNfoXml, 'NFO_Infan_082691.xml');
+
+    // T12.1: Identificação de 2 itens na NFO com o mesmo EAN mas lotes distintos
+    const nfoEanItems = docPollianaNfo.items.filter(it => it.cEAN === '7896685301227');
+    assert(
+      nfoEanItems.length === 2 &&
+      nfoEanItems[0].batches[0]?.nLote === '2606045' &&
+      nfoEanItems[1].batches[0]?.nLote === '2606046',
+      'T12.1: Detecção de múltiplos itens na NFO com o mesmo EAN (7896685301227) em lotes distintos (2606045 e 2606046)'
+    );
+
+    // Reconciliação do caso real da Polliana
+    const resPolliana = reconcileNFeDocuments(docPollianaNfd, docPollianaNfo);
+
+    // T12.2: Pareamento determinístico guiado por lote: NFD Item 2 (Lote 2606046) deve parear com NFO Item 2 (Lote 2606046)
+    const nfdItemProstokos = resPolliana.itemComparisons.find(c => c.nfdItem.cEAN === '7896685301227');
+    assert(
+      !!nfdItemProstokos &&
+      nfdItemProstokos.nfoItem?.nItem === 2 &&
+      nfdItemProstokos.nfoItem?.batches[0]?.nLote === '2606046',
+      'T12.2: Pareamento inteligente vincula NFD Item 2 ao NFO Item 2 (Lote 2606046) em vez de travar no NFO Item 1'
+    );
+
+    // T12.3: Ausência total de falso erro de divergência de lote (BATCH_MISMATCH)
+    const pollianaBatchMismatch = resPolliana.itemComparisons.some(c =>
+      c.issues.some(i => i.code === 'BATCH_MISMATCH')
+    );
+    assert(
+      !pollianaBatchMismatch,
+      'T12.3: Eliminação de falso erro de lote - ambos os itens pareados com seus respectivos lotes com 100% de conformidade'
+    );
+
+    // T12.4: Suporte e cruzamento com o grupo DFeReferenciado da SEFAZ
+    const prostokosDfeRef = docPollianaNfd.items.find(it => it.cEAN === '7896685301227')?.dfeReferenciado;
+    assert(
+      prostokosDfeRef?.nItem === 2 &&
+      prostokosDfeRef?.chaveAcesso === '26260808939548000103550010000826911840270693',
+      'T12.4: Leitura precisa do grupo DFeReferenciado (nItem=2) conforme NT SEFAZ 2024.002 / RTC VC02-14'
     );
 
   } catch (err: any) {

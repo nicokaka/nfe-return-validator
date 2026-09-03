@@ -94,6 +94,11 @@ export interface DiscountAudit {
   embeddedUnitPriceDiff?: number;
 }
 
+export interface DFeReferenciadoItem {
+  chaveAcesso?: string;
+  nItem?: number;
+}
+
 export interface NFeItem {
   nItem: number;
   cProd: string;
@@ -117,6 +122,7 @@ export interface NFeItem {
   icmsST?: NFeTaxICMSST;
   med?: NFeItemMed;
   infAdProd?: string;
+  dfeReferenciado?: DFeReferenciadoItem;
 }
 
 export interface NFeTotals {

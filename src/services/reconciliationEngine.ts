@@ -212,55 +212,121 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     let matchType: ItemComparison['matchType'] = 'NONE';
     let matchConfidence = 0;
 
-    // Priority 1: EAN exact
-    if (isCleanEanValid(nfdItem.cEAN)) {
-      matchedNfoItem = nfo.items.find(
-        item => !matchedNfoItemsSet.has(item.nItem) && isCleanEanValid(item.cEAN) && item.cEAN === nfdItem.cEAN
-      );
-      if (matchedNfoItem) {
-        matchType = 'EAN_EXACT';
-        matchConfidence = 1.0;
-      }
+    // -------------------------------------------------------------------------
+    // MOTOR DE PAREAMENTO INTELIGENTE MULTI-LOTE (DIRETRIZ DA GERÊNCIA FISCAL)
+    // -------------------------------------------------------------------------
+    // Regra de Ouro (Polliana): Quando a NFO possui múltiplos itens com o mesmo
+    // EAN/produto faturados em lotes diferentes (ex: Item 1 com Lote A e Item 2
+    // com Lote B), o validador NUNCA deve parar no primeiro EAN encontrado.
+    // Ele deve inspecionar TODOS os itens candidatos da NFO e priorizar aquele
+    // cujo LOTE físico faturado seja IDÊNTICO ao lote que o cliente está devolvendo!
+    // -------------------------------------------------------------------------
+
+    interface MatchCandidate {
+      item: NFeItem;
+      matchType: ItemComparison['matchType'];
+      confidence: number;
+      score: number;
+      hasExactLoteMatch: boolean;
     }
 
-    // Priority 2: EANTrib exact
-    if (!matchedNfoItem && isCleanEanValid(nfdItem.cEANTrib)) {
-      matchedNfoItem = nfo.items.find(
-        item => !matchedNfoItemsSet.has(item.nItem) && isCleanEanValid(item.cEANTrib) && item.cEANTrib === nfdItem.cEANTrib
-      );
-      if (matchedNfoItem) {
-        matchType = 'EAN_TRIB';
-        matchConfidence = 0.98;
+    const availableNfoItems = nfo.items.filter(item => !matchedNfoItemsSet.has(item.nItem));
+    const nfdBatches = nfdItem.batches.map(b => b.nLote.trim().toUpperCase()).filter(Boolean);
+
+    const candidates: MatchCandidate[] = [];
+
+    for (const candItem of availableNfoItems) {
+      let candMatchType: ItemComparison['matchType'] | null = null;
+      let candConfidence = 0;
+      let baseScore = 0;
+
+      // 1. DFeReferenciado (NT 2024.002 / NT 2025.002-RTC Regra VC02-14)
+      const isDfeRefMatch = nfdItem.dfeReferenciado?.nItem === candItem.nItem;
+      if (isDfeRefMatch) {
+        candMatchType = 'EAN_EXACT';
+        candConfidence = 1.0;
+        baseScore += 1000;
       }
-    }
 
-    // Priority 3: Description similarity + NCM
-    if (!matchedNfoItem) {
-      let bestSim = 0;
-      let candidate: NFeItem | undefined;
-
-      for (const nfoItem of nfo.items) {
-        if (matchedNfoItemsSet.has(nfoItem.nItem)) continue;
-        const sim = calculateStringSimilarity(nfdItem.xProd, nfoItem.xProd);
-        const isSameNcm = nfdItem.ncm && nfoItem.ncm && nfdItem.ncm === nfoItem.ncm;
-
-        if (isSameNcm && sim >= 0.75 && sim > bestSim) {
-          bestSim = sim;
-          candidate = nfoItem;
-        } else if (sim >= 0.88 && sim > bestSim) {
-          bestSim = sim;
-          candidate = nfoItem;
+      // 2. EAN Exato
+      const isEanMatch = isCleanEanValid(nfdItem.cEAN) && isCleanEanValid(candItem.cEAN) && nfdItem.cEAN === candItem.cEAN;
+      if (isEanMatch) {
+        if (!candMatchType) {
+          candMatchType = 'EAN_EXACT';
+          candConfidence = 1.0;
         }
+        baseScore += 500;
       }
 
-      if (candidate) {
-        matchedNfoItem = candidate;
-        matchType = 'DESCRIPTION_SIMILARITY';
-        matchConfidence = bestSim;
+      // 3. EAN Tributável Exato
+      const isEanTribMatch = isCleanEanValid(nfdItem.cEANTrib) && isCleanEanValid(candItem.cEANTrib) && nfdItem.cEANTrib === candItem.cEANTrib;
+      if (isEanTribMatch) {
+        if (!candMatchType) {
+          candMatchType = 'EAN_TRIB';
+          candConfidence = 0.98;
+        }
+        baseScore += 450;
+      }
+
+      // 4. Código do Produto Exato (cProd)
+      const isCleanCodeMatch = nfdItem.cProd && candItem.cProd && nfdItem.cProd.replace(/\D/g, '') === candItem.cProd.replace(/\D/g, '') && nfdItem.cProd.length >= 3;
+      if (isCleanCodeMatch) {
+        if (!candMatchType) {
+          candMatchType = 'EAN_EXACT';
+          candConfidence = 0.95;
+        }
+        baseScore += 400;
+      }
+
+      // 5. Similaridade de Descrição + NCM
+      const sim = calculateStringSimilarity(nfdItem.xProd, candItem.xProd);
+      const isSameNcm = nfdItem.ncm && candItem.ncm && nfdItem.ncm === candItem.ncm;
+
+      if ((isSameNcm && sim >= 0.70) || sim >= 0.85) {
+        if (!candMatchType) {
+          candMatchType = 'DESCRIPTION_SIMILARITY';
+          candConfidence = sim;
+        }
+        baseScore += Math.round(sim * 300);
+      }
+
+      // Se este item da NFO é um candidato para o produto da devolução:
+      if (candMatchType) {
+        const candBatches = candItem.batches.map(b => b.nLote.trim().toUpperCase()).filter(Boolean);
+        const hasExactLoteMatch = nfdBatches.length > 0 && candBatches.length > 0 && nfdBatches.some(b => candBatches.includes(b));
+
+        // 🌟 BÔNUS DETERMINÍSTICO DE LOTE: Se o lote confere exatamente, este candidato tem preferência máxima!
+        let totalScore = baseScore;
+        if (hasExactLoteMatch) {
+          totalScore += 2000;
+        }
+
+        // Bônus de preço unitário coincidente
+        if (Math.abs(nfdItem.vUnCom - candItem.vUnCom) <= 0.01) {
+          totalScore += 100;
+        }
+
+        // Bônus de quantidade devolvida menor ou igual à faturada
+        if (nfdItem.qCom <= candItem.qCom + 0.0001) {
+          totalScore += 50;
+        }
+
+        candidates.push({
+          item: candItem,
+          matchType: candMatchType,
+          confidence: candConfidence,
+          score: totalScore,
+          hasExactLoteMatch,
+        });
       }
     }
 
-    if (matchedNfoItem) {
+    if (candidates.length > 0) {
+      // Ordena decrescente por score: o item com o lote correspondente SEMPRE vencerá
+      candidates.sort((a, b) => b.score - a.score);
+      matchedNfoItem = candidates[0].item;
+      matchType = candidates[0].matchType;
+      matchConfidence = candidates[0].confidence;
       matchedNfoItemsSet.add(matchedNfoItem.nItem);
     }
 

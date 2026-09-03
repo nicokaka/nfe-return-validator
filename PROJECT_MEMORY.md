@@ -438,12 +438,37 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
   * O motor de conciliação fiscal audita as notas sem distinção de formato de entrada.
 
 ### 13.4. Qualidade e Cobertura
-* **Suíte de Testes (TDD):** Expandida de 62 para **66 testes automatizados (100% verde)**.
-  * `T11.1`: Extração de Metadados e Participantes da DANFE PDF.
-  * `T11.2`: Extração de Itens, Preços, NCM e Lotes ANVISA da DANFE PDF.
-  * `T11.3`: Extração de NFref e Motivo em Informações Complementares.
-  * `T11.4`: Reconciliação Híbrida 100% Aprovada (DANFE PDF Tapajós x XML Quesalon).
-* **Compilação de Produção:** Vite/TypeScript aprovado em **4.43s** com code-splitting dinâmico para não onerar o carregamento inicial.
+* **Suíte de Testes (TDD):** Expandida para **70 testes automatizados (100% verde)**.
+* **Compilação de Produção:** Vite/TypeScript aprovado em **11.78s** com code-splitting dinâmico.
+
+---
+
+## 🔬 14. PAREAMENTO INTELIGENTE MULTI-LOTE COM O MESMO EAN (HOMOLOGAÇÃO POLLIANA 03/09)
+
+### 14.1. Diagnóstico do Problema Reportado pela Gerência Fiscal
+* **Cenário Real:** Amostra real da INFAN S/A (NFO `82691`) com faturamento do medicamento **PROSTOKOS 25mcg (EAN `7896685301227`)** dividido em dois itens distintos:
+  * **Item 1:** Qtd 36 com **Lote `2606045`**.
+  * **Item 2:** Qtd 174 com **Lote `2606046`**.
+* A distribuidora cliente (Medicamental, NFD `154693`) devolveu 3 unidades do **Lote `2606046`**.
+* **Falha Detectada:** O algoritmo anterior realizava `nfo.items.find()`, que interrompia a busca no primeiro item com o EAN correspondente (Item 1, Lote `2606045`), gerando um falso erro crítico de divergência de lote (`BATCH_MISMATCH`) e reprovando indevidamente a nota.
+
+### 14.2. Solução Arquitetural: Algoritmo de Ranking Multi-Critério por Lote
+* **Varredura Completa de Candidatos:**
+  * O motor fiscal agora reúne **todos** os itens da NFO que possuem o mesmo EAN, código interno ou descrição compatível.
+* **Sistema de Pontuação Ponderada (Score-Based Candidate Ranking):**
+  * **Bônus de Lote Físico Idêntico (`+2000 pts`):** Se o lote devolvido pelo cliente for idêntico ao lote faturado na linha da NFO, esse candidato recebe prioridade absoluta e vence a disputa.
+  * **Bônus de Referência Direta Item a Item (`DFeReferenciado`, `+1000 pts`):** Conforme NT 2024.002 / RTC VC02-14, se o cliente referenciar `<nItem>`, o item é pontuado diretamente.
+  * **Bônus de Preço Unitário (`+100 pts`):** Preço unitário coincidente.
+  * **Bônus de Quantidade Faturada (`+50 pts`):** Quantidade devolvida compatível.
+* **Resultado:** O NFD Item 2 (Lote `2606046`) é vinculado com exatidão matemática ao NFO Item 2 (Lote `2606046`), eliminando 100% dos falsos erros de lote.
+
+### 14.3. Testes Automatizados da Suíte 12
+* `T12.1`: Detecção de múltiplos itens na NFO com o mesmo EAN em lotes distintos.
+* `T12.2`: Pareamento inteligente vinculando ao item do lote correto (`2606046`).
+* `T12.3`: Ausência de falso erro de lote (`BATCH_MISMATCH`).
+* `T12.4`: Leitura e validação do grupo `DFeReferenciado` da SEFAZ.
+* **Status Final:** **70/70 testes aprovados (100% verde)**.
+
 
 
 
