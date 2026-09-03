@@ -7,8 +7,46 @@ import {
   NFeType,
 } from '../types/nfe';
 
+let cachedWorkerBlobUrl: string | null = null;
+
 /**
- * Carrega a biblioteca pdfjs-dist de forma resiliente em ambientes Node (testes) e Browser (Vite).
+ * Obtém a URL do Web Worker de forma 100% imune a problemas de MIME-type em servidores Nginx/Apache.
+ * Converte o arquivo em um Blob URL de 'application/javascript' nativo no navegador.
+ */
+async function getBrowserWorkerUrl(): Promise<string> {
+  if (cachedWorkerBlobUrl) return cachedWorkerBlobUrl;
+  if (typeof window === 'undefined') return '';
+
+  const candidateUrls = [
+    new URL('pdf.worker.min.mjs', window.location.href).href,
+    new URL('pdf.worker.min.js', window.location.href).href,
+    '/pdf.worker.min.mjs',
+    '/pdf.worker.min.js',
+  ];
+
+  for (const url of candidateUrls) {
+    try {
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const text = await resp.text();
+        const blob = new Blob([text], { type: 'application/javascript' });
+        cachedWorkerBlobUrl = URL.createObjectURL(blob);
+        return cachedWorkerBlobUrl;
+      }
+    } catch {
+      // Tenta o próximo candidato
+    }
+  }
+
+  try {
+    return new URL('pdf.worker.min.mjs', window.location.href).href;
+  } catch {
+    return '/pdf.worker.min.mjs';
+  }
+}
+
+/**
+ * Carrega a biblioteca pdfjs-dist de forma resiliente em ambientes Node (testes) e Browser (Vite/Nginx).
  */
 async function getPdfJsInstance(): Promise<any> {
   let pdfjs: any;
@@ -18,16 +56,10 @@ async function getPdfJsInstance(): Promise<any> {
     pdfjs = await import('pdfjs-dist');
   }
 
-  // Configuração obrigatória do Worker no ambiente de navegador
+  // Configuração obrigatória e resiliente do Worker no ambiente de navegador
   if (typeof window !== 'undefined' && pdfjs?.GlobalWorkerOptions) {
     if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      try {
-        // Resolve URL absoluta tanto para desenvolvimento local quanto para produção com base relativa
-        const workerUrl = new URL('pdf.worker.min.mjs', window.location.href).href;
-        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-      } catch {
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-      }
+      pdfjs.GlobalWorkerOptions.workerSrc = await getBrowserWorkerUrl();
     }
   }
 

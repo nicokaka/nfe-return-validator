@@ -666,6 +666,33 @@ E apontou duas correções essenciais de usabilidade e precisão fiscal:
 * **`76/76 testes aprovados (100% VERDE)`**.
 * Compilação Vite executada em 8.02s sem erros.
 
+---
+
+## 🏛️ 22. RESOLUÇÃO DA FALHA DE FAKE WORKER NO NGINX (VM DEBIAN 192.168.97.10:5002)
+
+### 22.1. Diagnóstico Técnico da Causa-Raiz
+* **Sintoma:** O validador lia os DANFEs perfeitamente em ambiente local (`http://localhost:3000/`), mas no servidor de produção (`http://192.168.97.10:5002/`) disparava o erro:  
+  `Setting up fake worker failed: "error loading dynamically imported module: http://192.168.97.10:5002/pdf.worker.min.mjs"`.
+* **Causa-Raiz:** 
+  1. No ambiente local, o servidor Vite entrega arquivos `.mjs` com o header HTTP `Content-Type: text/javascript`.
+  2. No servidor Debian dentro do Docker (`nginx:alpine`), a imagem padrão do Nginx não possui o tipo `.mjs` no seu `/etc/nginx/mime.types`, servindo o arquivo como `Content-Type: application/octet-stream`.
+  3. O navegador Chrome/Edge bloqueia expressamente a execução de módulos JavaScript (`import(...)` e `new Worker(..., { type: 'module' })`) que venham com `application/octet-stream`, fazendo com que a inicialização do worker e o fallback de fake worker falhassem em cascata.
+
+### 22.2. Solução Definitiva em Camadas (Triple-Shield)
+1. **Configuração Explícita do Nginx (`nginx.conf` & `Dockerfile`):**
+   * Criado arquivo corporativo `nginx.conf` mapeando expressamente: `types { application/javascript js mjs; }`.
+   * Atualizado o `Dockerfile` para copiar o `nginx.conf` diretamente para `/etc/nginx/conf.d/default.conf`.
+2. **Duplo Empacotamento de Worker (`public/pdf.worker.min.mjs` & `public/pdf.worker.min.js`):**
+   * Disponibilizada cópia com extensão `.js` padrão, universalmente aceita por qualquer servidor web.
+3. **Conversão Nativa em Blob URL com MIME Garantido (`danfePdfParser.ts`):**
+   * Função `getBrowserWorkerUrl()` agora efetua o `fetch()` dos bytes do worker e cria um `Blob` com `type: 'application/javascript'` nativo na memória do navegador.
+   * O `workerSrc` passa a apontar para `blob:http://...`, eliminando 100% qualquer risco de bloqueio de MIME-type mesmo atrás de proxies reversos não configurados.
+
+### 22.3. Qualidade e Testes
+* **`76/76 testes aprovados (100% VERDE)`**.
+* Build Vite compilado com sucesso.
+
+
 
 
 
