@@ -11,13 +11,27 @@ import {
  * Carrega a biblioteca pdfjs-dist de forma resiliente em ambientes Node (testes) e Browser (Vite).
  */
 async function getPdfJsInstance(): Promise<any> {
+  let pdfjs: any;
   try {
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    return pdfjs;
+    pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   } catch {
-    const pdfjs = await import('pdfjs-dist');
-    return pdfjs;
+    pdfjs = await import('pdfjs-dist');
   }
+
+  // Configuração obrigatória do Worker no ambiente de navegador
+  if (typeof window !== 'undefined' && pdfjs?.GlobalWorkerOptions) {
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+      try {
+        // Resolve URL absoluta tanto para desenvolvimento local quanto para produção com base relativa
+        const workerUrl = new URL('pdf.worker.min.mjs', window.location.href).href;
+        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+      } catch {
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      }
+    }
+  }
+
+  return pdfjs;
 }
 
 /**
