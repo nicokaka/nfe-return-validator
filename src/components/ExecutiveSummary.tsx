@@ -500,14 +500,14 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               );
             })()}
 
-            {/* Linha: ICMS-ST */}
+            {/* Linha: ICMSS (Substituição Tributária) */}
             {(() => {
               const nfoTotalSt = nfo.items.reduce((acc, i) => acc + (i.icmsST?.vICMSST || i.icms?.vICMSST || 0), 0);
               const nfdTotalSt = nfd.items.reduce((acc, i) => acc + (i.icmsST?.vICMSST || i.icms?.vICMSST || 0), 0);
               return (
                 <div className="smart-tax-row smart-tax-row-triad">
                   <div className="col-tax-name font-weight-600">
-                    ICMS Substituição Tributária (ST)
+                    ICMSS
                   </div>
                   <div className="col-tax-nfo font-mono">
                     {formatCurrency(nfoTotalSt)}
@@ -520,7 +520,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
                   </div>
                   <div className="col-tax-status">
                     <span className="match-chip match-chip-ok">
-                      <CheckCircle2 className="icon-xs" /> {nfdTotalSt === 0 ? 'Sem ST (Conforme)' : 'ST Proporcional'}
+                      <CheckCircle2 className="icon-xs" /> {nfdTotalSt === 0 ? 'Sem ICMSS (Conforme)' : 'ICMSS Proporcional'}
                     </span>
                   </div>
                 </div>
@@ -548,26 +548,39 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               </div>
             </div>
 
-            {/* Linha: PIS / COFINS */}
-            <div className="smart-tax-row smart-tax-row-triad">
-              <div className="col-tax-name font-weight-600">
-                PIS / COFINS (Regime Fiscal)
-              </div>
-              <div className="col-tax-nfo font-mono">
-                CST {nfo.items[0]?.pis?.cst || '01'} / {nfo.items[0]?.cofins?.cst || '01'}
-              </div>
-              <div className="col-tax-nfd font-mono">
-                CST {nfd.items[0]?.pis?.cst || '49'} / {nfd.items[0]?.cofins?.cst || '49'}
-              </div>
-              <div className="col-tax-expected font-mono text-primary">
-                CST 49 / 49 <span className="badge-tag">Monofásico</span>
-              </div>
-              <div className="col-tax-status">
-                <span className="match-chip match-chip-ok">
-                  <CheckCircle2 className="icon-xs" /> Monofásicos Conforme
-                </span>
-              </div>
-            </div>
+            {/* Linha: PIS / COFINS (CST) */}
+            {(() => {
+              const pisCstNfo = nfo.items[0]?.pis?.cst || '01';
+              const cofinsCstNfo = nfo.items[0]?.cofins?.cst || '01';
+              const pisCstNfd = nfd.items[0]?.pis?.cst || '49';
+              const cofinsCstNfd = nfd.items[0]?.cofins?.cst || '49';
+              const isIndustry = result.companyProfile?.isIndustry;
+              const expectedPisCst = isIndustry ? (pisCstNfo === '02' ? '04' : (pisCstNfd || '04')) : '49';
+              const expectedCofinsCst = isIndustry ? (cofinsCstNfo === '02' ? '04' : (cofinsCstNfd || '04')) : '49';
+
+              return (
+                <div className="smart-tax-row smart-tax-row-triad">
+                  <div className="col-tax-name font-weight-600">
+                    PIS / COFINS (CST)
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    CST {pisCstNfo} / {cofinsCstNfo}
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    CST {pisCstNfd} / {cofinsCstNfd}
+                  </div>
+                  <div className="col-tax-expected font-mono text-primary">
+                    CST {expectedPisCst} / {expectedCofinsCst}{' '}
+                    <span className="badge-tag">{isIndustry ? 'Indústria INFAN' : 'Monofásico'}</span>
+                  </div>
+                  <div className="col-tax-status">
+                    <span className="match-chip match-chip-ok">
+                      <CheckCircle2 className="icon-xs" /> CST Validado
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Linha: IPI */}
             <div className="smart-tax-row smart-tax-row-triad">

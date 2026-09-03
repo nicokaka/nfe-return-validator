@@ -148,7 +148,7 @@ export const InstructionsModal: React.FC<InstructionsModalProps> = ({ onClose })
                   <div className="instruction-bullet-item">
                     <span>📌</span>
                     <div>
-                      <strong>2. IMPOSTOS:</strong> Tríade comparativa exibindo: <em>1. Faturado Origem</em> x <em>2. Informado Cliente</em> x <em>3. Correto Esperável (Sistema)</em> para CFOP, ICMS, Base de Cálculo, ST e PIS/COFINS.
+                      <strong>2. IMPOSTOS:</strong> Tríade comparativa exibindo: <em>1. Faturado Origem</em> x <em>2. Informado Cliente</em> x <em>3. Correto Esperável (Sistema)</em> para CFOP, ICMS, Base de Cálculo, ICMSS e PIS/COFINS (CST).
                     </div>
                   </div>
                   <div className="instruction-bullet-item">

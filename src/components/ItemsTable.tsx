@@ -424,7 +424,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                             {/* Card 1: Tributação do Item */}
                             <div className="item-detail-card">
                               <h6 className="detail-card-header">
-                                <span><ShieldCheck className="icon-xs text-primary" /> Impostos Item • CFOP & ICMS</span>
+                                <span><ShieldCheck className="icon-xs text-primary" /> Impostos Item • CFOP, ICMS & ICMSS</span>
                                 {c.expectedClientCfop && nfdItem.cfop.replace(/\D/g, '') === c.expectedClientCfop.replace(/\D/g, '') ? (
                                   <span className="badge-pill-success">✓ CFOP Conforme</span>
                                 ) : (
@@ -479,6 +479,30 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                   </strong>
                                 </div>
                               )}
+                              {((c.icmsStAudit?.vIcmsStNfd && c.icmsStAudit.vIcmsStNfd > 0) || (nfdItem.icmsST?.vICMSST && nfdItem.icmsST.vICMSST > 0) || (c.nfoItem?.icmsST?.vICMSST && c.nfoItem.icmsST.vICMSST > 0)) && (
+                                <div className="detail-field">
+                                  <span>ICMSS:</span>
+                                  <strong className="text-primary font-mono">
+                                    {formatCurrency(c.icmsStAudit?.expectedVIcmsSt || nfdItem.icmsST?.vICMSST || 0)}
+                                    {c.icmsStAudit?.isProportional ? (
+                                      <span className="badge-tag ml-1">Proporcional</span>
+                                    ) : (
+                                      <span className="badge-tag ml-1 badge-tag-warn">Divergente</span>
+                                    )}
+                                  </strong>
+                                </div>
+                              )}
+                              <div className="detail-field">
+                                <span>CST PIS / COFINS:</span>
+                                <strong className="font-mono">
+                                  CST {nfdItem.pis?.cst || '49'} / {nfdItem.cofins?.cst || '49'}
+                                  {c.nfoItem && (
+                                    <span className="text-xs text-muted ml-1 font-normal">
+                                      (Origem: CST {c.nfoItem.pis?.cst || '01'}/{c.nfoItem.cofins?.cst || '01'})
+                                    </span>
+                                  )}
+                                </strong>
+                              </div>
                             </div>
 
                             {/* Card 2: Precificação & Desconto */}

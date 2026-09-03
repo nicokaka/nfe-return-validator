@@ -592,6 +592,28 @@ E apontou duas correções essenciais de usabilidade e precisão fiscal:
 * **Status Global da Aplicação:** **`76/76 testes aprovados (100% VERDE)`**.
 * **Vite Build:** Compilação de produção aprovada com sucesso.
 
+---
+
+## 🏛️ 19. PADRONIZAÇÃO DE ICMSS E CST DE PIS/COFINS (DIRETRIZES POLLIANA)
+
+### 19.1. Diagnóstico Fiscal e Solicitações Homologadas
+1. **Exibição Exclusiva de CST de PIS/COFINS (Sem Base de Cálculo):**
+   * **Fundamento Fiscal:** No setor farmacêutico e especialmente na indústria (INFAN), medicamentos e produtos hospitalares sob regimes monofásicos e alíquotas diferenciadas são controlados pelo CST (Código de Situação Tributária). A base de cálculo do PIS/COFINS é desnecessária e polui a análise fiscal dos operadores.
+   * **Implementação:**
+     - Na Tríade de Impostos do Topo (`ExecutiveSummary.tsx`), a linha foi padronizada como **`PIS / COFINS (CST)`**, confrontando o CST da NFO x CST da NFD x CST Esperado.
+     - No detalhamento de cada item (`ItemsTable.tsx`), adicionamos o campo **`CST PIS / COFINS`** exibindo o CST de devolução com o espelho da saída, sem base de cálculo.
+2. **Substituição da Nomenclatura para "ICMSS":**
+   * **Fundamento Operacional:** No vocabulário fiscal prático da Hebron, da equipe da Glécia e no ERP Pirâmide (Procenge), o ICMS Substituição Tributária é chamado de **ICMSS** (com dois "S" no final).
+   * **Implementação:**
+     - No Comparativo Tributário Inteligente (`ExecutiveSummary.tsx`), o rótulo foi atualizado de "ICMS Substituição Tributária (ST)" para **`ICMSS`**, com os chips "Sem ICMSS (Conforme)" e "ICMSS Proporcional".
+     - No detalhe do item (`ItemsTable.tsx`), o card passou a se chamar **`Impostos Item • CFOP, ICMS & ICMSS`** e exibe o campo **`ICMSS`** quando aplicável.
+     - No modal interativo **Como Usar** (`InstructionsModal.tsx`), as menções foram atualizadas para **ICMSS**.
+
+### 19.2. Qualidade e Testes
+* **`76/76 testes aprovados (100% VERDE)`**.
+* Compilação Vite de produção executada com sucesso.
+
+
 
 
 
