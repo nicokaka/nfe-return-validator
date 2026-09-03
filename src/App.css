@@ -5555,6 +5555,107 @@ svg.search-icon {
   gap: 8px;
 }
 
+/* ==========================================================================
+   SEÇÕES CORPORATIVAS PADRONIZADAS (GERAL, IMPOSTOS, ITENS, IMPOSTOS ITEM)
+   Design Premium, Limpo e Elegante (Light & Dark Mode)
+   ========================================================================== */
+.section-title-premium {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  background: var(--bg-surface-elevated, #1e293b);
+  border-left: 4px solid var(--accent-primary, #6366f1);
+  border-radius: 0 8px 8px 0;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+  transition: all 0.2s ease-in-out;
+}
+
+[data-theme='light'] .section-title-premium {
+  background: #f1f5f9;
+  border-left-color: #4f46e5;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.section-title-premium .title-left,
+.table-header-bar .title-left,
+.item-details-section-header .title-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-badge-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary, #6366f1);
+  box-shadow: 0 0 8px var(--accent-primary, #6366f1);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.title-badge-indicator.item-tax {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.section-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.section-heading-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.item-details-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  margin-bottom: 10px;
+  padding: 7px 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #10b981;
+  border-radius: 0 6px 6px 0;
+  flex-wrap: wrap;
+}
+
+[data-theme='light'] .item-details-section-header {
+  background: #ecfdf5;
+  border-left-color: #059669;
+  border-top: 1px solid #d1fae5;
+  border-right: 1px solid #d1fae5;
+  border-bottom: 1px solid #d1fae5;
+}
+
+.item-details-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.item-details-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 
 
 

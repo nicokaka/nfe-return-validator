@@ -47,9 +47,12 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
     <div className="items-table-section">
       <div className="table-header-bar">
         <div>
-          <h3 className="table-title">Matriz de Validação de Produtos (Item a Item)</h3>
+          <div className="title-left">
+            <span className="title-badge-indicator" />
+            <h3 className="section-heading">Itens</h3>
+          </div>
           <p className="table-subtitle">
-            Auditoria detalhada de itens devolvidos (NFD) x faturados (NFO), divergências fiscais, quantidades e almoxarifados do Pirâmide.
+            Matriz de Validação de Produtos (Item a Item) • Auditoria de preços, descontos, lotes e almoxarifados do Pirâmide.
           </p>
         </div>
 
@@ -396,12 +399,21 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                             );
                           })()}
 
+                          {/* Título Padronizado: Impostos Item */}
+                          <div className="item-details-section-header">
+                            <div className="title-left">
+                              <span className="title-badge-indicator item-tax" />
+                              <h5 className="item-details-title">Impostos Item</h5>
+                            </div>
+                            <span className="item-details-sub">CFOP de Devolução, Alíquotas de ICMS, Base de Cálculo Reduzida/Cheia e Destaque Fiscal</span>
+                          </div>
+
                           {/* Resumo Específico do Item (Compacto, sem repetição com o topo) */}
-                          <div className="item-detail-grid mt-3 mb-2">
+                          <div className="item-detail-grid mt-2 mb-2">
                             {/* Card 1: Tributação do Item */}
                             <div className="item-detail-card">
                               <h6 className="detail-card-header">
-                                <span><ShieldCheck className="icon-xs text-primary" /> Tributação & CFOP</span>
+                                <span><ShieldCheck className="icon-xs text-primary" /> Impostos Item • CFOP & ICMS</span>
                                 {c.expectedClientCfop && nfdItem.cfop.replace(/\D/g, '') === c.expectedClientCfop.replace(/\D/g, '') ? (
                                   <span className="badge-pill-success">✓ CFOP Conforme</span>
                                 ) : (

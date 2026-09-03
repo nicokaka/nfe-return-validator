@@ -112,6 +112,15 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
         )}
       </div>
 
+      {/* Seção Corporativa: Geral */}
+      <div className="section-title-premium">
+        <div className="title-left">
+          <span className="title-badge-indicator" />
+          <h3 className="section-heading">Geral</h3>
+        </div>
+        <span className="section-heading-sub">Conferência Cadastral e Cabeçalho das Notas Fiscais (NFO x NFD)</span>
+      </div>
+
       {/* Cards Comparison Grid */}
       <div className="summary-cards-grid">
         {/* NFO Card */}
@@ -314,8 +323,17 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
         </div>
       </div>
 
+      {/* Seção Corporativa: Impostos */}
+      <div className="section-title-premium mt-4">
+        <div className="title-left">
+          <span className="title-badge-indicator" />
+          <h3 className="section-heading">Impostos</h3>
+        </div>
+        <span className="section-heading-sub">Comparativo Tributário Inteligente (Visualização Tripla: Origem x Devolução x Esperado)</span>
+      </div>
+
       {/* Comparativo Tributário Inteligente Global da Operação com Terceira Coluna (NFO x NFD x Esperado) */}
-      <div className="smart-tax-comparison-section mt-3">
+      <div className="smart-tax-comparison-section mt-2">
         <div className="comparison-section-header">
           <h6 className="section-title">
             <ShieldCheck className="icon-xs text-success" /> Comparativo Tributário Inteligente (Visualização Tripla: Origem x Devolução x Esperado)
