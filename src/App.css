@@ -6267,6 +6267,486 @@ svg.search-icon {
   font-weight: 600;
 }
 
+/* ==========================================================================
+   DESIGN SYSTEM ENTERPRISE: TABELA DE ITENS (MATRIZ DE RECONCILIAÇÃO)
+   ========================================================================== */
+.reconciliation-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.reconciliation-table th {
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: #18181b;
+  color: #f1f5f9;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+[data-theme='light'] .reconciliation-table th {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.reconciliation-table td {
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+[data-theme='light'] .reconciliation-table td {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Hover suave e destaque de status na linha */
+.item-row {
+  transition: background-color 0.15s ease;
+}
+
+.item-row:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+[data-theme='light'] .item-row {
+  background-color: #ffffff;
+}
+
+[data-theme='light'] .item-row:hover {
+  background-color: #f8fafc;
+}
+
+/* Chips de Status (Pill Elegante com Micro-sombra) */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.chip-approved {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme='light'] .chip-approved {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+}
+
+.chip-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme='light'] .chip-warning {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  box-shadow: 0 1px 2px rgba(245, 158, 11, 0.08);
+}
+
+.chip-critical {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='light'] .chip-critical {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.08);
+}
+
+/* Título e Metadados do Produto */
+.product-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+[data-theme='light'] .product-title {
+  color: #0f172a;
+}
+
+.product-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.product-meta-pill {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.product-meta-pill strong {
+  font-family: 'JetBrains Mono', monospace;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+[data-theme='light'] .product-meta-pill {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+[data-theme='light'] .product-meta-pill strong {
+  color: #0f172a;
+}
+
+.product-meta-pill.cfop {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+}
+
+[data-theme='light'] .product-meta-pill.cfop {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+/* Badge NCM Refinado */
+.ncm-category-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+.badge-ncm {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-ncm-vitamina {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme='light'] .badge-ncm-vitamina {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-ncm-medicamento {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+[data-theme='light'] .badge-ncm-medicamento {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.badge-ncm-suplemento {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme='light'] .badge-ncm-suplemento {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.badge-ncm-cosmetico_correlato {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+[data-theme='light'] .badge-ncm-cosmetico_correlato {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+/* Coluna EAN / GTIN */
+.cell-ean {
+  white-space: nowrap;
+}
+
+.ean-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+[data-theme='light'] .ean-badge {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+}
+
+/* Coluna de Quantidades */
+.quantity-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.quantity-main {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.quantity-val {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+[data-theme='light'] .quantity-val {
+  color: #0f172a;
+}
+
+.unit-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+[data-theme='light'] .unit-label {
+  color: #475569;
+}
+
+.quantity-faturado {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+[data-theme='light'] .quantity-faturado {
+  color: #475569;
+}
+
+.badge-qty-partial {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  margin-top: 2px;
+  width: fit-content;
+}
+
+[data-theme='light'] .badge-qty-partial {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.badge-qty-total {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  margin-top: 2px;
+  width: fit-content;
+}
+
+[data-theme='light'] .badge-qty-total {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+/* Coluna de Almoxarifado Pirâmide */
+.warehouse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.warehouse-auto {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+[data-theme='light'] .warehouse-auto {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+/* Colunas de Preço Unitário e Desconto */
+.price-main,
+.desc-main {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+[data-theme='light'] .price-main,
+[data-theme='light'] .desc-main {
+  color: #0f172a;
+}
+
+.badge-discount-ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+[data-theme='light'] .badge-discount-ok {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+/* Cards de Lotes NFD e NFO */
+.batch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  min-width: 96px;
+  text-align: left;
+}
+
+.batch-card .batch-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.batch-card .batch-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+/* Lote NFD Válido */
+.batch-card-ok {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.batch-card-ok .batch-number { color: #f8fafc; }
+.batch-card-ok .batch-val { color: #a1a1aa; }
+
+[data-theme='light'] .batch-card-ok {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+[data-theme='light'] .batch-card-ok .batch-number { color: #0f172a; }
+[data-theme='light'] .batch-card-ok .batch-val { color: #475569; }
+
+/* Lote NFO de Origem */
+.batch-card-nfo {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.batch-card-nfo .batch-number { color: #60a5fa; }
+.batch-card-nfo .batch-val { color: #93c5fd; }
+
+[data-theme='light'] .batch-card-nfo {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+[data-theme='light'] .batch-card-nfo .batch-number { color: #1d4ed8; }
+[data-theme='light'] .batch-card-nfo .batch-val { color: #2563eb; }
+
+/* Lote Dispensado NT 2021.004 */
+.batch-card-exempt {
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.batch-card-exempt .batch-exempt-label {
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 10.5px;
+}
+
+.batch-card-exempt .batch-exempt-sub {
+  color: #7dd3fc;
+  font-weight: 600;
+  font-size: 9.5px;
+}
+
+[data-theme='light'] .batch-card-exempt {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+[data-theme='light'] .batch-card-exempt .batch-exempt-label {
+  color: #0369a1;
+}
+
+[data-theme='light'] .batch-card-exempt .batch-exempt-sub {
+  color: #0284c7;
+}
+
+
 
 
 

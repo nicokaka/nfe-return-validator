@@ -634,6 +634,39 @@ E apontou duas correções essenciais de usabilidade e precisão fiscal:
 * **`76/76 testes aprovados (100% VERDE)`**.
 * Compilação de produção Vite aprovada com sucesso (`3.29s`).
 
+---
+
+## 🏛️ 21. REDESIGN ENTERPRISE DA TABELA DE ITENS (MATRIZ DE RECONCILIAÇÃO)
+
+### 21.1. Diagnóstico da Visualização Anterior
+* Textos e códigos amontoados em uma única linha usando barras verticais sem espaçamento (`Cod. Cliente: 172424 | Cod. Origem: 258 | CFOP: 6202`).
+* Badges de NCM com bordas neon grossas que poluíam visualmente a leitura.
+* EAN / GTIN solto no espaço sem delimitação de leitura.
+* Quantidades com alinhamento vertical confuso e texto secundário apagado.
+* Cards de lote NFD e NFO com datas de validade desbotadas e rótulo de isenção de lote parecendo botão tracejado quebrado (`ℹ️ S/ LOTE XML NT 2021.004`).
+
+### 21.2. Melhorias Implementadas (`ItemsTable.tsx` & `App.css`)
+1. **Pills de Status Refinadas (`.status-chip`):**
+   * Pílulas arredondadas com micro-sombra, borda suave e cores institucionais (`#ecfdf5` / `#065f46` para aprovado no Light Mode, e verde esmeralda no Dark Mode).
+2. **Metadados Estruturados de Produto (`.product-meta-pill`):**
+   * Separação em micro-tags discretas: `Cód: 172424`, `Origem: 258`, `CFOP 6202` com contraste de alto padrão e tipografia mono nos códigos.
+3. **Badges Farmacêuticas Elegantes (`.badge-ncm`):**
+   * Tags harmonizadas com o design system para Medicamento, Vitamina, Suplemento e Cosméticos/Correlatos, sem bordas agressivas.
+4. **Pill de Código de Barras EAN (`.ean-badge`):**
+   * O código de barras agora fica dentro de um badge mono limpo e bem posicionado.
+5. **Hierarquia de Quantidade Clara (`.quantity-cell`):**
+   * Destaque na quantidade devolvida (`3 UN`), faturamento de origem legível (`Faturado: 24 UN`) e badge arredondado `Parcial (13%)`.
+6. **Cards de Lote NFD e NFO de Alta Clareza (`.batch-card`):**
+   * Lotes em mono negrito (`2606039`) com validade contrastante (`Val: 30/06/2028`).
+   * Quando o produto é dispensado por regulamentação (Vitamina NT 2021.004), o card exibe uma badge informativa suave: `ℹ️ Dispensado NT • Conferência Doca`.
+7. **Cabeçalho da Tabela Reforçado (`.reconciliation-table th`):**
+   * Fundo contrastante, texto em caixa alta nítido, padding confortável e borda marcante.
+
+### 21.3. Qualidade e Testes
+* **`76/76 testes aprovados (100% VERDE)`**.
+* Compilação Vite executada em 8.02s sem erros.
+
+
 
 
 

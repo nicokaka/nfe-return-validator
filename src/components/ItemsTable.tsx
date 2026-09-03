@@ -138,21 +138,17 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                     <td>
                       <div className="product-title">{nfdItem.xProd}</div>
                       <div className="product-sub">
-                        Cod. Cliente: <span className="font-mono">{nfdItem.cProd}</span>
+                        <span className="product-meta-pill">Cód: <strong>{nfdItem.cProd}</strong></span>
                         {nfoItem && (
-                          <>
-                            {' | '}Cod. Origem: <span className="font-mono">{nfoItem.cProd}</span>
-                          </>
+                          <span className="product-meta-pill">Origem: <strong>{nfoItem.cProd}</strong></span>
                         )}
                         {nfdItem.cfop && (
-                          <>
-                            {' | '}CFOP: <span className="font-mono">{nfdItem.cfop}</span>
-                            {c.issues.some(i => i.code === 'CFOP_CLIENT_MISMATCH') && (
-                              <span className="badge-tag ml-1 badge-tag-warn" title="CFOP divergente da NFO. Solicite Carta de Correção (CC-e) ao cliente">
-                                ⚠️ Pedir CC-e (Esperado {c.expectedClientCfop})
-                              </span>
-                            )}
-                          </>
+                          <span className="product-meta-pill cfop">CFOP <strong>{nfdItem.cfop}</strong></span>
+                        )}
+                        {c.issues.some(i => i.code === 'CFOP_CLIENT_MISMATCH') && (
+                          <span className="badge-tag ml-1 badge-tag-warn" title="CFOP divergente da NFO. Solicite Carta de Correção (CC-e) ao cliente">
+                            ⚠️ Pedir CC-e (Esperado {c.expectedClientCfop})
+                          </span>
                         )}
                       </div>
                       {/* NCM Category Badge */}
@@ -163,7 +159,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                             title={`NCM ${nfdItem.ncm}: ${c.ncmProfile.description}`}
                           >
                             <span className="badge-icon">{c.ncmProfile.icon}</span> {c.ncmProfile.categoryLabel}
-                            <span className="font-mono text-xs opacity-75 ml-1">[{nfdItem.ncm || 'S/NCM'}]</span>
+                            <span className="font-mono text-xs opacity-85 ml-1">[{nfdItem.ncm || 'S/NCM'}]</span>
                           </span>
                           {nfdItem.med?.cProdANVISA && (
                             <span className="badge-anvisa ml-1" title="Código de Registro ANVISA (NT 2021.004)">
@@ -185,18 +181,20 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                       )}
                     </td>
 
-                    <td className="font-mono text-sm">{nfdItem.cEAN || 'Sem GTIN'}</td>
+                    <td className="cell-ean">
+                      <span className="ean-badge font-mono">{nfdItem.cEAN || 'Sem GTIN'}</span>
+                    </td>
 
                     {/* Quantidades e Indicador de Devolução */}
                     <td>
                       <div className="quantity-cell">
                         <div className="quantity-main">
-                          <span className="font-weight-600 font-mono text-base">{nfdItem.qCom}</span>
+                          <span className="quantity-val font-mono">{nfdItem.qCom}</span>
                           <span className="unit-label font-mono">{normalizeUnit(nfdItem.uCom)}</span>
                         </div>
                         {nfoItem && (
                           <div className="quantity-sub">
-                            <span className="text-muted text-xs">de {nfoItem.qCom} {normalizeUnit(nfoItem.uCom)}</span>
+                            <span className="quantity-faturado">Faturado: {nfoItem.qCom} {normalizeUnit(nfoItem.uCom)}</span>
                             {c.returnType === 'TOTAL' && (
                               <span className="badge-qty badge-qty-total" title="Devolução 100% Total">
                                 Total 100%
@@ -262,7 +260,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                             </span>
                           ) : nfdItem.vDesc > 0 ? (
                             <span className="badge-discount badge-discount-ok" title="Desconto proporcional perfeito com a origem">
-                              ✅ Proporcional
+                              ✓ Proporcional
                             </span>
                           ) : null}
                         </div>
@@ -280,15 +278,15 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                         <div className="batch-card batch-card-ok">
                           <span className="batch-number font-mono">{nfdItem.batches[0].nLote}</span>
                           {nfdItem.batches[0].dVal && (
-                            <span className="batch-val text-xs font-mono">
+                            <span className="batch-val font-mono">
                               Val: {formatFiscalDate(nfdItem.batches[0].dVal)}
                             </span>
                           )}
                         </div>
                       ) : c.ncmProfile?.category === 'VITAMINA' || c.ncmProfile?.category === 'SUPLEMENTO' || result.nfd.finNFe === 4 ? (
                         <div className="batch-card batch-card-exempt" title="Dispensado pela NT 2021.004 na SEFAZ (Conferência física na doca)">
-                          <span className="batch-exempt-label">ℹ️ S/ LOTE XML</span>
-                          <span className="batch-exempt-sub">NT 2021.004</span>
+                          <span className="batch-exempt-label">ℹ️ Dispensado NT</span>
+                          <span className="batch-exempt-sub">Conferência Doca</span>
                         </div>
                       ) : (
                         <div className="batch-card batch-card-missing" title="Lote ausente na nota fiscal">
@@ -303,7 +301,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                         <div className="batch-card batch-card-nfo">
                           <span className="batch-number font-mono">{nfoItem.batches[0].nLote}</span>
                           {nfoItem.batches[0].dVal && (
-                            <span className="batch-val text-xs font-mono">
+                            <span className="batch-val font-mono">
                               Val: {formatFiscalDate(nfoItem.batches[0].dVal)}
                             </span>
                           )}
