@@ -39,11 +39,12 @@ export function auditIcmsAndBaseReduction(
   const nfdVBc = nfdItem.icms?.vBC || 0;
   const nfdVProd = nfdItem.vProd || (nfdItem.qCom * nfdItem.vUnCom);
 
-  const { expectedRate, reductionPercentage, baseMultiplier, isInternal } = calculateExpectedIcms(
+  const { expectedRate, reductionPercentage, baseMultiplier } = calculateExpectedIcms(
     comp,
     destUf || '',
     nfdItem.ncm,
-    nfoRate
+    nfoRate,
+    nfoItem?.cfop
   );
 
   const baseReductionApplied = reductionPercentage > 0;
@@ -56,9 +57,9 @@ export function auditIcmsAndBaseReduction(
     ? Math.abs(nfdRate - nfoRate) < 0.1 || (nfdRate === 0 && nfoRate === 0)
     : Math.abs(nfdRate - (expectedRate * 100)) < 0.1;
 
-  // Base match check (Considera base líquida com desconto rateado ou bruta se sem desconto)
+  // Base match check (Tolerância de R$ 0.15)
   const isBaseMatching = nfdVBc > 0
-    ? Math.abs(nfdVBc - vBcExpected) <= 0.10 || Math.abs(nfdVBc - nfdVProdLiq) <= 0.10 || Math.abs(nfdVBc - nfdVProd) <= 0.10
+    ? Math.abs(nfdVBc - vBcExpected) <= 0.15 || (!baseReductionApplied && (Math.abs(nfdVBc - nfdVProdLiq) <= 0.15 || Math.abs(nfdVBc - nfdVProd) <= 0.15))
     : true;
 
   // 1. Princípio da Nota Espelho: alíquota deve espelhar a saída
@@ -73,14 +74,17 @@ export function auditIcmsAndBaseReduction(
     });
   }
 
-  // 2. Verificação de Redução de Base da INFAN
-  if (comp.key === 'INFAN' && isInternal && baseReductionApplied) {
-    if (nfdVBc > 0 && Math.abs(nfdVBc - nfdVProd) <= 0.05 && Math.abs(nfdVBc - vBcExpected) > 0.50) {
+  // 2. Verificação de Redução de Base da INFAN (auditada rigorosamente pelo CFOP de saída da NFO)
+  if (comp.key === 'INFAN' && baseReductionApplied) {
+    if (nfdVBc > 0 && Math.abs(nfdVBc - vBcExpected) > 0.15) {
+      const isClientBaseFull = Math.abs(nfdVBc - nfdVProdLiq) <= 0.15 || Math.abs(nfdVBc - nfdVProd) <= 0.15;
       issues.push({
         id: `ICMS_BASE_REDUCTION_OMITTED_${nfdItem.nItem}`,
         code: 'ICMS_BASE_REDUCTION_OMITTED',
-        title: `Redução de Base de ICMS (${reductionPercentage.toFixed(2)}%) Omitida`,
-        description: `Na INFAN (PB interna), o produto NCM ${nfdItem.ncm} possui benefício fiscal de redução de base de cálculo de ${reductionPercentage.toFixed(2)}% (Base esperada: R$ ${vBcExpected.toFixed(2)} vs destacada R$ ${nfdVBc.toFixed(2)}).`,
+        title: `Redução de Base de ICMS INFAN (${reductionPercentage.toFixed(2)}%) Omitida pelo Cliente`,
+        description: isClientBaseFull
+          ? `Na INFAN (CFOP de Saída ${nfoItem?.cfop || 'Venda'}), o produto NCM ${nfdItem.ncm} possui benefício fiscal de redução de base de cálculo de ${reductionPercentage.toFixed(2)}%. O cliente destacou Base Cheia (R$ ${nfdVBc.toFixed(2)}), mas a base esperada para lançamento e estorno correto no ERP Pirâmide é R$ ${vBcExpected.toFixed(2)}.`
+          : `Na INFAN, a base de cálculo de ICMS destacada na devolução (R$ ${nfdVBc.toFixed(2)}) diverge da base com redução esperada de ${reductionPercentage.toFixed(2)}% (R$ ${vBcExpected.toFixed(2)}).`,
         severity: 'WARNING',
         field: 'vBC',
       });

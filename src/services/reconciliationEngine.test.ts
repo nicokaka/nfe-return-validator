@@ -521,6 +521,38 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       'T13.3: Reconciliação Fiscal PDF x PDF 100% Aprovada com Pareamento Determinístico de Lote e Zero Erros'
     );
 
+    // =========================================================================
+    // SUÍTE 14: REGRAS FISCAIS DA INFAN POR CFOP DA NFO (DIRETRIZ POLLIANA)
+    // =========================================================================
+    // T14.1: INFAN Saída Interestadual (CFOP 6101) com Redução de Base de 9,90% (NCM 3004)
+    const infanAudit6101 = calculateExpectedIcms(infanCompany, 'RJ', '30049029', 12, '6101');
+    assert(
+      infanAudit6101.expectedRate === 0.12 &&
+      infanAudit6101.reductionPercentage === 9.90 &&
+      infanAudit6101.baseMultiplier === 0.901,
+      'T14.1: INFAN Saída Interestadual (CFOP 6101) com Redução de Base de 9,90% para NCM 3004'
+    );
+
+    // T14.2: INFAN Suframa (CFOP 6109 / 6110) com Alíquota Zero (Desoneração)
+    const infanSuframa6109 = calculateExpectedIcms(infanCompany, 'AM', '30049029', 0, '6109');
+    const infanSuframa6110 = calculateExpectedIcms(infanCompany, 'AM', '30049029', 0, '6110');
+    assert(
+      infanSuframa6109.expectedRate === 0.0 && infanSuframa6110.expectedRate === 0.0,
+      'T14.2: INFAN Suframa (CFOP 6109/6110) com Alíquota 0,00% e Desoneração Total'
+    );
+
+    // T14.3: Amostra Real 03/09 (INFAN x Medicamental) detectando Base Cheia do Cliente
+    // NFO INFAN faturou com CST 20 (Redução 9,90%) e cliente devolveu com CST 00 (Base Cheia)
+    const resInfanMedicamental = reconcileNFeDocuments(docPollianaNfd, docPollianaNfo);
+    const hasBaseReductionOmittedWarning = resInfanMedicamental.itemComparisons.some(c =>
+      c.issues.some(i => i.code === 'ICMS_BASE_REDUCTION_OMITTED')
+    );
+    assert(
+      hasBaseReductionOmittedWarning &&
+      resInfanMedicamental.itemComparisons[0].icmsAudit?.reductionPercentage === 9.90,
+      'T14.3: Alerta de Redução de Base de 9,90% Omitida pelo Cliente (CST 00 vs esperado CST 20) com Base Esperada Auditada'
+    );
+
   } catch (err: any) {
     failed++;
     log.push(`❌ Exceção não capturada durante a execução da suíte: ${err.message}`);

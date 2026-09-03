@@ -24,11 +24,12 @@ export const COMPANIES: Record<CompanyKey, CompanyProfile> = {
     tradeName: 'Indústria INFAN',
     corporateName: 'INFAN INDÚSTRIA QUÍMICA FARMACÊUTICA NACIONAL S/A',
     uf: 'PB',
+    cnpjBase: '08939548000103',
     isIndustry: true,
     internalIcmsRate: 0.205, // 20.50%
     interstateIcmsRateDefault: 0.12, // 12.00%
     hasBaseReduction: true,
-    notes: 'Possui redução de base de cálculo de ICMS: NCM 3004 (9.90% de redução / base 90.1%) e Cosméticos selecionados (10.49% de redução / base 89.51%).',
+    notes: 'Possui redução de base de cálculo de ICMS: NCM 3004 (9.90% de redução / base 90.1%) e Cosméticos selecionados (10.49% de redução / base 89.51%). Verificada pelo CFOP da NFO.',
   },
   QUESALON_PB: {
     key: 'QUESALON_PB',
@@ -96,8 +97,8 @@ export function identifyCompany(cnpjRaw: string, ufRaw?: string, xNomeRaw?: stri
     return COMPANIES.QUESALON_PB;
   }
 
-  // 3. INFAN Indústria
-  if (xNome.includes('INFAN') || cleanCnpj.includes('08825857')) {
+  // 3. INFAN Indústria (CNPJ Matriz: 08.939.548/0001-03)
+  if (xNome.includes('INFAN') || cleanCnpj.includes('08939548') || cleanCnpj.includes('08825857')) {
     return COMPANIES.INFAN;
   }
 
@@ -120,12 +121,14 @@ export const SOUTH_SOUTHEAST_EXCEPT_ES = ['SP', 'RJ', 'MG', 'PR', 'SC', 'RS'];
 
 /**
  * Calcula a alíquota esperada de ICMS e percentual de redução de base de cálculo
+ * Conforme regras da Gerência Fiscal Hebron (Polliana - Sheet 3 / produtos ean cest base.xlsx)
  */
 export function calculateExpectedIcms(
   company: CompanyProfile,
   destUfRaw: string,
   ncmRaw: string,
-  nfoIcmsRatePracticed?: number
+  nfoIcmsRatePracticed?: number,
+  nfoCfopRaw?: string
 ): {
   expectedRate: number;
   reductionPercentage: number; // ex: 9.90 ou 10.49
@@ -134,63 +137,103 @@ export function calculateExpectedIcms(
   explanation: string;
 } {
   const destUf = (destUfRaw || '').trim().toUpperCase();
-  const isInternal = destUf !== '' && company.uf !== '' && destUf === company.uf;
+  const cleanNfoCfop = (nfoCfopRaw || '').replace(/\D/g, '');
+  const isCfopInternal = cleanNfoCfop.startsWith('5');
+  const isInternal = cleanNfoCfop !== ''
+    ? isCfopInternal
+    : (destUf !== '' && company.uf !== '' && destUf === company.uf);
   const cleanNcm = (ncmRaw || '').replace(/\D/g, '');
   const prefix4 = cleanNcm.slice(0, 4);
 
-  // A. Operação Interna
-  if (isInternal) {
-    if (company.key === 'INFAN') {
-      // Reduções de Base da INFAN
-      if (prefix4 === '3004') {
-        // NCM 3004: Redução de 9.90% -> Base = 90.10%
-        return {
-          expectedRate: 0.205,
-          reductionPercentage: 9.90,
-          baseMultiplier: 0.901,
-          isInternal: true,
-          explanation: 'INFAN Interna (PB): Alíquota 20,50% com Redução de Base de 9,90% (Base = 90,10%) para Medicamento (NCM 3004).',
-        };
-      }
-
-      // NCMs 3401.20.10, 3304.99.10, 3307.90.00 e 3401.30.00: Redução de 10.49% -> Base = 89.51%
-      if (
-        cleanNcm.startsWith('34012010') ||
-        cleanNcm.startsWith('33049910') ||
-        cleanNcm.startsWith('33079000') ||
-        cleanNcm.startsWith('34013000') ||
-        ['3401', '3304', '3307'].includes(prefix4)
-      ) {
-        return {
-          expectedRate: 0.205,
-          reductionPercentage: 10.49,
-          baseMultiplier: 0.8951,
-          isInternal: true,
-          explanation: 'INFAN Interna (PB): Alíquota 20,50% com Redução de Base de 10,49% (Base = 89,51%) para Cosmético/Higiene.',
-        };
-      }
-
+  // 1. INFAN: Regras específicas baseadas no CFOP da Nota de Origem e NCM (Fonte: Sheet 3 / Polliana)
+  if (company.key === 'INFAN') {
+    // A. Suframa (CFOPs 6109 / 6110): Alíquota 0% (Isenção / Desoneração)
+    if (cleanNfoCfop === '6109' || cleanNfoCfop === '6110') {
       return {
-        expectedRate: 0.205,
+        expectedRate: 0.0,
         reductionPercentage: 0,
-        baseMultiplier: 1.0,
-        isInternal: true,
-        explanation: 'INFAN Interna (PB): Alíquota 20,50% com Base Cheia (sem redução).',
+        baseMultiplier: 0.0,
+        isInternal: false,
+        explanation: `INFAN Suframa (CFOP ${cleanNfoCfop}): Operação com desoneração de ICMS (Alíquota 0%).`,
       };
     }
 
-    if (company.key === 'QUESALON_PB') {
+    // Alíquota de Saída: 20.50% (Interna PB) vs 12.00% (Interestadual)
+    const rate = isInternal ? 0.205 : 0.12;
+    const opLabel = isInternal ? 'Interna (PB)' : `Interestadual (${destUf || 'Inter'})`;
+
+    // B. NCM 3004: Medicamentos possuem Redução de Base de ICMS de 9,90% (Base = 90,10%)
+    if (prefix4 === '3004') {
       return {
-        expectedRate: 0.20,
-        reductionPercentage: 0,
-        baseMultiplier: 1.0,
-        isInternal: true,
-        explanation: 'QUESALON PB Interna: Alíquota padrão 20,00% com Base Cheia.',
+        expectedRate: rate,
+        reductionPercentage: 9.90,
+        baseMultiplier: 0.901,
+        isInternal,
+        explanation: `INFAN ${opLabel} (CFOP ${cleanNfoCfop || 'Venda'}): Alíquota ${(rate * 100).toFixed(2)}% com Redução de Base de 9,90% (Base = 90,10%) para Medicamento (NCM 3004).`,
       };
     }
 
-    if (company.key === 'QUESALON_EXTREMA') {
-      // Se a NFO praticou 12% ou 18%, respeitamos o Termo de Acordo herdando a alíquota
+    // C. Cosméticos e Higiene (3401.20.10, 3304.99.10, 3307.90.00, 3401.30.00): Redução de 10,49% (Base = 89,51%)
+    // Exceto sabão comum NCM 34011900 que é Base Cheia
+    if (
+      !cleanNcm.startsWith('34011900') &&
+      (cleanNcm.startsWith('34012010') ||
+       cleanNcm.startsWith('33049910') ||
+       cleanNcm.startsWith('33079000') ||
+       cleanNcm.startsWith('34013000') ||
+       ['3401', '3304', '3307'].includes(prefix4))
+    ) {
+      return {
+        expectedRate: rate,
+        reductionPercentage: 10.49,
+        baseMultiplier: 0.8951,
+        isInternal,
+        explanation: `INFAN ${opLabel} (CFOP ${cleanNfoCfop || 'Venda'}): Alíquota ${(rate * 100).toFixed(2)}% com Redução de Base de 10,49% (Base = 89,51%) para Cosméticos/Higiene.`,
+      };
+    }
+
+    // D. Demais NCMs (2936, 2106, 2309, 30024991, 34011900, 33069000): BASE CHEIA
+    return {
+      expectedRate: rate,
+      reductionPercentage: 0,
+      baseMultiplier: 1.0,
+      isInternal,
+      explanation: `INFAN ${opLabel} (CFOP ${cleanNfoCfop || 'Venda'}): Alíquota ${(rate * 100).toFixed(2)}% com Base Cheia (sem redução).`,
+    };
+  }
+
+  // 2. QUESALON PB: Base Cheia para todos os NCMs
+  if (company.key === 'QUESALON_PB') {
+    if (cleanNfoCfop === '6110') {
+      return {
+        expectedRate: 0.0,
+        reductionPercentage: 0,
+        baseMultiplier: 0.0,
+        isInternal: false,
+        explanation: 'QUESALON PB Suframa (CFOP 6110): Alíquota 0% com desoneração.',
+      };
+    }
+    return {
+      expectedRate: isInternal ? 0.20 : 0.12,
+      reductionPercentage: 0,
+      baseMultiplier: 1.0,
+      isInternal,
+      explanation: `QUESALON PB ${isInternal ? 'Interna' : 'Interestadual'}: Alíquota padrão ${isInternal ? '20,00%' : '12,00%'} com Base Cheia.`,
+    };
+  }
+
+  // 3. QUESALON EXTREMA (MG)
+  if (company.key === 'QUESALON_EXTREMA') {
+    if (cleanNfoCfop === '6110') {
+      return {
+        expectedRate: 0.0,
+        reductionPercentage: 0,
+        baseMultiplier: 0.0,
+        isInternal: false,
+        explanation: 'QUESALON Extrema Suframa (CFOP 6110): Alíquota 0% com desoneração.',
+      };
+    }
+    if (isInternal) {
       const rate = nfoIcmsRatePracticed !== undefined && (Math.abs(nfoIcmsRatePracticed - 12) < 0.5 || Math.abs(nfoIcmsRatePracticed - 0.12) < 0.005)
         ? 0.12
         : 0.18;
@@ -202,19 +245,7 @@ export function calculateExpectedIcms(
         explanation: `QUESALON Extrema Interna (MG): Alíquota ${(rate * 100).toFixed(0)}% (Termo de Acordo MG) com Base Cheia.`,
       };
     }
-
-    return {
-      expectedRate: company.internalIcmsRate || 0.20,
-      reductionPercentage: 0,
-      baseMultiplier: 1.0,
-      isInternal: true,
-      explanation: `Operação Interna (${company.uf}): Alíquota ${(company.internalIcmsRate * 100).toFixed(1)}%.`,
-    };
-  }
-
-  // B. Operação Interestadual
-  if (company.key === 'QUESALON_EXTREMA') {
-    // Sul e Sudeste (exceto ES) -> 12%
+    // Interestadual: Sul/Sudeste exceto ES -> 12% | Demais -> 7%
     if (SOUTH_SOUTHEAST_EXCEPT_ES.includes(destUf)) {
       return {
         expectedRate: 0.12,
@@ -224,7 +255,6 @@ export function calculateExpectedIcms(
         explanation: `QUESALON Extrema Interestadual (MG ➔ ${destUf} Sul/Sudeste): Alíquota 12,00%.`,
       };
     }
-    // ES, Centro-Oeste, Norte e Nordeste -> 7%
     return {
       expectedRate: 0.07,
       reductionPercentage: 0,
@@ -234,12 +264,33 @@ export function calculateExpectedIcms(
     };
   }
 
-  // Demais empresas interestaduais: 12.00%
+  // 4. QUEDES (AL)
+  if (company.key === 'QUEDES') {
+    if (cleanNfoCfop === '6110') {
+      return {
+        expectedRate: 0.0,
+        reductionPercentage: 0,
+        baseMultiplier: 0.0,
+        isInternal: false,
+        explanation: 'QUEDES Suframa (CFOP 6110): Alíquota 0% com desoneração.',
+      };
+    }
+    return {
+      expectedRate: 0.12,
+      reductionPercentage: 0,
+      baseMultiplier: 1.0,
+      isInternal: false,
+      explanation: 'QUEDES Interestadual (AL): Alíquota 12,00% com Base Cheia.',
+    };
+  }
+
+  // Fallback genérico
+  const rate = isInternal ? (company.internalIcmsRate || 0.20) : (company.interstateIcmsRateDefault || 0.12);
   return {
-    expectedRate: 0.12,
+    expectedRate: rate,
     reductionPercentage: 0,
     baseMultiplier: 1.0,
-    isInternal: false,
-    explanation: `${company.tradeName} Interestadual (${company.uf} ➔ ${destUf}): Alíquota 12,00%.`,
+    isInternal,
+    explanation: `${company.tradeName} (${company.uf}): Alíquota ${(rate * 100).toFixed(1)}%.`,
   };
 }

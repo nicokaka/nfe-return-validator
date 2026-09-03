@@ -500,6 +500,49 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
 * `T13.3`: Reconciliação Fiscal PDF x PDF 100% Aprovada com Pareamento Determinístico de Lote e Zero Erros.
 * **Status Global da Aplicação:** **`73/73 testes aprovados (100% VERDE)`**.
 
+---
+
+## 📊 16. AUDITORIA EXAUSTIVA DA PLANILHA DA POLLIANA (`produtos ean cest base.xlsx`) E REGRAS DE CÁLCULO INFAN POR CFOP
+
+### 16.1. Estrutura e Conteúdo das 5 Abas da Planilha Oficial
+1. **Aba 1 (`ean`):** Códigos internos de materiais do ERP Pirâmide, tipos de material (Acabado/Cosmético) e vínculos de GTIN/EAN com reclassificação fiscal.
+2. **Aba 2 (`Produtos`):** Catálogo corporativo de medicamentos, alimentos e cosméticos com alíquotas tributárias:
+   * **INFAN:** PIS `2,10%`, COFINS `9,90%`, CBS `0,90%`, IBS `0,10%` para medicamentos; Cosméticos com IPI `3,25%`, PIS `2,20%`, COFINS `10,30%`.
+   * **QUESALON PB/MG e QUEDES:** PIS/COFINS Monofásico (Não destacado na distribuição).
+3. **Aba 3 (`Dados` - Matriz Tributária das Empresas):**
+   * **🏭 INFAN (Indústria Química Farmacêutica Nacional S/A - CNPJ `08.939.548/0001-03`):**
+     * Saída Interna PB (`5101`, `5102`, `5401`, `5403`): Alíquota `20,50%`.
+     * Saída Interestadual (`6101`, `6102`, `6403`): Alíquota `12,00%`.
+     * Suframa (`6109`, `6110`): Alíquota `0,00%` (Desoneração/Isenção Suframa).
+     * Bonificação (`5910`): Sem valor comercial.
+     * **Benefício de Redução de Base de Cálculo ("Desconto na Base"):**
+       * **NCM 3004 (Medicamentos):** **9,90% de redução** (Base Efetiva = **90,10%** do valor líquido).
+       * **Cosméticos/Higiene (3401.20.10, 3304.99.10, 3307.90.00, 3401.30.00):** **10,49% de redução** (Base Efetiva = **89,51%** do valor líquido).
+       * **Demais NCMs (2936, 2106, 2309, 30024991, 34011900, 33069000):** **Base Cheia (100%)**.
+       * **REGRA CRUCIAL (Homologação Polliana):** A aplicação da redução de base da INFAN não é restrita à operação interna na Paraíba; ela **é verificada pelo CFOP da Nota de Origem** (operações de venda com destaque como 5101, 5102, 6101, 6102).
+   * **🏢 QUESALON PB, QUESALON EXTREMA (MG) e QUEDES (AL):**
+     * **Todos os NCMs operam com BASE CHEIA (100%)**, sem redução de base.
+4. **Aba 4 (`CFOP`):** Matriz oficial com 668 CFOPs com naturezas e controles de GIA e Suframa.
+5. **Aba 5 (`Planilha1`):** Fórmula oficial do Desconto Comercial Proporcional da Devolução:
+   $$di = \frac{\text{Desconto Item NFO}}{\text{Qtd Faturada NFO}}, \quad dp = di \times \text{Qtd Devolvida NFD}, \quad \text{vProdLiq} = (pu \times q) - dp$$
+
+### 16.2. Melhorias Implementadas no Motor de Cálculo
+1. **`calculateExpectedIcms` em `src/data/companyData.ts`:**
+   * Passou a receber o parâmetro `nfoCfopRaw`.
+   * Para a INFAN, verifica o CFOP de saída: se for Suframa (`6109`/`6110`), alíquota 0%; se for venda tributada (`5101`, `5102`, `6101`, `6102`, `5401`, etc.), aplica a redução de 9,90% para NCM 3004 e 10,49% para cosméticos.
+   * Cadastrado o CNPJ oficial da Matriz INFAN (`08.939.548/0001-03`).
+2. **`auditIcmsAndBaseReduction` em `src/services/pharmaFiscalEngine.ts`:**
+   * Alerta específico `ICMS_BASE_REDUCTION_OMITTED` disparado sempre que a INFAN tiver redução de base e o cliente tiver emitido Base Cheia (CST 00).
+3. **Tríade Comparativa em `src/components/ExecutiveSummary.tsx`:**
+   * A linha "Base de Cálculo do ICMS" no "3. Correto Esperável (Sistema)" agora apresenta o valor auditado com a redução aplicada (`totalExpectedVBc`) com tag dinâmica (`Redução 9,90%` ou `Proporcional Líquida`), alertando `Base Divergente` quando o cliente omitir o benefício.
+
+### 16.3. Testes Automatizados da Suíte 14
+* `T14.1`: INFAN Saída Interestadual (CFOP 6101) com Redução de Base de 9,90% para NCM 3004.
+* `T14.2`: INFAN Suframa (CFOP 6109/6110) com Alíquota 0,00% e Desoneração Total.
+* `T14.3`: Alerta de Redução de Base de 9,90% Omitida pelo Cliente (CST 00 vs esperado CST 20) com Base Esperada Auditada.
+* **Status Global da Aplicação:** **`76/76 testes aprovados (100% VERDE)`**.
+
+
 
 
 

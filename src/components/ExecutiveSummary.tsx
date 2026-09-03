@@ -399,25 +399,46 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
             })()}
 
             {/* Linha: Base de Cálculo de ICMS */}
-            <div className="smart-tax-row smart-tax-row-triad">
-              <div className="col-tax-name font-weight-600">
-                Base de Cálculo do ICMS
-              </div>
-              <div className="col-tax-nfo font-mono">
-                {formatCurrency(nfo.totals.vBC)} <span className="badge-tag">Total Venda</span>
-              </div>
-              <div className="col-tax-nfd font-mono">
-                {formatCurrency(nfd.totals.vBC || nfd.totals.vNF)}
-              </div>
-              <div className="col-tax-expected font-mono text-primary">
-                {formatCurrency(nfd.totals.vBC || nfd.totals.vNF)} <span className="badge-tag">Proporcional Líquida</span>
-              </div>
-              <div className="col-tax-status">
-                <span className="match-chip match-chip-ok">
-                  <CheckCircle2 className="icon-xs" /> Base Conforme
-                </span>
-              </div>
-            </div>
+            {(() => {
+              const totalExpectedVBc = result.itemComparisons.reduce((acc, c) => {
+                if (c.icmsAudit?.vBcExpected !== undefined) {
+                  return acc + c.icmsAudit.vBcExpected;
+                }
+                const vLiq = Math.max(0, (c.nfdItem.vProd || 0) - (c.nfdItem.vDesc || 0));
+                return acc + vLiq;
+              }, 0);
+
+              const actualNfdVBc = nfd.totals.vBC || 0;
+              const hasBaseReduction = result.itemComparisons.some(c => c.icmsAudit?.baseReductionApplied);
+              const reductionPct = result.itemComparisons.find(c => c.icmsAudit?.baseReductionApplied)?.icmsAudit?.reductionPercentage;
+              const isBaseMatch = Math.abs(actualNfdVBc - totalExpectedVBc) <= 0.25 || actualNfdVBc === 0;
+
+              return (
+                <div className="smart-tax-row smart-tax-row-triad">
+                  <div className="col-tax-name font-weight-600">
+                    Base de Cálculo do ICMS
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    {formatCurrency(nfo.totals.vBC)} <span className="badge-tag">Total Venda</span>
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    {formatCurrency(actualNfdVBc)}
+                  </div>
+                  <div className="col-tax-expected font-mono text-primary">
+                    {formatCurrency(totalExpectedVBc)}{' '}
+                    <span className="badge-tag">
+                      {hasBaseReduction ? `Redução ${reductionPct?.toFixed(2)}%` : 'Proporcional Líquida'}
+                    </span>
+                  </div>
+                  <div className="col-tax-status">
+                    <span className={`match-chip ${isBaseMatch ? 'match-chip-ok' : 'match-chip-warn'}`}>
+                      {isBaseMatch ? <CheckCircle2 className="icon-xs" /> : <AlertTriangle className="icon-xs" />}
+                      {isBaseMatch ? 'Base Conforme' : 'Base Divergente'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Linha: ICMS-ST */}
             {(() => {
