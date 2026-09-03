@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { BatchReconciliationResult, NFeDocument, ReconciliationResult } from '../types/nfe';
 import { parseNFeXml } from '../services/nfeParser';
+import { parseDanfePdf } from '../services/danfePdfParser';
 import { reconcileNFeDocuments } from '../services/reconciliationEngine';
 import { executeBatchPairing } from '../services/batchPairingEngine';
 
@@ -32,12 +33,6 @@ export function useReconciliation() {
     if (nfeMatch2) return nfeMatch2[0];
 
     const ext = fileName.toLowerCase().split('.').pop();
-    if (ext === 'pdf') {
-      throw new Error(
-        'Arquivo PDF não contém dados XML de NF-e embutidos. ' +
-        'Use o arquivo XML original exportado do sistema emissor.'
-      );
-    }
     if (ext === 'json') {
       throw new Error(
         'Arquivo JSON não contém estrutura XML de NF-e reconhecível. ' +
@@ -68,9 +63,16 @@ export function useReconciliation() {
       }
 
       try {
-        const rawText = await file.text();
-        const xmlContent = extractXmlFromContent(rawText, file.name);
-        const doc = parseNFeXml(xmlContent, file.name);
+        let doc: NFeDocument;
+        if (ext.endsWith('.pdf')) {
+          const buffer = await file.arrayBuffer();
+          doc = await parseDanfePdf(buffer, file.name);
+        } else {
+          const rawText = await file.text();
+          const xmlContent = extractXmlFromContent(rawText, file.name);
+          doc = parseNFeXml(xmlContent, file.name);
+        }
+
         newLoaded.push({
           id: `${file.name}-${Date.now()}-${Math.random()}`,
           name: file.name,

@@ -1,7 +1,9 @@
 import { parseNFeXml } from './nfeParser';
+import { parseDanfeText } from './danfePdfParser';
 import { reconcileNFeDocuments, reconcileNFdAgainstMultipleNfos } from './reconciliationEngine';
 import { executeBatchPairing } from './batchPairingEngine';
 import { sampleNfdXml, sampleNfoXml } from '../data/sampleXmls';
+import { sampleDanfePdfText } from '../data/sampleDanfeText';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { calculateExpectedIcms, identifyCompany } from '../data/companyData';
 import { findProductByEan, findProductByCode } from '../data/productCatalog';
@@ -381,6 +383,52 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     assert(
       criticalsApproved.length === 0,
       'T10.2: Nota 100% auditada possui zero divergências críticas e obtém liberação direta no Pirâmide'
+    );
+
+    // =========================================================================
+    // SUÍTE 11: INGESTÃO E PROCESSAMENTO NATIVO DE DANFE EM PDF (HEBRON & CLIENTES)
+    // =========================================================================
+    // T11.1: Extração de Metadados e Participantes a partir do PDF da DANFE
+    const docDanfePdf = parseDanfeText(sampleDanfePdfText, 'DANFE_Devolucao_663338.pdf');
+    assert(
+      docDanfePdf.chNFe === '15260784521053000490550010006633381403148640' &&
+      docDanfePdf.nNF === '663338' &&
+      docDanfePdf.nfeType === 'NFD' &&
+      docDanfePdf.emit.cnpj === '84521053000490' &&
+      docDanfePdf.dest.cnpj === '04792134000143',
+      'T11.1: Extração de Chave de Acesso, nNF, Tipo NFD, Emitente e Destinatário de DANFE PDF'
+    );
+
+    // T11.2: Extração de Itens, Preços Unitários, NCM e Lotes ANVISA a partir de DANFE PDF
+    const pdfItem1 = docDanfePdf.items.find(it => it.cProd === '172424');
+    assert(
+      !!pdfItem1 &&
+      pdfItem1.qCom === 3 &&
+      pdfItem1.vUnCom === 99.25 &&
+      pdfItem1.ncm === '29362990' &&
+      pdfItem1.batches.some(b => b.nLote === '2606039' && b.dVal === '2028-06-30'),
+      'T11.2: Extração de Itens, Preços Unitários, NCM e Lotes ANVISA a partir de DANFE PDF'
+    );
+
+    // T11.3: Extração de NFref e Motivo de Devolução em Informações Complementares da DANFE PDF
+    assert(
+      docDanfePdf.refNFeList.includes('25260704792134000143550010002807481662339838') &&
+      docDanfePdf.parsedNfoRefNumber === '280748' &&
+      Boolean(docDanfePdf.parsedMotivoDevolucao?.includes('AVARIA')),
+      'T11.3: Extração de NFref e Motivo de Devolução em Informações Complementares de DANFE PDF'
+    );
+
+    // T11.4: Reconciliação Híbrida 100% Aprovada: DANFE PDF de Devolução (663338) x XML de Origem (280748)
+    const hybridReconciliation = reconcileNFeDocuments(docDanfePdf, docNfo);
+    const hybridCriticals = [
+      ...hybridReconciliation.headerValidation.issues.filter(i => i.severity === 'CRITICAL'),
+      ...hybridReconciliation.itemComparisons.flatMap(c => c.issues.filter(i => i.severity === 'CRITICAL')),
+    ];
+    assert(
+      hybridReconciliation.headerValidation.isRefKeyMatching &&
+      hybridCriticals.length === 0 &&
+      hybridReconciliation.itemComparisons.length === 2,
+      'T11.4: Reconciliação Híbrida 100% Aprovada: DANFE PDF de Devolução (663338) x XML de Origem (280748)'
     );
 
   } catch (err: any) {

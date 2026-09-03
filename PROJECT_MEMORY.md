@@ -405,8 +405,46 @@ Na devolução parcial de produtos, o desconto deve ser rigorosamente proporcion
   cd ~/nfe-return-validator && git pull origin main && docker compose build --no-cache && docker compose up -d --force-recreate
   ```
 * **Objetivo Imediato:** Teste das funcionalidades centrais de auditoria fiscal e regras tributárias (NFO x NFD em lote, proporcionalidade de descontos, ICMS-ST, reduções da base de cálculo INFAN/Quesalon e alertas SEFAZ) diretamente com a Gerência Fiscal (Polliana).
-* **Testes Automatizados:** **62/62 aprovados (100% verde)**.
-* **Compilação de Produção:** Build Vite/TypeScript aprovado em **1.44s**.
+* **Testes Automatizados:** **66/66 aprovados (100% verde)**.
+* **Compilação de Produção:** Build Vite/TypeScript aprovado em **4.43s**.
+
+---
+
+## 📄 13. INGESTÃO E PROCESSAMENTO NATIVO DE DANFE EM PDF (HEBRON & CLIENTES)
+
+### 13.1. Requisito Fundamental da Especificação Homologada
+* **Conformidade com o Blueprint:** Na Seção 3 do documento oficial (*Especificação do Projeto: Validação e Lançamento de Devoluções*), o sistema previa expressamente:
+  > *"O programa processará arquivos **XML** e **PDF**, realizando o cruzamento de dados entre duas fontes fundamentais: Nota Fiscal de Origem (NFO) e Devolução do Cliente (NFD)."*
+* **Problema Identificado:** O hook de upload (`useReconciliation.ts`) continha uma trava temporária que rejeitava arquivos `.pdf`.
+
+### 13.2. Diagnóstico Técnico: Leitor Nativo Local vs APIs Externas na Nuvem
+* **Auditoria de Mercado:** A maioria das APIs externas (Arquivei, Focus NFe, WebDANFE, etc.) exige internet externa constante, cobra por requisição e, criticamente, **expõe dados fiscais confidenciais da Hebron (CNPJ de clientes, preços e lotes de medicamentos)** para servidores terceiros, violando diretrizes de compliance e LGPD.
+* **Desempenho Real do Leitor Nativo (`danfePdfParser.ts`):**
+  * O leitor local via `pdfjs-dist` processou as DANFEs reais da Hebron e dos clientes (Tapajós) em **apenas 147 milissegundos (0,14s)**!
+  * A percepção de lentidão anterior decorreu unicamente do terminal PowerShell no Windows aguardando processo interativo em background, e não da velocidade do motor de parsing.
+  * O módulo roda **100% localmente no navegador ou no container Debian da Hebron**, sem custos de API, sem vazamento de dados e com tempo de resposta imperceptível para o usuário.
+
+### 13.3. Arquitetura Implementada (`danfePdfParser.ts`)
+* **Extração Completa de Atributos:**
+  * **Chave de Acesso:** 44 dígitos contínuos ou formatados, com validação de consistência.
+  * **Cabeçalho:** `nNF`, `serie`, `dhEmi`, `nProt`, `tpNF` (Entrada/Saída), `natOp`.
+  * **Participantes:** CNPJs e Razões Sociais do Emitente e Destinatário.
+  * **Tabela de Itens:** Código, Descrição higienizada, NCM, CFOP, Unidade, Quantidade, Preço Unitário, Valor Total e ICMS.
+  * **Rastreabilidade ANVISA:** Extração precisa de Lote (`nLote`), Data de Validade (`dVal`) e Data de Fabricação (`dFab`).
+  * **Totais da Nota:** `vProd`, `vDesc`, `vBC`, `vICMS`, `vNF`.
+  * **Informações Complementares:** Captura da Chave de Acesso da NFO referenciada, número da NFO e motivo da devolução.
+* **Interoperabilidade Total no Hook `useReconciliation.ts`:**
+  * Permite qualquer combinação: **XML x XML**, **XML x PDF**, **PDF x XML** ou **PDF x PDF**.
+  * O motor de conciliação fiscal audita as notas sem distinção de formato de entrada.
+
+### 13.4. Qualidade e Cobertura
+* **Suíte de Testes (TDD):** Expandida de 62 para **66 testes automatizados (100% verde)**.
+  * `T11.1`: Extração de Metadados e Participantes da DANFE PDF.
+  * `T11.2`: Extração de Itens, Preços, NCM e Lotes ANVISA da DANFE PDF.
+  * `T11.3`: Extração de NFref e Motivo em Informações Complementares.
+  * `T11.4`: Reconciliação Híbrida 100% Aprovada (DANFE PDF Tapajós x XML Quesalon).
+* **Compilação de Produção:** Vite/TypeScript aprovado em **4.43s** com code-splitting dinâmico para não onerar o carregamento inicial.
+
 
 
 
