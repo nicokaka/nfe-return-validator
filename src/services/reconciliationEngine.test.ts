@@ -13,6 +13,7 @@ import { auditIcmsStProportionality } from './pharmaFiscalEngine';
 import { validateCnpjChecksum } from './cnpjValidator';
 import { validateNFeKey } from './sefazStatusService';
 import { generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript } from './piramideService';
+import { suggestNDO } from './ndoTaxEngine';
 
 export function runExhaustiveTestSuite(): { total: number; passed: number; failed: number; log: string[] } {
   const log: string[] = [];
@@ -551,6 +552,89 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       hasBaseReductionOmittedWarning &&
       resInfanMedicamental.itemComparisons[0].icmsAudit?.reductionPercentage === 9.90,
       'T14.3: Alerta de Redução de Base de 9,90% Omitida pelo Cliente (CST 00 vs esperado CST 20) com Base Esperada Auditada'
+    );
+
+    // =========================================================================
+    // SUÍTE 15: DEMANDAS ESTRATÉGICAS DA GERÊNCIA FISCAL (POLLIANA - 04/09/2026)
+    // =========================================================================
+    // T15.1: CFOP Produção Interestadual (NFO 6101 ➔ Entrada Pirâmide 2.201)
+    assert(
+      resInfanMedicamental.ndoSuggestion?.cfop === '2.201' &&
+      resInfanMedicamental.ndoSuggestion?.ndoCode === 'DEV-VDA-PROD-INTER',
+      'T15.1: Variação CFOP Produção Interestadual: Venda 6101 da INFAN gera Entrada 2.201 no Pirâmide'
+    );
+
+    // T15.2: CFOP Produção Estadual (NFO 5101 ➔ Entrada Pirâmide 1.201)
+    const mockNfdEstadual = {
+      ...docPollianaNfd,
+      emit: { ...docPollianaNfd.emit, uf: 'PE' },
+      dest: { ...docPollianaNfd.dest, uf: 'PE' },
+      items: [{ ...docPollianaNfd.items[0], cfop: '5201' }],
+    };
+    const mockNfoEstadualProd = {
+      ...docPollianaNfo,
+      emit: { ...docPollianaNfo.emit, uf: 'PE' },
+      dest: { ...docPollianaNfo.dest, uf: 'PE' },
+      items: [{ ...docPollianaNfo.items[0], cfop: '5101' }],
+    };
+    const ndoProdEstadual = suggestNDO(mockNfdEstadual as any, mockNfoEstadualProd as any);
+    assert(
+      ndoProdEstadual.cfop === '1.201' && ndoProdEstadual.ndoCode === 'DEV-VDA-PROD-ESTADUAL',
+      'T15.2: Variação CFOP Produção Estadual: Venda 5101 gera Entrada 1.201 no Pirâmide'
+    );
+
+    // T15.3: CFOP Revenda Interestadual (NFO 6102 ➔ Entrada Pirâmide 2.202)
+    const mockNfoInterRevenda = {
+      ...docPollianaNfo,
+      items: [{ ...docPollianaNfo.items[0], cfop: '6102' }],
+    };
+    const ndoRevInter = suggestNDO(docPollianaNfd as any, mockNfoInterRevenda as any);
+    assert(
+      ndoRevInter.cfop === '2.202' && ndoRevInter.ndoCode === 'DEV-VDA-REV-INTER',
+      'T15.3: Variação CFOP Revenda Interestadual: Venda 6102 gera Entrada 2.202 no Pirâmide'
+    );
+
+    // T15.4: CFOP Revenda Estadual (NFO 5102 ➔ Entrada Pirâmide 1.202)
+    const mockNfoEstadualRev = {
+      ...mockNfoEstadualProd,
+      items: [{ ...mockNfoEstadualProd.items[0], cfop: '5102' }],
+    };
+    const ndoRevEstadual = suggestNDO(mockNfdEstadual as any, mockNfoEstadualRev as any);
+    assert(
+      ndoRevEstadual.cfop === '1.202' && ndoRevEstadual.ndoCode === 'DEV-VDA-REV-ESTADUAL',
+      'T15.4: Variação CFOP Revenda Estadual: Venda 5102 gera Entrada 1.202 no Pirâmide'
+    );
+
+    // T15.5: Cálculo Automático de Crédito de PIS (2,10%) e COFINS (9,90%) para Medicamentos Monofásicos da INFAN
+    const firstComp = resInfanMedicamental.itemComparisons[0];
+    assert(
+      firstComp.pisCofinsCreditAudit !== undefined &&
+      firstComp.pisCofinsCreditAudit.isMonofasicoRecovery === true &&
+      firstComp.pisCofinsCreditAudit.pPis === 2.10 &&
+      firstComp.pisCofinsCreditAudit.pCofins === 9.90 &&
+      firstComp.pisCofinsCreditAudit.vPisCredit > 0 &&
+      firstComp.pisCofinsCreditAudit.vCofinsCredit > 0 &&
+      firstComp.pisCofinsCreditAudit.cstEntry === '50' &&
+      (resInfanMedicamental.pharmaceuticalSummary?.totalPisCreditRecuperavel || 0) > 0,
+      'T15.5: Cálculo de Crédito Automático de PIS (2,10%) e COFINS (9,90%) na Devolução para a INFAN (CST 50)'
+    );
+
+    // T15.6: Ausência de Falso Erro de CST quando o Cliente Devolve Monofásico com CST 04
+    const hasFalseCstMismatch = firstComp.issues.some(i => i.code === 'PIS_CST_MISMATCH');
+    const hasMonofasicoInfo = firstComp.issues.some(i => i.code === 'PIS_COFINS_INFAN_CREDITO_MONOFASICO');
+    assert(
+      !hasFalseCstMismatch && hasMonofasicoInfo,
+      'T15.6: Devolução de Monofásico com CST 04 não gera falso erro e confirma conformidade com Lei 10.147/00'
+    );
+
+    // T15.7: Extração Estruturada e Auditoria da Reforma Tributária (CBS 0,90% e IBS 0,10%)
+    assert(
+      docPollianaNfd.items[0].ibsCbs !== undefined &&
+      docPollianaNfd.items[0].ibsCbs?.pCbs === 0.9 &&
+      docPollianaNfd.items[0].ibsCbs?.pIbs === 0.1 &&
+      (docPollianaNfd.totals.vCBS || 0) > 0 &&
+      (resInfanMedicamental.taxReformSummary?.totalCbs || 0) > 0,
+      'T15.7: Parse estruturado de tags <IBSCBS> e <IBSCBSTot> com auditoria de CBS (0,90%) e IBS (0,10%)'
     );
 
   } catch (err: any) {

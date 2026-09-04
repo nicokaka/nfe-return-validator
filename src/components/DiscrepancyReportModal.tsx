@@ -25,7 +25,7 @@ export const DiscrepancyReportModal: React.FC<DiscrepancyReportModalProps> = ({ 
 
   const handleDownloadCsv = () => {
     const csvRows: string[] = [
-      'Item;Status;Produto NFD;NCM;Categoria;ANVISA;EAN;Qtd Devolvida;Preco NFD;Preco NFO;Desc NFD;Desc Esperado NFO;Desc Proporcional;Lote NFD;Lote NFO;Almoxarifado Piramide;Inconsistencias',
+      'Item;Status;Produto NFD;NCM;Categoria;ANVISA;EAN;CFOP NFD;CFOP Entrada Piramide;Qtd Devolvida;Preco NFD;Preco NFO;Desc NFD;Desc Esperado NFO;Desc Proporcional;Credito PIS INFAN;Credito COFINS INFAN;CBS;IBS;Lote NFD;Lote NFO;Almoxarifado Piramide;Inconsistencias',
     ];
 
     result.itemComparisons.forEach(c => {
@@ -39,16 +39,22 @@ export const DiscrepancyReportModal: React.FC<DiscrepancyReportModalProps> = ({ 
       const ncm = nfdItem.ncm || '';
       const categoria = c.ncmProfile?.categoryLabel || 'Geral';
       const anvisa = nfdItem.med?.cProdANVISA || '';
+      const cfopNfd = nfdItem.cfop || '';
+      const cfopEntrada = result.ndoSuggestion?.cfop || '2.202';
       const descNfd = (nfdItem.vDesc || 0).toFixed(2);
       const descEsperado = c.discountAudit ? c.discountAudit.expectedDiscount.toFixed(2) : '0.00';
       const descPropOk = c.discountAudit ? (c.discountAudit.isProportional ? 'SIM' : 'NAO') : 'SIM';
+      const credPis = (c.pisCofinsCreditAudit?.vPisCredit || 0).toFixed(2);
+      const credCofins = (c.pisCofinsCreditAudit?.vCofinsCredit || 0).toFixed(2);
+      const vCbs = (c.ibsCbsAudit?.vCbs || 0).toFixed(2);
+      const vIbs = (c.ibsCbsAudit?.vIbs || 0).toFixed(2);
       const lotesNfd = nfdItem.batches.map(b => b.nLote).join('/') || 'SEM LOTE';
       const lotesNfo = nfoItem ? nfoItem.batches.map(b => b.nLote).join('/') || 'SEM LOTE' : 'N/A';
       const almox = c.piramideResolution?.almoxarifado || result.piramideResolution?.almoxarifado || 'ALMOX';
       const issuesStr = c.issues.map(i => i.title).join(' | ') || 'Nenhuma';
 
       csvRows.push(
-        `${nfdItem.nItem};"${status}";"${nfdItem.xProd.replace(/"/g, '""')}";"${ncm}";"${categoria}";"${anvisa}";"${nfdItem.cEAN}";${nfdItem.qCom};${nfdItem.vUnCom.toFixed(2)};${nfoItem ? nfoItem.vUnCom.toFixed(2) : 0};${descNfd};${descEsperado};"${descPropOk}";"${lotesNfd}";"${lotesNfo}";"${almox}";"${issuesStr}"`
+        `${nfdItem.nItem};"${status}";"${nfdItem.xProd.replace(/"/g, '""')}";"${ncm}";"${categoria}";"${anvisa}";"${nfdItem.cEAN}";"${cfopNfd}";"${cfopEntrada}";${nfdItem.qCom};${nfdItem.vUnCom.toFixed(2)};${nfoItem ? nfoItem.vUnCom.toFixed(2) : 0};${descNfd};${descEsperado};"${descPropOk}";${credPis};${credCofins};${vCbs};${vIbs};"${lotesNfd}";"${lotesNfo}";"${almox}";"${issuesStr}"`
       );
     });
 

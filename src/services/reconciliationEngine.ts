@@ -344,7 +344,7 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     itemIssues.push(...discountIssues);
 
     // Auditoria farmacêutica regulatória (NT 2021.004, ANVISA, PIS/COFINS Monofásico)
-    const { issues: pharmaIssues } = auditPharmaceuticalItem(nfdItem, matchedNfoItem, nfd, nfo);
+    const { issues: pharmaIssues, pisCofinsCreditAudit } = auditPharmaceuticalItem(nfdItem, matchedNfoItem, nfd, nfo);
     itemIssues.push(...pharmaIssues);
 
     // Auditoria de ICMS e Redução de Base (ex: INFAN 9.90% e 10.49%) com Princípio da Nota Espelho
@@ -356,7 +356,7 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
     itemIssues.push(...stIssues);
 
     // Auditoria da Reforma Tributária (IBS e CBS)
-    const { ibsCbsAudit, issues: ibsCbsIssues } = auditIbsCbsReform(nfdItem, nfd);
+    const { ibsCbsAudit, issues: ibsCbsIssues } = auditIbsCbsReform(nfdItem, nfd, matchedNfoItem);
     itemIssues.push(...ibsCbsIssues);
 
     // Auditoria DFeReferenciado SEFAZ 2026 (NT RTC v1.40 / Regra VC02-14)
@@ -602,6 +602,7 @@ export function reconcileNFeDocuments(docA: NFeDocument, docB: NFeDocument): Rec
       discountAudit,
       icmsAudit,
       icmsStAudit,
+      pisCofinsCreditAudit,
       ibsCbsAudit,
       dfeReferenciadoAudit,
       issues: itemIssues,

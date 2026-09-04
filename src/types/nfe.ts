@@ -64,6 +64,16 @@ export interface NFeTaxICMSST {
   vICMSST: number;
 }
 
+export interface NFeTaxIbsCbs {
+  cst?: string;
+  cClassTrib?: string;
+  vBC?: number;
+  pIbs?: number;
+  vIbs?: number;
+  pCbs?: number;
+  vCbs?: number;
+}
+
 export type NcmCategory = 'MEDICAMENTO' | 'VITAMINA' | 'SUPLEMENTO' | 'COSMETICO_CORRELATO' | 'OUTROS';
 
 export interface NcmProfile {
@@ -120,6 +130,7 @@ export interface NFeItem {
   pis?: NFeTaxPIS;
   cofins?: NFeTaxCOFINS;
   icmsST?: NFeTaxICMSST;
+  ibsCbs?: NFeTaxIbsCbs;
   med?: NFeItemMed;
   infAdProd?: string;
   dfeReferenciado?: DFeReferenciadoItem;
@@ -133,7 +144,19 @@ export interface NFeTotals {
   vIPI: number;
   vPIS: number;
   vCOFINS: number;
+  vIBS?: number;
+  vCBS?: number;
   vNF: number;
+}
+
+export interface PisCofinsCreditAudit {
+  vPisCredit: number;
+  vCofinsCredit: number;
+  pPis: number;
+  pCofins: number;
+  cstEntry: string;
+  isMonofasicoRecovery: boolean;
+  explanation: string;
 }
 
 export interface PharmaceuticalSummary {
@@ -148,6 +171,8 @@ export interface PharmaceuticalSummary {
   totalDescontoNfd: number;
   totalDescontoNfoProporcional: number;
   temDivergenciaDesconto: boolean;
+  totalPisCreditRecuperavel?: number;
+  totalCofinsCreditRecuperavel?: number;
 }
 
 export interface NFeDocument {
@@ -287,6 +312,7 @@ export interface ItemComparison {
   discountAudit?: DiscountAudit;
   icmsAudit?: IcmsAudit;
   icmsStAudit?: IcmsStAudit;
+  pisCofinsCreditAudit?: PisCofinsCreditAudit;
   ibsCbsAudit?: IbsCbsAudit;
   dfeReferenciadoAudit?: DFeReferenciadoAudit;
   issues: ValidationIssue[];

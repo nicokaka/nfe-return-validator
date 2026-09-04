@@ -548,7 +548,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               </div>
             </div>
 
-            {/* Linha: PIS / COFINS (CST) */}
+            {/* Linha: PIS / COFINS (CST e Crédito) */}
             {(() => {
               const pisCstNfo = nfo.items[0]?.pis?.cst || '01';
               const cofinsCstNfo = nfo.items[0]?.cofins?.cst || '01';
@@ -557,25 +557,34 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
               const isIndustry = result.companyProfile?.isIndustry;
               const expectedPisCst = isIndustry ? (pisCstNfo === '02' ? '04' : (pisCstNfd || '04')) : '49';
               const expectedCofinsCst = isIndustry ? (cofinsCstNfo === '02' ? '04' : (cofinsCstNfd || '04')) : '49';
+              const hasMonofasicoCredit = (result.pharmaceuticalSummary?.totalPisCreditRecuperavel || 0) > 0;
 
               return (
                 <div className="smart-tax-row smart-tax-row-triad">
                   <div className="col-tax-name font-weight-600">
-                    PIS / COFINS (CST)
+                    PIS / COFINS (CST & Crédito)
                   </div>
                   <div className="col-tax-nfo font-mono">
                     CST {pisCstNfo} / {cofinsCstNfo}
+                    {nfo.totals.vPIS > 0 && <span className="badge-tag ml-1">{formatCurrency(nfo.totals.vPIS)} / {formatCurrency(nfo.totals.vCOFINS)}</span>}
                   </div>
                   <div className="col-tax-nfd font-mono">
                     CST {pisCstNfd} / {cofinsCstNfd}
+                    <span className="badge-tag ml-1">{nfd.totals.vPIS > 0 ? formatCurrency(nfd.totals.vPIS) : 'Sem Destaque'}</span>
                   </div>
                   <div className="col-tax-expected font-mono text-primary">
                     CST {expectedPisCst} / {expectedCofinsCst}{' '}
-                    <span className="badge-tag">{isIndustry ? 'Indústria INFAN' : 'Monofásico'}</span>
+                    {hasMonofasicoCredit ? (
+                      <span className="badge-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#059669', borderColor: '#10b981' }}>
+                        Crédito INFAN: {formatCurrency((result.pharmaceuticalSummary?.totalPisCreditRecuperavel || 0) + (result.pharmaceuticalSummary?.totalCofinsCreditRecuperavel || 0))} (CST 50)
+                      </span>
+                    ) : (
+                      <span className="badge-tag">{isIndustry ? 'Indústria INFAN' : 'Monofásico'}</span>
+                    )}
                   </div>
                   <div className="col-tax-status">
                     <span className="match-chip match-chip-ok">
-                      <CheckCircle2 className="icon-xs" /> CST Validado
+                      <CheckCircle2 className="icon-xs" /> {hasMonofasicoCredit ? 'Crédito Apurado' : 'CST Validado'}
                     </span>
                   </div>
                 </div>
@@ -602,6 +611,68 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
                 </span>
               </div>
             </div>
+
+            {/* Linha: CBS (Reforma Tributária - Federal) */}
+            {(() => {
+              const cbsNfo = nfo.totals.vCBS || nfo.items.reduce((acc, i) => acc + (i.ibsCbs?.vCbs || 0), 0);
+              const cbsNfd = nfd.totals.vCBS || nfd.items.reduce((acc, i) => acc + (i.ibsCbs?.vCbs || 0), 0);
+              const cbsExpected = result.taxReformSummary?.totalCbs || cbsNfd;
+              const hasCbs = cbsNfd > 0 || cbsNfo > 0;
+
+              return (
+                <div className="smart-tax-row smart-tax-row-triad">
+                  <div className="col-tax-name font-weight-600">
+                    CBS (Reforma Tributária - Federal)
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    {cbsNfo > 0 ? formatCurrency(cbsNfo) : '0,90%'} <span className="badge-tag">Transição</span>
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    {cbsNfd > 0 ? formatCurrency(cbsNfd) : '0,00%'}
+                  </div>
+                  <div className="col-tax-expected font-mono text-primary">
+                    {cbsExpected > 0 ? formatCurrency(cbsExpected) : '0,90%'}{' '}
+                    <span className="badge-tag">{hasCbs ? 'Conforme 2026/27' : 'Alíquota Teste 0,90%'}</span>
+                  </div>
+                  <div className="col-tax-status">
+                    <span className="match-chip match-chip-ok">
+                      <CheckCircle2 className="icon-xs" /> Reforma 2026/2027
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Linha: IBS (Reforma Tributária - Estadual) */}
+            {(() => {
+              const ibsNfo = nfo.totals.vIBS || nfo.items.reduce((acc, i) => acc + (i.ibsCbs?.vIbs || 0), 0);
+              const ibsNfd = nfd.totals.vIBS || nfd.items.reduce((acc, i) => acc + (i.ibsCbs?.vIbs || 0), 0);
+              const ibsExpected = result.taxReformSummary?.totalIbs || ibsNfd;
+              const hasIbs = ibsNfd > 0 || ibsNfo > 0;
+
+              return (
+                <div className="smart-tax-row smart-tax-row-triad">
+                  <div className="col-tax-name font-weight-600">
+                    IBS (Reforma Tributária - Estadual)
+                  </div>
+                  <div className="col-tax-nfo font-mono">
+                    {ibsNfo > 0 ? formatCurrency(ibsNfo) : '0,10%'} <span className="badge-tag">Transição</span>
+                  </div>
+                  <div className="col-tax-nfd font-mono">
+                    {ibsNfd > 0 ? formatCurrency(ibsNfd) : '0,00%'}
+                  </div>
+                  <div className="col-tax-expected font-mono text-primary">
+                    {ibsExpected > 0 ? formatCurrency(ibsExpected) : '0,10%'}{' '}
+                    <span className="badge-tag">{hasIbs ? 'Conforme 2026/27' : 'Alíquota Teste 0,10%'}</span>
+                  </div>
+                  <div className="col-tax-status">
+                    <span className="match-chip match-chip-ok">
+                      <CheckCircle2 className="icon-xs" /> Reforma 2026/2027
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -670,6 +741,21 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
                 Esperado Proporcional: {formatCurrency(result.pharmaceuticalSummary.totalDescontoNfoProporcional)}
               </div>
             </div>
+
+            {((result.pharmaceuticalSummary.totalPisCreditRecuperavel || 0) > 0 || (result.pharmaceuticalSummary.totalCofinsCreditRecuperavel || 0) > 0) && (
+              <div className="pharma-metric-card" style={{ borderColor: 'rgba(16, 185, 129, 0.4)', background: 'rgba(16, 185, 129, 0.04)' }}>
+                <div className="pharma-metric-top">
+                  <span className="pharma-card-icon">💰</span>
+                  <span className="pharma-metric-name">Crédito PIS/COFINS INFAN</span>
+                </div>
+                <div className="pharma-metric-number font-mono text-success">
+                  {formatCurrency((result.pharmaceuticalSummary.totalPisCreditRecuperavel || 0) + (result.pharmaceuticalSummary.totalCofinsCreditRecuperavel || 0))}
+                </div>
+                <div className="pharma-metric-desc">
+                  PIS: {formatCurrency(result.pharmaceuticalSummary.totalPisCreditRecuperavel || 0)} | COFINS: {formatCurrency(result.pharmaceuticalSummary.totalCofinsCreditRecuperavel || 0)} (CST 50)
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

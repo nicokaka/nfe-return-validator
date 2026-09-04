@@ -1,7 +1,7 @@
 # 🧠 PROJECT MEMORY & KNOWLEDGE BASE
 > **Projeto:** Validador Fiscal & Conciliador de Devoluções de NF-e (NFO x NFD) — Hebron & ERP Pirâmide  
-> **Status:** Ativo | 100% Testes Aprovados (55/55) | Integração TI Oracle em Andamento  
-> **Última Atualização:** 2026-09-01 (Checkpoint de Integração Pirâmide Homologação `.61`)  
+> **Status:** Ativo | 100% Testes Aprovados (83/83) | Integração TI Oracle em Andamento  
+> **Última Atualização:** 2026-09-04 (Eliminação de Overflow/Scrollbar, Refinamento UI/UX e Demandas Fiscais Polliana)  
 
 ---
 
@@ -692,18 +692,56 @@ E apontou duas correções essenciais de usabilidade e precisão fiscal:
 * **`76/76 testes aprovados (100% VERDE)`**.
 * Build Vite compilado com sucesso.
 
+---
 
+## 🏛️ 23. HOMOLOGAÇÃO DAS DEMANDAS DA GERÊNCIA FISCAL (POLLIANA - SOLICITACOESPOLLI1.MD)
+> **Data:** 2026-09-04 | **Status:** 83/83 Testes Aprovados (100% Verde) | Build Vite Concluído com Sucesso
 
+### 23.1. Variação Inteligente do CFOP de Entrada no Pirâmide (Produção vs Revenda)
+* **Regra Operacional:**
+  * Saída Hebron terminada em `01` (ex: `5101`/`51011` estadual ou `6101`/`61011` interestadual — Venda de Produção Própria): Sugestão de Entrada no ERP Pirâmide terminada em `01` (`1.201` ou `2.201`).
+  * Saída Hebron terminada em `02` (ex: `5102`/`51021` estadual ou `6102`/`61021` interestadual — Venda de Mercadoria Adquirida de Terceiros / Revenda): Sugestão de Entrada no ERP Pirâmide terminada em `02` (`1.202` ou `2.202`).
+* **Implementação:** Função `suggestNDO()` em `src/services/ndoTaxEngine.ts` com análise dinâmica dos últimos dígitos do CFOP faturado na NFO.
 
+### 23.2. Comparativo Triplo no Detalhe dos Itens (`ItemsTable.tsx`)
+* **Arquitetura Visual:** Replicada a mesma esteira comparativa de 3 colunas (*1. Faturado Origem NFO | 2. Informado Cliente NFD | 3. Correto Esperável Sistema | Auditoria & Match*) na gaveta expandida de cada item na tabela de produtos.
+* **10 Parâmetros Auditados:** CFOP, Base de Cálculo ICMS, Alíquota & CST ICMS, Valor ICMS, ICMSS (Subst. Tributária), Desconto Comercial Rateado, PIS (CST & Crédito), COFINS (CST & Crédito), CBS (0,90%) e IBS (0,10%).
 
+### 23.3. Crédito Automático de PIS/COFINS Monofásico para INFAN (Lei nº 10.147/2000)
+* **Fundamentação Fiscal:** A INFAN (indústria farmacêutica) recolhe PIS e COFINS concentrado na saída com alíquotas majoradas (PIS 2,10% e COFINS 9,90%, total 12,00%). Nas devoluções, o cliente devolve sob regime monofásico com CST `04` ou `49` a Alíquota Zero (sem destaque).
+* **Solução Sistêmica:** Quando a empresa destinatária for a INFAN e o NCM for de medicamento monofásico:
+  1. O sistema calcula automaticamente o crédito de PIS (2,10%) e COFINS (9,90%) sobre a base líquida de devolução ($vProd - vDesc$).
+  2. Sugere o lançamento de entrada sob o CST `50` (Operação com Direito a Crédito) para escrituração no Pirâmide.
+  3. Elimina o falso erro de divergência de CST (`PIS_CST_MISMATCH`), registrando nota informativa de conformidade legal.
+  4. Para suplementos e alimentos, mantém o regime não-cumulativo padrão com crédito compartilhado entre INFAN e QUESALON.
 
+### 23.4. Exibição dos Novos Tributos da Reforma Tributária (CBS e IBS)
+* **Integração XML/DANFE:** Parse completo dos nós `<IBSCBS>` e `<IBSCBSTot>` com extração de base de cálculo, alíquotas (`pCBS = 0,90%`, `pIBS = 0,10%`) e valores apurados.
+* **Apresentação:** Integrado ao Resumo Executivo e ao detalhe de cada item com chips de conformidade para o período de transição (EC 132/2023).
 
+### 23.5. Qualidade Assegurada
+* **`83/83 testes aprovados (100% VERDE - Suíte 15)`**.
+* **Build de Produção 100% limpo (`tsc && vite build`)**.
 
+---
 
+## 📐 24. REENGENHARIA RESPONSIVA & ELIMINAÇÃO DE OVERFLOW (SET/2026)
 
+### 24.1. Diagnóstico e Causa-Raiz
+* **Problema Identificado:** Ao expandir os itens na tabela principal, surgia uma barra de rolagem horizontal indesejada (`overflow-x: auto`), e o deslocamento para a direita cortava visualmente os rótulos fiscais da coluna da esquerda.
+* **Causa Técnica:** A tabela continha 11 colunas com padding lateral excessivo (`14px` por célula) e larguras mínimas fixas (`min-width: 140px;`), exigindo mais de 1.550px horizontais em telas padrão HD/Full HD. A gaveta expandida (`.expanded-detail-box`) possuía frações de grid muito largas na matriz tributária tripla.
 
-
-
+### 24.2. Solução Implementada
+1. **Otimização de Padding e Larguras (`ItemsTable.tsx` & `App.css`):**
+   * Padding de células reduzido para `7px 8px` com alinhamento numérico à direita (`.cell-right`).
+   * Dimensões fixadas e otimizadas para colunas estreitas (`#`: 28px, `Status`: 68px, `EAN`: 105px, `Qtd`: 110px, `Almox`: 95px, `Preços`: 85px, `Lotes`: 100px).
+   * Cartões de lote compactos e tipografia limpa de cabeçalho (`10px`).
+2. **Rebalanceamento do Grid Triplo de Impostos:**
+   * Grid tributário ajustado para `1.4fr 1.05fr 1.05fr 1.3fr 1.2fr` com `gap: 6px`.
+   * Cards de *Preço & Desconto* e *Rastreabilidade* fluídos com `gap: 10px`.
+3. **Resultado Aferido no Navegador:**
+   * `scrollWidth` = `clientWidth` (Zero overflow).
+   * Eliminação completa de barras de rolagem horizontais espúrias.
 
 
 

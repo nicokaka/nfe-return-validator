@@ -216,7 +216,7 @@ export function generatePiramideOracleTiInsertScript(
     const vProd = (item.qCom * parseFloat(vUn)).toFixed(2);
     const vDescItem = (item.vDesc || 0).toFixed(2);
     const uCom = normalizeUnit(item.uCom);
-    const cfopEntrada = c.expectedClientCfop || item.cfop;
+    const cfopEntrada = result.ndoSuggestion?.cfop ? result.ndoSuggestion.cfop.replace(/\D/g, '') : (c.expectedClientCfop || item.cfop);
     const lote = item.batches[0]?.nLote || c.nfoItem?.batches[0]?.nLote || '';
     const dVal = item.batches[0]?.dVal || c.nfoItem?.batches[0]?.dVal || '';
     const dFab = item.batches[0]?.dFab || c.nfoItem?.batches[0]?.dFab || '';

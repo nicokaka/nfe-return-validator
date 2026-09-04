@@ -74,6 +74,12 @@ export function generateDiscrepancyReport(result: ReconciliationResult): string 
     if (c.discountAudit) {
       lines.push(`   • Desconto: Informado R$ ${c.discountAudit.actualDiscount.toFixed(2)} | Esperado Proporcional R$ ${c.discountAudit.expectedDiscount.toFixed(2)} (${c.discountAudit.isProportional ? '✅ Conforme' : '⚠️ Divergente'})`);
     }
+    if (c.pisCofinsCreditAudit?.isMonofasicoRecovery) {
+      lines.push(`   • Crédito PIS/COFINS INFAN (CST 50): PIS R$ ${c.pisCofinsCreditAudit.vPisCredit.toFixed(2)} | COFINS R$ ${c.pisCofinsCreditAudit.vCofinsCredit.toFixed(2)}`);
+    }
+    if (c.ibsCbsAudit && ((c.ibsCbsAudit.vCbs || 0) > 0 || (c.ibsCbsAudit.vIbs || 0) > 0)) {
+      lines.push(`   • Reforma Tributária: CBS R$ ${(c.ibsCbsAudit.vCbs || 0).toFixed(2)} | IBS R$ ${(c.ibsCbsAudit.vIbs || 0).toFixed(2)}`);
+    }
     if (c.piramideResolution) {
       lines.push(`   • Destino Pirâmide: Almoxarifado [${c.piramideResolution.almoxarifado}] (${c.piramideResolution.motivoDesc})`);
     }

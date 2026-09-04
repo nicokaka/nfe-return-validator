@@ -9,6 +9,7 @@ import {
   NFeTaxICMSST,
   NFeTaxIPI,
   NFeTaxPIS,
+  NFeTaxIbsCbs,
   NFeTotals,
 } from '../types/nfe';
 
@@ -176,6 +177,25 @@ function parseCOFINS(impostoEl: Element): NFeTaxCOFINS | undefined {
   return { cst, vBC, pCOFINS, vCOFINS };
 }
 
+function parseIBSCBS(impostoEl: Element): NFeTaxIbsCbs | undefined {
+  const ibsContainer = impostoEl.getElementsByTagName('IBSCBS')[0] || impostoEl.getElementsByTagName('detIBSCBS')[0];
+  if (!ibsContainer) return undefined;
+
+  const cst = getTagText(ibsContainer, ['CST']);
+  const cClassTrib = getTagText(ibsContainer, ['cClassTrib']);
+  const vBC = parseFloatSafe(getTagText(ibsContainer, ['vBC']));
+  
+  // Taxas e Valores IBS
+  const pIbs = parseFloatSafe(getTagText(ibsContainer, ['pIBSUF', 'pIBS', 'aliqIBS']));
+  const vIbs = parseFloatSafe(getTagText(ibsContainer, ['vIBSUF', 'vIBS']));
+  
+  // Taxas e Valores CBS
+  const pCbs = parseFloatSafe(getTagText(ibsContainer, ['pCBS', 'aliqCBS']));
+  const vCbs = parseFloatSafe(getTagText(ibsContainer, ['vCBS']));
+
+  return { cst, cClassTrib, vBC, pIbs, vIbs, pCbs, vCbs };
+}
+
 function parseItem(detEl: Element, index: number): NFeItem {
   const nItemAttr = detEl.getAttribute('nItem');
   const nItem = nItemAttr ? parseInt(nItemAttr, 10) : index + 1;
@@ -204,6 +224,7 @@ function parseItem(detEl: Element, index: number): NFeItem {
   const ipi = parseIPI(impostoEl);
   const pis = parsePIS(impostoEl);
   const cofins = parseCOFINS(impostoEl);
+  const ibsCbs = parseIBSCBS(impostoEl);
 
   const dfeRefEl = detEl.getElementsByTagName('DFeReferenciado')[0];
   let dfeReferenciado: { chaveAcesso?: string; nItem?: number } | undefined;
@@ -241,6 +262,7 @@ function parseItem(detEl: Element, index: number): NFeItem {
     ipi,
     pis,
     cofins,
+    ibsCbs,
     infAdProd,
     dfeReferenciado,
   };
@@ -252,6 +274,10 @@ function parseTotals(totalEl: Element | null): NFeTotals {
   }
 
   const icmsTot = totalEl.getElementsByTagName('ICMSTot')[0] || totalEl;
+  const ibsTot = totalEl.getElementsByTagName('IBSCBSTot')[0];
+
+  const vIBS = ibsTot ? parseFloatSafe(getTagText(ibsTot, ['vIBS'])) : undefined;
+  const vCBS = ibsTot ? parseFloatSafe(getTagText(ibsTot, ['vCBS'])) : undefined;
 
   return {
     vBC: parseFloatSafe(getTagText(icmsTot, ['vBC'])),
@@ -261,6 +287,8 @@ function parseTotals(totalEl: Element | null): NFeTotals {
     vIPI: parseFloatSafe(getTagText(icmsTot, ['vIPI'])),
     vPIS: parseFloatSafe(getTagText(icmsTot, ['vPIS'])),
     vCOFINS: parseFloatSafe(getTagText(icmsTot, ['vCOFINS'])),
+    vIBS: vIBS !== undefined && !isNaN(vIBS) ? vIBS : undefined,
+    vCBS: vCBS !== undefined && !isNaN(vCBS) ? vCBS : undefined,
     vNF: parseFloatSafe(getTagText(icmsTot, ['vNF'])),
   };
 }

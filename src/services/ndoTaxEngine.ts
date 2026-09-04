@@ -99,23 +99,27 @@ export function suggestNDO(nfd: NFeDocument, nfo?: NFeDocument): NDOSuggestion {
     };
   }
 
-  // E. Produção do Estabelecimento (5101, 51011 ➔ 5202 ➔ 1201 | 6101, 61011 ➔ 6202 ➔ 2202)
-  const isProducao = ['5101', '51011'].includes(nfoCfopRaw);
+  // E. Produção do Estabelecimento (Terminados em 01: 5101, 51011 ➔ 1.201 | 6101, 61011 ➔ 2.201)
+  const isProducao =
+    ['5101', '51011', '6101', '61011'].includes(nfoCfopRaw) ||
+    nfoCfopRaw.endsWith('01') ||
+    nfoCfopRaw.endsWith('011');
+
   if (isProducao) {
-    const entryCfop = isInterstate ? '2.202' : '1.201';
+    const entryCfop = isInterstate ? '2.201' : '1.201';
     return {
       ndoCode: isInterstate ? 'DEV-VDA-PROD-INTER' : 'DEV-VDA-PROD-ESTADUAL',
       ndoDescription: isInterstate
-        ? 'Devolução de Venda de Produção Interestadual (NDO 2.202)'
+        ? 'Devolução de Venda de Produção Interestadual (NDO 2.201)'
         : 'Devolução de Venda de Produção do Estabelecimento (NDO 1.201)',
       cfop: entryCfop,
       operationType: 'DEV_VENDA',
       isInterstate,
-      explanation: `Venda de Produção | Saída: ${nfoCfopRaw || '5101'} ➔ Devolução: ${nfdCfopRaw || '5202'} ➔ Entrada Pirâmide: ${entryCfop}`,
+      explanation: `Venda de Produção | Saída: ${nfoCfopRaw || '5101/6101'} ➔ Devolução: ${nfdCfopRaw || '5202/6202'} ➔ Entrada Pirâmide: ${entryCfop}`,
     };
   }
 
-  // F. Comercialização / Revenda Padrão (5102, 51021 ➔ 5202 ➔ 1202 | 6102, 61021 ➔ 6202 ➔ 2202)
+  // F. Comercialização / Revenda Padrão (Terminados em 02: 5102, 51021 ➔ 1.202 | 6102, 61021 ➔ 2.202)
   const entryCfop = isInterstate ? '2.202' : '1.202';
   return {
     ndoCode: isInterstate ? 'DEV-VDA-REV-INTER' : 'DEV-VDA-REV-ESTADUAL',
@@ -125,24 +129,28 @@ export function suggestNDO(nfd: NFeDocument, nfo?: NFeDocument): NDOSuggestion {
     cfop: entryCfop,
     operationType: 'DEV_VENDA',
     isInterstate,
-    explanation: `Comercialização | Saída: ${nfoCfopRaw || '5102/6102'} ➔ Devolução: ${nfdCfopRaw || '5202/6202'} ➔ Entrada Pirâmide: ${entryCfop}`,
+    explanation: `Comercialização / Revenda | Saída: ${nfoCfopRaw || '5102/6102'} ➔ Devolução: ${nfdCfopRaw || '5202/6202'} ➔ Entrada Pirâmide: ${entryCfop}`,
   };
 }
 
 /**
  * Realiza auditoria dos campos da Reforma Tributária (IBS e CBS) e Rejeição UB12-10_1115
  */
-export function auditIbsCbsReform(nfdItem: NFeItem, nfdDoc: NFeDocument): { ibsCbsAudit: IbsCbsAudit; issues: ValidationIssue[] } {
+export function auditIbsCbsReform(
+  nfdItem: NFeItem,
+  nfdDoc: NFeDocument,
+  nfoItem?: NFeItem
+): { ibsCbsAudit: IbsCbsAudit; issues: ValidationIssue[] } {
   const issues: ValidationIssue[] = [];
   const rawXml = nfdDoc.rawXml || '';
 
   // CRT=3: Regime Normal de Apuração
   const isCrt3Normal = nfdDoc.emit.crt === 3 || nfdDoc.emit.crt === undefined; // default regime normal
-  const hasIbsCbsInDoc = /<(?:IBS|CBS|gIBS|gCBS|vCBS|vIBS|detIBSCBS)/i.test(rawXml);
+  const hasIbsCbsInDoc = Boolean(nfdItem.ibsCbs || /<(?:IBS|CBS|gIBS|gCBS|vCBS|vIBS|detIBSCBS)/i.test(rawXml));
 
-  // Alíquotas-teste de transição 2026/2027
-  const expectedCbsRate = 0.009; // 0.90%
-  const expectedIbsEstRate = 0.001; // 0.10%
+  // Alíquotas-teste de transição 2026/2027 (ou originadas da NFO)
+  const expectedCbsRate = nfoItem?.ibsCbs?.pCbs ? nfoItem.ibsCbs.pCbs / 100 : 0.009; // 0.90%
+  const expectedIbsEstRate = nfoItem?.ibsCbs?.pIbs ? nfoItem.ibsCbs.pIbs / 100 : 0.001; // 0.10%
 
   // Se o emissor é Regime Normal e não informou IBS/CBS
   const emissionYear = nfdDoc.dhEmi ? new Date(nfdDoc.dhEmi).getFullYear() : new Date().getFullYear();
@@ -164,13 +172,23 @@ export function auditIbsCbsReform(nfdItem: NFeItem, nfdDoc: NFeDocument): { ibsC
     });
   }
 
+  const vBc = nfdItem.ibsCbs?.vBC || Math.max(0, nfdItem.vProd - nfdItem.vDesc);
+  const pCbs = nfdItem.ibsCbs?.pCbs !== undefined ? nfdItem.ibsCbs.pCbs : expectedCbsRate * 100;
+  const pIbs = nfdItem.ibsCbs?.pIbs !== undefined ? nfdItem.ibsCbs.pIbs : expectedIbsEstRate * 100;
+  const vCbs = nfdItem.ibsCbs?.vCbs !== undefined ? nfdItem.ibsCbs.vCbs : (vBc * pCbs) / 100;
+  const vIbs = nfdItem.ibsCbs?.vIbs !== undefined ? nfdItem.ibsCbs.vIbs : (vBc * pIbs) / 100;
+
   return {
     ibsCbsAudit: {
       hasIbsCbs: hasIbsCbsInDoc,
+      cstIbsCbs: nfdItem.ibsCbs?.cst || '000',
+      vBcIbsCbs: vBc,
+      pCbs,
+      vCbs,
+      pIbs,
+      vIbs,
       isCrt3Normal,
       isCreditAtRisk,
-      pCbs: expectedCbsRate * 100,
-      pIbs: expectedIbsEstRate * 100,
       issues,
     },
     issues,

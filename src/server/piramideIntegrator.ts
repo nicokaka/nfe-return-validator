@@ -198,7 +198,7 @@ export async function integrateReturnNoteToPiramide(
       const vProdNum = item.qCom * vUnNum;
       const vDescItemNum = item.vDesc || 0;
       const uCom = normalizeUnit(item.uCom);
-      const cfopEntrada = c.expectedClientCfop || item.cfop;
+      const cfopEntrada = result.ndoSuggestion?.cfop ? result.ndoSuggestion.cfop.replace(/\D/g, '') : (c.expectedClientCfop || item.cfop);
 
       const lote = item.batches[0]?.nLote || c.nfoItem?.batches[0]?.nLote || null;
       const dValRaw = item.batches[0]?.dVal || c.nfoItem?.batches[0]?.dVal || null;

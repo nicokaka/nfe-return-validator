@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ReconciliationResult } from '../types/nfe';
-import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck, ShieldCheck, DollarSign, Package } from './Icons';
+import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Info, PackageCheck, DollarSign, Package } from './Icons';
 import { formatFiscalDate } from '../utils/dateUtils';
 import { normalizeUnit } from '../services/reconciliationEngine';
 
@@ -86,17 +86,17 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
         <table className="reconciliation-table">
           <thead>
             <tr>
-              <th style={{ width: '35px' }}>#</th>
-              <th>Status</th>
-              <th>Produto Devolvido (NFD)</th>
-              <th>EAN / GTIN</th>
-              <th>Qtd Devolvida / Origem</th>
-              <th>Almoxarifado Pirâmide</th>
-              <th>Preço Unitário</th>
-              <th>Desc. / Un</th>
-              <th>Lote NFD</th>
-              <th>Lote NFO</th>
-              <th style={{ width: '40px' }}></th>
+              <th style={{ width: '28px' }} className="cell-center">#</th>
+              <th style={{ width: '68px' }} className="cell-center">Status</th>
+              <th>Produto Devolvido</th>
+              <th style={{ width: '105px' }}>EAN / GTIN</th>
+              <th style={{ width: '110px' }}>Qtd (Dev / Orig)</th>
+              <th style={{ width: '95px' }}>Almoxarifado</th>
+              <th style={{ width: '85px' }} className="cell-right">Preço Un.</th>
+              <th style={{ width: '85px' }} className="cell-right">Desc. / Un</th>
+              <th style={{ width: '100px' }}>Lote NFD</th>
+              <th style={{ width: '100px' }}>Lote NFO</th>
+              <th style={{ width: '32px' }} className="cell-center"></th>
             </tr>
           </thead>
           <tbody>
@@ -233,7 +233,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                     </td>
 
                     {/* Preço Unitário */}
-                    <td className="font-mono text-cell-price">
+                    <td className="font-mono text-cell-price cell-right">
                       <span className="price-main">{formatCurrency(nfdItem.vUnCom)}</span>
                       {nfoItem && Math.abs(nfdItem.vUnCom - nfoItem.vUnCom) > 0.001 && (
                         <span className="diff-highlight danger block">
@@ -243,7 +243,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                     </td>
 
                     {/* Desconto / Unidade */}
-                    <td className="font-mono text-cell-desc">
+                    <td className="font-mono text-cell-desc cell-right">
                       <span className="desc-main">{formatCurrency(nfdDescUnit)}</span>
                       {c.discountAudit && (
                         <div className="discount-audit-container mt-1">
@@ -412,98 +412,370 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                           <div className="item-details-section-header">
                             <div className="title-left">
                               <span className="title-badge-indicator item-tax" />
-                              <h5 className="item-details-title">Impostos Item</h5>
+                              <h5 className="item-details-title">Impostos Item • Comparativo Tributário Inteligente</h5>
                             </div>
-                            <span className="item-details-sub">CFOP de Devolução, Alíquotas de ICMS, Base de Cálculo Reduzida/Cheia e Destaque Fiscal</span>
+                            <span className="item-details-sub">Visualização Tripla (1. Faturado Origem x 2. Informado Cliente x 3. Sugerido Sistema)</span>
                           </div>
 
-                          {/* Resumo Específico do Item (Compacto, sem repetição com o topo) */}
-                          <div className="item-detail-grid mt-2 mb-2">
-                            {/* Card 1: Tributação do Item */}
-                            <div className="item-detail-card">
-                              <h6 className="detail-card-header">
-                                <span><ShieldCheck className="icon-xs text-primary" /> Impostos Item • CFOP, ICMS & ICMSS</span>
-                                {c.expectedClientCfop && nfdItem.cfop.replace(/\D/g, '') === c.expectedClientCfop.replace(/\D/g, '') ? (
-                                  <span className="badge-pill-success">✓ CFOP Conforme</span>
-                                ) : (
-                                  <span className="badge-pill-neutral" style={{ background: '#fef3c7', color: '#92400e' }}>⚠️ Pedir CC-e</span>
-                                )}
-                              </h6>
-                              <div className="detail-field">
-                                <span>CFOP Devolução:</span>
-                                <strong>
-                                  {nfdItem.cfop} <span className="text-xs opacity-75">(Esperado: {c.expectedClientCfop || '6202'})</span>
-                                </strong>
-                              </div>
-                              <div className="detail-field">
-                                <span>ICMS Alíquota:</span>
-                                <strong>
-                                  {(nfdItem.icms?.pICMS || c.icmsAudit?.expectedRate || 12).toFixed(2)}%
-                                  <span className="text-xs opacity-75 ml-1 font-mono">
-                                    (CST {c.icmsAudit?.baseReductionApplied ? '20' : (nfdItem.icms?.cst || '00')})
-                                  </span>
-                                </strong>
-                              </div>
-                              <div className="detail-field">
-                                <span>Base de Cálculo Esperada:</span>
-                                <strong className="text-primary font-mono font-bold">
-                                  {formatCurrency(c.icmsAudit?.vBcExpected !== undefined ? c.icmsAudit.vBcExpected : (nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0)))}
-                                  {c.icmsAudit?.baseReductionApplied ? (
-                                    <span className="badge-reduction ml-1">Red. {c.icmsAudit.reductionPercentage.toFixed(2)}%</span>
-                                  ) : (
-                                    <span className="badge-tag ml-1">Base Cheia</span>
-                                  )}
-                                </strong>
-                              </div>
-                              {c.icmsAudit?.baseReductionApplied && Math.abs((nfdItem.icms?.vBC || 0) - (c.icmsAudit?.vBcExpected || 0)) > 0.15 && (
-                                <div className="detail-field text-warning">
-                                  <span>Base Informada Cliente:</span>
-                                  <strong className="text-warning font-mono">
-                                    {formatCurrency(nfdItem.icms?.vBC || 0)} <span className="badge-pill-neutral ml-1">⚠️ Base Cheia (Omitiu Redução)</span>
-                                  </strong>
-                                </div>
-                              )}
-                              <div className="detail-field">
-                                <span>ICMS Esperado (Sistema):</span>
-                                <strong className="text-primary font-mono font-bold">
-                                  {formatCurrency(c.icmsAudit?.vIcmsExpected !== undefined ? c.icmsAudit.vIcmsExpected : (c.icmsAudit?.vBcExpected || 0) * (nfdItem.icms?.pICMS || 12) / 100)}
-                                </strong>
-                              </div>
-                              {Math.abs((nfdItem.icms?.vICMS || 0) - (c.icmsAudit?.vIcmsExpected || 0)) > 0.10 && (
-                                <div className="detail-field text-warning">
-                                  <span>ICMS Destacado Cliente:</span>
-                                  <strong className="text-warning font-mono">
-                                    {formatCurrency(nfdItem.icms?.vICMS || 0)}
-                                  </strong>
-                                </div>
-                              )}
-                              {((c.icmsStAudit?.vIcmsStNfd && c.icmsStAudit.vIcmsStNfd > 0) || (nfdItem.icmsST?.vICMSST && nfdItem.icmsST.vICMSST > 0) || (c.nfoItem?.icmsST?.vICMSST && c.nfoItem.icmsST.vICMSST > 0)) && (
-                                <div className="detail-field">
-                                  <span>ICMSS:</span>
-                                  <strong className="text-primary font-mono">
-                                    {formatCurrency(c.icmsStAudit?.expectedVIcmsSt || nfdItem.icmsST?.vICMSST || 0)}
-                                    {c.icmsStAudit?.isProportional ? (
-                                      <span className="badge-tag ml-1">Proporcional</span>
-                                    ) : (
-                                      <span className="badge-tag ml-1 badge-tag-warn">Divergente</span>
-                                    )}
-                                  </strong>
-                                </div>
-                              )}
-                              <div className="detail-field">
-                                <span>CST PIS / COFINS:</span>
-                                <strong className="font-mono">
-                                  CST {nfdItem.pis?.cst || '49'} / {nfdItem.cofins?.cst || '49'}
-                                  {c.nfoItem && (
-                                    <span className="text-xs text-muted ml-1 font-normal">
-                                      (Origem: CST {c.nfoItem.pis?.cst || '01'}/{c.nfoItem.cofins?.cst || '01'})
-                                    </span>
-                                  )}
-                                </strong>
-                              </div>
+                          {/* Comparativo de 3 Colunas/Linhas no Detalhe do Produto */}
+                          <div className="smart-tax-table smart-tax-table-item mt-2 mb-3">
+                            <div className="smart-tax-thead smart-tax-thead-triad">
+                              <div className="col-tax-name">Tributo / Parâmetro Fiscal</div>
+                              <div className="col-tax-nfo">1. Faturado Origem (NFO)</div>
+                              <div className="col-tax-nfd">2. Informado Cliente (NFD)</div>
+                              <div className="col-tax-expected">3. Correto Esperável (Sistema)</div>
+                              <div className="col-tax-status">Auditoria & Match</div>
                             </div>
+                            <div className="smart-tax-tbody">
+                              {/* 1. CFOP */}
+                              {(() => {
+                                const nfoCfop = nfoItem?.cfop || '6102';
+                                const nfdCfop = nfdItem.cfop;
+                                const expectedCfop = c.expectedClientCfop || '6202';
+                                const isCfopMatch = nfdCfop.replace(/\D/g, '') === expectedCfop.replace(/\D/g, '');
+                                const entrySuggested = result.ndoSuggestion?.cfop || '2.202';
 
-                            {/* Card 2: Precificação & Desconto */}
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      CFOP da Operação
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {nfoCfop} <span className="badge-tag">Saída</span>
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {nfdCfop} <span className="badge-tag">Devolução</span>
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      <strong>{expectedCfop}</strong> <span className="badge-tag">Entrada {entrySuggested}</span>
+                                    </div>
+                                    <div className="col-tax-status">
+                                      {isCfopMatch ? (
+                                        <span className="match-chip match-chip-ok">
+                                          <CheckCircle2 className="icon-xs" /> CFOP Conforme
+                                        </span>
+                                      ) : (
+                                        <span className="match-chip match-chip-warn" title="Solicite Carta de Correção (CC-e) ao cliente">
+                                          <AlertTriangle className="icon-xs" /> Incorreto (Pedir CC-e)
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 2. Base de Cálculo de ICMS */}
+                              {(() => {
+                                const vBcOrigProportional = nfoItem
+                                  ? (nfoItem.icms?.vBC ? (nfoItem.icms.vBC / nfoItem.qCom) * nfdItem.qCom : ((nfoItem.vProd - (nfoItem.vDesc || 0)) / nfoItem.qCom) * nfdItem.qCom)
+                                  : undefined;
+                                const vBcNfd = nfdItem.icms?.vBC || 0;
+                                const vBcExpected = c.icmsAudit?.vBcExpected !== undefined
+                                  ? c.icmsAudit.vBcExpected
+                                  : Math.max(0, nfdItem.qCom * nfdItem.vUnCom - (nfdItem.vDesc || 0));
+                                const hasRed = c.icmsAudit?.baseReductionApplied;
+                                const isBaseMatch = Math.abs(vBcNfd - vBcExpected) <= 0.20 || vBcNfd === 0;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      Base de Cálculo do ICMS
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {vBcOrigProportional !== undefined ? formatCurrency(vBcOrigProportional) : 'N/A'}{' '}
+                                      <span className="badge-tag">Proporcional</span>
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {formatCurrency(vBcNfd)}
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {formatCurrency(vBcExpected)}{' '}
+                                      <span className="badge-tag">
+                                        {hasRed ? `Red. ${c.icmsAudit?.reductionPercentage.toFixed(2)}%` : 'Base Cheia'}
+                                      </span>
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className={`match-chip ${isBaseMatch ? 'match-chip-ok' : 'match-chip-warn'}`}>
+                                        {isBaseMatch ? <CheckCircle2 className="icon-xs" /> : <AlertTriangle className="icon-xs" />}
+                                        {isBaseMatch ? 'Base Conforme' : 'Base Divergente'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 3. Alíquota de ICMS & CST */}
+                              {(() => {
+                                const pIcmsNfo = nfoItem?.icms?.pICMS || 12;
+                                const pIcmsNfd = nfdItem.icms?.pICMS || 12;
+                                const cstNfo = nfoItem?.icms?.cst || '00';
+                                const cstNfd = nfdItem.icms?.cst || '00';
+                                const isRateMatch = Math.abs(pIcmsNfo - pIcmsNfd) < 0.01;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      Alíquota do ICMS & CST
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {pIcmsNfo.toFixed(2)}% <span className="badge-tag">CST {cstNfo}</span>
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {pIcmsNfd.toFixed(2)}% <span className="badge-tag">CST {cstNfd}</span>
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {pIcmsNfo.toFixed(2)}% <span className="badge-tag">CST {c.icmsAudit?.baseReductionApplied ? '20' : cstNfo}</span>
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className={`match-chip ${isRateMatch ? 'match-chip-ok' : 'match-chip-error'}`}>
+                                        {isRateMatch ? <CheckCircle2 className="icon-xs" /> : <XCircle className="icon-xs" />}
+                                        {isRateMatch ? `Alíquota OK (${pIcmsNfd.toFixed(1)}%)` : 'Divergente'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 4. Valor do ICMS Próprio (R$) */}
+                              {(() => {
+                                const vIcmsOrigProportional = nfoItem
+                                  ? ((nfoItem.icms?.vICMS || 0) / nfoItem.qCom) * nfdItem.qCom
+                                  : undefined;
+                                const vIcmsNfd = nfdItem.icms?.vICMS || 0;
+                                const vIcmsExpected = c.icmsAudit?.vIcmsExpected !== undefined
+                                  ? c.icmsAudit.vIcmsExpected
+                                  : (c.icmsAudit?.vBcExpected || 0) * (nfdItem.icms?.pICMS || 12) / 100;
+                                const isIcmsMatch = Math.abs(vIcmsNfd - vIcmsExpected) <= 0.15 || vIcmsNfd === 0;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      Valor do ICMS Próprio (R$)
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {vIcmsOrigProportional !== undefined ? formatCurrency(vIcmsOrigProportional) : 'N/A'}
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {formatCurrency(vIcmsNfd)}
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {formatCurrency(vIcmsExpected)}
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className={`match-chip ${isIcmsMatch ? 'match-chip-ok' : 'match-chip-warn'}`}>
+                                        {isIcmsMatch ? <CheckCircle2 className="icon-xs" /> : <AlertTriangle className="icon-xs" />}
+                                        {isIcmsMatch ? 'Valor Conforme' : 'Valor Divergente'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 5. ICMSS (Substituição Tributária) */}
+                              {(() => {
+                                const stNfoProp = c.icmsStAudit?.expectedVIcmsSt || c.icmsStAudit?.vIcmsStNfo || 0;
+                                const stNfd = nfdItem.icmsST?.vICMSST || 0;
+                                const stExpected = c.icmsStAudit?.expectedVIcmsSt || 0;
+                                const hasSt = stNfd > 0 || stNfoProp > 0;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      ICMSS (Subst. Tributária)
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {formatCurrency(stNfoProp)}
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {formatCurrency(stNfd)}
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {formatCurrency(stExpected)}
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className="match-chip match-chip-ok">
+                                        <CheckCircle2 className="icon-xs" /> {hasSt ? 'ST Proporcional' : 'Sem ICMSS (OK)'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 6. Desconto Comercial Rateado */}
+                              {(() => {
+                                const descNfoProp = c.discountAudit?.expectedDiscount || 0;
+                                const descNfd = nfdItem.vDesc || 0;
+                                const isProp = c.discountAudit?.isProportional || descNfd === 0;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      Desconto Comercial
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {formatCurrency(descNfoProp)} <span className="badge-tag">Rateio</span>
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {formatCurrency(descNfd)}
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {formatCurrency(descNfoProp)}
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className={`match-chip ${isProp ? 'match-chip-ok' : 'match-chip-warn'}`}>
+                                        {isProp ? <CheckCircle2 className="icon-xs" /> : <AlertTriangle className="icon-xs" />}
+                                        {isProp ? 'Rateio Exato' : 'Não Proporcional'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 7. PIS (CST & Crédito Automático) */}
+                              {(() => {
+                                const pisCstNfo = nfoItem?.pis?.cst || '01';
+                                const pisCstNfd = nfdItem.pis?.cst || '49';
+                                const vPisNfd = nfdItem.pis?.vPIS || 0;
+                                const creditAudit = c.pisCofinsCreditAudit;
+                                const isMonofasico = creditAudit?.isMonofasicoRecovery;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      PIS (CST & Crédito)
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      CST {pisCstNfo} {nfoItem?.pis?.pPIS ? `(${nfoItem.pis.pPIS.toFixed(2)}%)` : ''}
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      CST {pisCstNfd} <span className="badge-tag ml-1">{vPisNfd > 0 ? formatCurrency(vPisNfd) : 'Sem Destaque'}</span>
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {isMonofasico && creditAudit ? (
+                                        <span>
+                                          CST 50 • <strong>{formatCurrency(creditAudit.vPisCredit)}</strong>{' '}
+                                          <span className="badge-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#059669' }}>
+                                            Crédito INFAN ({creditAudit.pPis.toFixed(2)}%)
+                                          </span>
+                                        </span>
+                                      ) : (
+                                        <span>CST {pisCstNfd}</span>
+                                      )}
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className="match-chip match-chip-ok">
+                                        <CheckCircle2 className="icon-xs" /> {isMonofasico ? 'Crédito Apurado' : 'CST Validado'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 8. COFINS (CST & Crédito Automático) */}
+                              {(() => {
+                                const cofinsCstNfo = nfoItem?.cofins?.cst || '01';
+                                const cofinsCstNfd = nfdItem.cofins?.cst || '49';
+                                const vCofinsNfd = nfdItem.cofins?.vCOFINS || 0;
+                                const creditAudit = c.pisCofinsCreditAudit;
+                                const isMonofasico = creditAudit?.isMonofasicoRecovery;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      COFINS (CST & Crédito)
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      CST {cofinsCstNfo} {nfoItem?.cofins?.pCOFINS ? `(${nfoItem.cofins.pCOFINS.toFixed(2)}%)` : ''}
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      CST {cofinsCstNfd} <span className="badge-tag ml-1">{vCofinsNfd > 0 ? formatCurrency(vCofinsNfd) : 'Sem Destaque'}</span>
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {isMonofasico && creditAudit ? (
+                                        <span>
+                                          CST 50 • <strong>{formatCurrency(creditAudit.vCofinsCredit)}</strong>{' '}
+                                          <span className="badge-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#059669' }}>
+                                            Crédito INFAN ({creditAudit.pCofins.toFixed(2)}%)
+                                          </span>
+                                        </span>
+                                      ) : (
+                                        <span>CST {cofinsCstNfd}</span>
+                                      )}
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className="match-chip match-chip-ok">
+                                        <CheckCircle2 className="icon-xs" /> {isMonofasico ? 'Crédito Apurado' : 'CST Validado'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 9. CBS (Reforma Tributária - Federal) */}
+                              {(() => {
+                                const cbsNfo = nfoItem?.ibsCbs?.vCbs !== undefined ? nfoItem.ibsCbs.vCbs : undefined;
+                                const cbsNfd = nfdItem.ibsCbs?.vCbs !== undefined ? nfdItem.ibsCbs.vCbs : 0;
+                                const cbsExpected = c.ibsCbsAudit?.vCbs || cbsNfd;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      CBS (Reforma Tributária)
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {cbsNfo !== undefined ? formatCurrency(cbsNfo) : '0,90%'} <span className="badge-tag">Transição</span>
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {formatCurrency(cbsNfd)}
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {cbsExpected > 0 ? formatCurrency(cbsExpected) : '0,90%'}{' '}
+                                      <span className="badge-tag">Alíquota 0,90%</span>
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className="match-chip match-chip-ok">
+                                        <CheckCircle2 className="icon-xs" /> Reforma 2026/27
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* 10. IBS (Reforma Tributária - Estadual) */}
+                              {(() => {
+                                const ibsNfo = nfoItem?.ibsCbs?.vIbs !== undefined ? nfoItem.ibsCbs.vIbs : undefined;
+                                const ibsNfd = nfdItem.ibsCbs?.vIbs !== undefined ? nfdItem.ibsCbs.vIbs : 0;
+                                const ibsExpected = c.ibsCbsAudit?.vIbs || ibsNfd;
+
+                                return (
+                                  <div className="smart-tax-row smart-tax-row-triad">
+                                    <div className="col-tax-name font-weight-600">
+                                      IBS (Reforma Tributária)
+                                    </div>
+                                    <div className="col-tax-nfo font-mono">
+                                      {ibsNfo !== undefined ? formatCurrency(ibsNfo) : '0,10%'} <span className="badge-tag">Transição</span>
+                                    </div>
+                                    <div className="col-tax-nfd font-mono">
+                                      {formatCurrency(ibsNfd)}
+                                    </div>
+                                    <div className="col-tax-expected font-mono text-primary">
+                                      {ibsExpected > 0 ? formatCurrency(ibsExpected) : '0,10%'}{' '}
+                                      <span className="badge-tag">Alíquota 0,10%</span>
+                                    </div>
+                                    <div className="col-tax-status">
+                                      <span className="match-chip match-chip-ok">
+                                        <CheckCircle2 className="icon-xs" /> Reforma 2026/27
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+
+                          {/* Resumo Específico do Item: Preço & Desconto + Rastreabilidade & Pirâmide */}
+                          <div className="item-detail-grid mt-2 mb-2">
+                            {/* Card 1: Precificação & Desconto */}
                             <div className="item-detail-card">
                               <h6 className="detail-card-header">
                                 <span><DollarSign className="icon-xs text-primary" /> Preço & Desconto</span>
@@ -544,7 +816,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                               </div>
                             </div>
 
-                            {/* Card 3: Rastreabilidade & Almoxarifado */}
+                            {/* Card 2: Rastreabilidade & Almoxarifado */}
                             <div className="item-detail-card">
                               <h6 className="detail-card-header">
                                 <span><Package className="icon-xs text-primary" /> Rastreabilidade & Destino</span>

@@ -947,31 +947,38 @@
 
 .table-responsive-container {
   overflow-x: auto;
+  scrollbar-width: thin;
+  width: 100%;
 }
 
 .reconciliation-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 12.5px;
+  font-size: 11.5px;
+  table-layout: auto;
 }
 
 .reconciliation-table th {
   background-color: var(--bg-surface-elevated);
-  padding: 10px 14px;
-  font-size: 10.5px;
+  padding: 7px 8px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
 
 .reconciliation-table td {
-  padding: 12px 14px;
+  padding: 7px 8px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
+}
+
+.cell-right {
+  text-align: right;
 }
 
 /* Neutral Enterprise Row (No aggressive green/red background flood!) */
@@ -1185,23 +1192,21 @@
 
 /* Lote Cards */
 .cell-lote {
-  min-width: 140px;
   white-space: nowrap;
 }
 
 .batch-card {
   display: inline-flex;
   flex-direction: column;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: var(--radius-xs);
-  font-size: 11px;
-  line-height: 1.25;
-  min-width: 115px;
+  font-size: 10.5px;
+  line-height: 1.2;
 }
 
 .batch-card .batch-number {
   font-weight: 700;
-  font-size: 11.5px;
+  font-size: 11px;
   letter-spacing: 0.2px;
 }
 
@@ -1254,11 +1259,14 @@
 }
 
 .expanded-detail-box {
-  padding: 16px 20px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -1429,8 +1437,30 @@
 
 .smart-tax-thead-triad,
 .smart-tax-row-triad {
-  grid-template-columns: 1.6fr 1.2fr 1.2fr 1.4fr 1.4fr;
-  gap: 8px;
+  grid-template-columns: 1.4fr 1.05fr 1.05fr 1.3fr 1.2fr;
+  gap: 6px;
+}
+
+.smart-tax-table-item {
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.smart-tax-table-item .smart-tax-thead {
+  background-color: var(--bg-surface-elevated, #f8fafc);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  padding: 5px 10px;
+}
+
+.smart-tax-table-item .smart-tax-row {
+  padding: 5px 10px;
+  font-size: 11px;
 }
 
 .col-tax-expected {
@@ -1629,30 +1659,32 @@
 .item-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .item-detail-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .detail-card-header {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   letter-spacing: 0.3px;
 }
 
 .detail-field {
-  font-size: 11.5px;
+  font-size: 11px;
   display: flex;
   justify-content: space-between;
   gap: 6px;

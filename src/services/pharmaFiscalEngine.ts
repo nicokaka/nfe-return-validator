@@ -7,6 +7,7 @@ import {
   NFeDocument,
   NFeItem,
   PharmaceuticalSummary,
+  PisCofinsCreditAudit,
   ValidationIssue,
 } from '../types/nfe';
 import { calculateExpectedIcms, CompanyProfile } from '../data/companyData';
@@ -430,7 +431,7 @@ export function auditPharmaceuticalItem(
   nfoItem?: NFeItem,
   nfdDoc?: NFeDocument,
   _nfoDoc?: NFeDocument
-): { ncmProfile: NcmProfile; issues: ValidationIssue[] } {
+): { ncmProfile: NcmProfile; pisCofinsCreditAudit?: PisCofinsCreditAudit; issues: ValidationIssue[] } {
   const ncmProfile = classifyNcm(nfdItem.ncm || (nfoItem ? nfoItem.ncm : ''));
   const issues: ValidationIssue[] = [];
 
@@ -495,10 +496,45 @@ export function auditPharmaceuticalItem(
   // 2. Auditoria Tributária de PIS / COFINS (Regime Monofásico vs Normal)
   const pisCstNfd = nfdItem.pis?.cst;
   const pisCstNfo = nfoItem?.pis?.cst;
+  const destCnpj = (nfdDoc?.dest.cnpj || '').replace(/\D/g, '');
+  const destNome = (nfdDoc?.dest.xNome || '').toUpperCase();
+  const nfoEmitCnpj = (_nfoDoc?.emit.cnpj || '').replace(/\D/g, '');
+  const nfoEmitNome = (_nfoDoc?.emit.xNome || '').toUpperCase();
+  const isDestInfan = destCnpj === '08939548000103' || destNome.includes('INFAN') || nfoEmitCnpj === '08939548000103' || nfoEmitNome.includes('INFAN');
+
+  let pisCofinsCreditAudit: PisCofinsCreditAudit | undefined;
 
   if (ncmProfile.pisCofinsRegime === 'MONOFASICO_ALÍQUOTA_ZERO') {
-    // Medicamentos NCM 3004 devem ser CST 04 (Alíquota Zero na revenda por Lei 10.147/2000)
-    if (pisCstNfd && ['01', '02'].includes(pisCstNfd)) {
+    // Medicamentos Monofásicos: INFAN recolheu na saída concentrada (Lei 10.147/2000).
+    // O cliente devolve com CST 04 ou 49 a Alíquota Zero (sem destaque).
+    // A INFAN tem direito ao crédito na entrada (CST 50) para recuperação do tributo recolhido.
+    if (isDestInfan) {
+      const vBc = Math.max(0, (nfdItem.vProd || (nfdItem.qCom * nfdItem.vUnCom)) - (nfdItem.vDesc || 0));
+      const pPis = nfoItem?.pis?.pPIS && nfoItem.pis.pPIS > 0 ? nfoItem.pis.pPIS : 2.10;
+      const pCofins = nfoItem?.cofins?.pCOFINS && nfoItem.cofins.pCOFINS > 0 ? nfoItem.cofins.pCOFINS : 9.90;
+
+      const vPisCredit = Math.round((vBc * pPis) / 100 * 100) / 100;
+      const vCofinsCredit = Math.round((vBc * pCofins) / 100 * 100) / 100;
+
+      pisCofinsCreditAudit = {
+        vPisCredit,
+        vCofinsCredit,
+        pPis,
+        pCofins,
+        cstEntry: '50', // Operação com Direito a Crédito
+        isMonofasicoRecovery: true,
+        explanation: `Crédito Automático INFAN (Lei 10.147/00): PIS ${pPis.toFixed(2)}% (R$ ${vPisCredit.toFixed(2)}) e COFINS ${pCofins.toFixed(2)}% (R$ ${vCofinsCredit.toFixed(2)}) calculados sobre Base Líquida R$ ${vBc.toFixed(2)} (CST Entrada: 50)`,
+      };
+
+      issues.push({
+        id: `PIS_INFAN_MONO_CREDIT_${nfdItem.nItem}`,
+        code: 'PIS_COFINS_INFAN_CREDITO_MONOFASICO',
+        title: 'Crédito de PIS/COFINS Monofásico Calculado (INFAN)',
+        description: `O cliente devolveu com CST ${pisCstNfd || '04'} (sem destaque), em estrita conformidade com a Lei 10.147/2000. O sistema apurou automaticamente o crédito fiscal de devolução para a INFAN escriturar no Pirâmide (CST 50).`,
+        severity: 'INFO',
+        field: 'pisCst',
+      });
+    } else if (pisCstNfd && ['01', '02'].includes(pisCstNfd)) {
       issues.push({
         id: `PIS_BITRIBUTACAO_RISK_${nfdItem.nItem}`,
         code: 'PIS_COFINS_MONOFASICO_BITRIBUTACAO',
@@ -509,7 +545,23 @@ export function auditPharmaceuticalItem(
       });
     }
   } else if (ncmProfile.pisCofinsRegime === 'TRIBUTACAO_NORMAL') {
-    // Vitaminas e Suplementos não costumam ser Monofásicos
+    // Alimentos, Suplementos e Vitaminas (Regime Padrão Não-Cumulativo)
+    const vBc = Math.max(0, (nfdItem.vProd || (nfdItem.qCom * nfdItem.vUnCom)) - (nfdItem.vDesc || 0));
+    const pPis = nfdItem.pis?.pPIS || nfoItem?.pis?.pPIS || 1.65;
+    const pCofins = nfdItem.cofins?.pCOFINS || nfoItem?.cofins?.pCOFINS || 7.60;
+    const vPisCredit = nfdItem.pis?.vPIS && nfdItem.pis.vPIS > 0 ? nfdItem.pis.vPIS : Math.round((vBc * pPis) / 100 * 100) / 100;
+    const vCofinsCredit = nfdItem.cofins?.vCOFINS && nfdItem.cofins.vCOFINS > 0 ? nfdItem.cofins.vCOFINS : Math.round((vBc * pCofins) / 100 * 100) / 100;
+
+    pisCofinsCreditAudit = {
+      vPisCredit,
+      vCofinsCredit,
+      pPis,
+      pCofins,
+      cstEntry: '50',
+      isMonofasicoRecovery: false,
+      explanation: `Crédito Padrão (Não-Cumulativo): PIS ${pPis.toFixed(2)}% (R$ ${vPisCredit.toFixed(2)}) e COFINS ${pCofins.toFixed(2)}% (R$ ${vCofinsCredit.toFixed(2)})`,
+    };
+
     if (pisCstNfd === '04') {
       issues.push({
         id: `PIS_SUPPL_MONO_CHECK_${nfdItem.nItem}`,
@@ -522,8 +574,9 @@ export function auditPharmaceuticalItem(
     }
   }
 
-  // Divergência de CST de PIS/COFINS entre NFD e NFO
-  if (pisCstNfd && pisCstNfo && pisCstNfd !== pisCstNfo) {
+  // Divergência de CST de PIS/COFINS entre NFD e NFO (apenas se não for o caso monofásico regular da INFAN)
+  const isRegularInfanMonofasico = isDestInfan && ncmProfile.pisCofinsRegime === 'MONOFASICO_ALÍQUOTA_ZERO' && (pisCstNfd === '04' || pisCstNfd === '49');
+  if (pisCstNfd && pisCstNfo && pisCstNfd !== pisCstNfo && !isRegularInfanMonofasico) {
     issues.push({
       id: `PIS_CST_MISMATCH_${nfdItem.nItem}`,
       code: 'PIS_CST_MISMATCH',
@@ -534,7 +587,7 @@ export function auditPharmaceuticalItem(
     });
   }
 
-  return { ncmProfile, issues };
+  return { ncmProfile, pisCofinsCreditAudit, issues };
 }
 
 /**
@@ -556,6 +609,8 @@ export function buildPharmaceuticalSummary(
   let totalDescontoNfd = 0;
   let totalDescontoNfoProporcional = 0;
   let temDivergenciaDesconto = false;
+  let totalPisCreditRecuperavel = 0;
+  let totalCofinsCreditRecuperavel = 0;
 
   for (const comp of itemComparisons) {
     const ncmProf = comp.ncmProfile || classifyNcm(comp.nfdItem.ncm);
@@ -580,6 +635,11 @@ export function buildPharmaceuticalSummary(
     } else {
       totalDescontoNfoProporcional += nfdDesc;
     }
+
+    if (comp.pisCofinsCreditAudit) {
+      totalPisCreditRecuperavel += comp.pisCofinsCreditAudit.vPisCredit;
+      totalCofinsCreditRecuperavel += comp.pisCofinsCreditAudit.vCofinsCredit;
+    }
   }
 
   return {
@@ -594,5 +654,7 @@ export function buildPharmaceuticalSummary(
     totalDescontoNfd: Math.round(totalDescontoNfd * 100) / 100,
     totalDescontoNfoProporcional: Math.round(totalDescontoNfoProporcional * 100) / 100,
     temDivergenciaDesconto,
+    totalPisCreditRecuperavel: Math.round(totalPisCreditRecuperavel * 100) / 100,
+    totalCofinsCreditRecuperavel: Math.round(totalCofinsCreditRecuperavel * 100) / 100,
   };
 }
