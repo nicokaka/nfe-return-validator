@@ -131,11 +131,16 @@ export function generatePiramideOracleTiInsertScript(
 ): string {
   const nfd = result.nfd;
   const nfo = result.nfo;
-  const empresa = options?.empresa || (result.companyProfile?.isIndustry ? '003' : '001');
-  const filial = options?.filial || (result.companyProfile?.isIndustry ? '003' : '001');
+  const defaultEmpresa = result.companyProfile?.isIndustry
+    ? '003'
+    : (result.companyProfile?.key === 'QUESALON_EXTREMA' ? '004' : (result.companyProfile?.key === 'QUEDES' ? '005' : '001'));
+  const empresa = options?.empresa || defaultEmpresa;
+  const filial = options?.filial || defaultEmpresa;
   const sistema = options?.sistemaOrigem || 'VAL';
-  const ndo = options?.customNDO || result.ndoSuggestion?.ndoCode || '2202';
-  const warehouse = options?.selectedWarehouse || result.piramideResolution?.almoxarifado || 'GQ';
+  const defaultNdo = result.companyProfile?.isIndustry ? 'COM206' : 'COM032';
+  const ndo = (options?.customNDO && options.customNDO.length <= 6) ? options.customNDO : defaultNdo;
+  const rawWarehouse = (options?.selectedWarehouse || result.piramideResolution?.almoxarifado || 'GQ').trim().toUpperCase();
+  const warehouse = rawWarehouse === 'AVARIA' ? 'AVCD' : (rawWarehouse.length > 5 ? rawWarehouse.substring(0, 5) : rawWarehouse);
 
   const dEmi = nfd.dhEmi ? nfd.dhEmi.substring(0, 10) : new Date().toISOString().substring(0, 10);
   const vNF = nfd.totals.vNF.toFixed(2);

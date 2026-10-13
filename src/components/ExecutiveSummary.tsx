@@ -369,7 +369,7 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({ result, onGe
                     {nfdCfop} <span className="badge-tag">Devolução</span>
                   </div>
                   <div className="col-tax-expected font-mono text-primary">
-                    <strong>{expectedCfop}</strong> <span className="badge-tag">Entrada {ndoSuggestion?.cfop || '2.202'}</span>
+                    <strong>{ndoSuggestion?.cfop || '2.202'}</strong> <span className="badge-tag">Cliente {expectedCfop}</span>
                   </div>
                   <div className="col-tax-status">
                     {isCfopMatch ? (

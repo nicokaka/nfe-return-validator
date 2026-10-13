@@ -6,6 +6,7 @@ import { sampleNfdXml, sampleNfoXml } from '../data/sampleXmls';
 import { sampleDanfePdfText } from '../data/sampleDanfeText';
 import { samplePollianaDanfeNfoText, samplePollianaDanfeNfdText } from '../data/samplePollianaDanfeText';
 import { samplePollianaNfdXml, samplePollianaNfoXml } from '../data/samplePolliana0309';
+import { sampleQuesalonExtremaNfdXml, sampleQuesalonExtremaNfoXml } from '../data/sampleQuesalonExtrema';
 import { calculateStringSimilarity } from '../utils/textSimilarity';
 import { calculateExpectedIcms, identifyCompany } from '../data/companyData';
 import { findProductByEan, findProductByCode } from '../data/productCatalog';
@@ -635,6 +636,22 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       (docPollianaNfd.totals.vCBS || 0) > 0 &&
       (resInfanMedicamental.taxReformSummary?.totalCbs || 0) > 0,
       'T15.7: Parse estruturado de tags <IBSCBS> e <IBSCBSTot> com auditoria de CBS (0,90%) e IBS (0,10%)'
+    );
+
+    // 16. Caso Real Quesalon Extrema (MG) x Veterinária (MS) - Devolução Interestadual HebronVet
+    const docQExtNfo = parseNFeXml(sampleQuesalonExtremaNfoXml, '030714.XML');
+    const docQExtNfd = parseNFeXml(sampleQuesalonExtremaNfdXml, '50260437567872000146550010002703771002545240.xml');
+    const resQExt = reconcileNFeDocuments(docQExtNfd, docQExtNfo);
+
+    assert(resQExt.companyProfile?.key === 'QUESALON_EXTREMA', 'T16.1: Identificação de QUESALON Extrema (MG) por CNPJ 04.792.134/0004-96');
+    assert(resQExt.ndoSuggestion?.cfop === '2.202', 'T16.2: Sugestão NDO 2.202 para Devolução de Revenda Interestadual (6102 ➔ 6202)');
+    assert(resQExt.itemComparisons[0]?.expectedClientCfop === '6202', 'T16.3: CFOP esperado do cliente é 6202 baseado na NFO 6102');
+    assert(resQExt.summary.overallStatus === 'APPROVED', 'T16.4: Reconciliação aprovada sem erros impeditivos');
+
+    const tiScriptQExt = generatePiramideOracleTiInsertScript(resQExt);
+    assert(
+      tiScriptQExt.includes("'004'") && tiScriptQExt.includes('COD_FILIAL_ORIGEM'),
+      "T16.5: Geração de script PL/SQL para Quesalon Extrema com Filial '004' nas TIs do Pirâmide"
     );
 
   } catch (err: any) {

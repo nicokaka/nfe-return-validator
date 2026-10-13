@@ -447,7 +447,7 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({ result }) => {
                                       {nfdCfop} <span className="badge-tag">Devolução</span>
                                     </div>
                                     <div className="col-tax-expected font-mono text-primary">
-                                      <strong>{expectedCfop}</strong> <span className="badge-tag">Entrada {entrySuggested}</span>
+                                      <strong>{entrySuggested}</strong> <span className="badge-tag">Cliente {expectedCfop}</span>
                                     </div>
                                     <div className="col-tax-status">
                                       {isCfopMatch ? (

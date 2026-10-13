@@ -1,7 +1,7 @@
 # 🧠 PROJECT MEMORY & KNOWLEDGE BASE
 > **Projeto:** Validador Fiscal & Conciliador de Devoluções de NF-e (NFO x NFD) — Hebron & ERP Pirâmide  
-> **Status:** Ativo | 100% Testes Aprovados (83/83) | Integração TI Oracle em Andamento  
-> **Última Atualização:** 2026-09-04 (Eliminação de Overflow/Scrollbar, Refinamento UI/UX e Demandas Fiscais Polliana)  
+> **Status:** Ativo | 100% Testes Aprovados (88/88) | Integração TI Oracle Homologada no Servidor .61  
+> **Última Atualização:** 2026-10-13 (Homologação Prática no Oracle .61, Mapeamento de Constraints NDO/Almox e Rollback)  
 
 ---
 
@@ -743,5 +743,105 @@ E apontou duas correções essenciais de usabilidade e precisão fiscal:
    * `scrollWidth` = `clientWidth` (Zero overflow).
    * Eliminação completa de barras de rolagem horizontais espúrias.
 
+---
 
+## 🏛️ 25. HOMOLOGAÇÃO PRÁTICA NO ORACLE .61 (TESTE), MAPEAMENTO DE CONSTRAINTS & BLINDAGEM DE ESQUEMA
+> **Data:** 2026-10-13 | **Status:** 88/88 Testes Aprovados (100% Verde) | Validação Completa Carga + Consulta + Rollback
+
+### 25.1. Contexto e Ambiente de Homologação
+* **SGBD:** Oracle Database 19c / Schema Oficial: **`PIRAMIDE`**.
+* **Host Homologação (TESTE):** **`192.169.97.61:1521/TESTE`** (Acesso de Administração Nicolas).
+* **Host Produção (Oficial):** `192.169.97.60:1521/PROD` (Mantido intencionalmente em **Standby**).
+* **Ferramenta de Homologação:** **PL/SQL Developer** conectado em `piramide@TESTE`.
+
+### 25.2. Descobertas Críticas de Constraints do Catálogo Oracle (Procenge)
+Durante a execução de testes práticos de carga no servidor `.61`, foram mapeadas e blindadas no código três restrições fundamentais de dicionário:
+
+1. **Restrição de Tamanho da NDO (`TI_ITEM_NOTA_FISCAL_ENTRADA.COD_NDO_ORIGEM`):**
+   * **Erro Original:** `ORA-12899: valor muito grande para a coluna COD_NDO_ORIGEM (real: 17, máximo: 6)`.
+   * **Causa:** O sistema enviava a descrição de slug `'DEV-VDA-REV-INTER'` (17 caracteres).
+   * **Correção & Padrão Hebron:** A coluna aceita rigorosamente até **6 caracteres (`VARCHAR2(6)`)**. O validador agora injeta os códigos mnemônicos oficiais parametrizados no ERP:
+     * **`COM032`:** Devolução de Mercadorias para Comercialização (Quesalon PB Matriz `001` e Filial Extrema MG `004`).
+     * **`COM206`:** Retorno / Devolução de Produto Acabado de Produção Própria (INFAN PB `003`).
+     * **`COM200`:** Entrada em Bonificação (Infan e Quesalon).
+     * Ou o CFOP limpo com 4 dígitos (`2202`, `1202`, `2201`, `1201`).
+
+2. **Restrição de Tamanho do Almoxarifado (`TI_ITEM_NOTA_FISCAL_ENTRADA.COD_DEPOSITO`):**
+   * **Erro Original:** `ORA-12899: valor muito grande para a coluna COD_DEPOSITO (real: 6, máximo: 5)`.
+   * **Causa:** O motivo 11/04 enviava a palavra literal `'AVARIA'` (6 caracteres).
+   * **Correção & Padrão Hebron:** A coluna aceita no máximo **5 caracteres (`VARCHAR2(5)`)**. Criada a normalização automática:
+     * `'AVARIA'` (6 chars) $\rightarrow$ **`'AVCD'`** (Avaria de CD - 4 chars) ou **`'GQ'`** (Garantia da Qualidade - 2 chars).
+     * Siglas homologadas: `ALMOX` (5), `AVCD` (4), `GQ` (2), `CQ` (2), `EXTRV` (5), `EXPED` (5), `VC` (2).
+
+3. **Diferenciação de Chaves de Filtro entre Cabeçalho e Itens:**
+   * **Erro em Consultas:** `ORA-00904: "COD_SISTEMA_ORIGEM": identificador inválido` ao consultar `TI_ITEM_NOTA_FISCAL_ENTRADA`.
+   * **Causa:** A coluna `COD_SISTEMA_ORIGEM` existe exclusivamente na tabela de cabeçalho (`TI_NOTA_FISCAL_ENTRADA`).
+   * **Correção:** Na tabela de itens (`TI_ITEM_NOTA_FISCAL_ENTRADA`), a amarração relacional é efetuada unicamente por `NUM_SEQUENCIAL_ENTRADA_ORIGEM` (e a coluna de sistema chama-se `COD_SIST_SOLIC_OPER_REGISTRO = 'VAL'`).
+
+### 25.3. Dinâmica Multiemprsas no Assistente (`DataBridgeCopilot.tsx`)
+Ajustada a exibição do Card 1 (**EMPRESA / FILIAL HEBRON**) para ler o `companyProfile` canônico, eliminando a dependência de CNPJs estáticos e cobrindo todas as divisões corporativas do Grupo:
+* **`001 • QUESALON MATRIZ (PB)`** (CNPJ `04.792.134/0001-43`)
+* **`003 • INFAN QUÍMICA (PB)`** (CNPJ `08.939.548/0001-03`)
+* **`004 • QUESALON EXTREMA (MG)`** (CNPJ `04.792.134/0004-96`)
+* **`005 • QUEDES DISTRIBUIDORA (AL)`** (CNPJ `10.565.860/0001-08`)
+
+### 25.4. Ciclo Completo Executado no Oracle .61 com Evidências
+1. **Carga Executada com Sucesso:**
+   * Script PL/SQL executado na nota real `663338` (Tapajós ➔ Quesalon PB).
+   * **Tempo:** `0.39 seconds`.
+   * **Resultado:** `SUCESSO: Nota 663338 inserida nas TIs do Piramide com status NP.`
+2. **Inspeção de Dados Confirmada:**
+   * Cabeçalho: Status `'NP'`, valor `R$ 468,17`, desconto `R$ 76,21`.
+   * Itens: NDO `'COM032'`, Almoxarifado `'AVCD'`, `VAL_OUTRAS_DESPESAS = 0`.
+   * Lotes ANVISA: Lote `2606039` (Val: 30/06/2028, Fab: 11/06/2026, Qtd: 3) e Lote `2604186` (Val: 29/04/2028, Fab: 30/04/2026, Qtd: 3).
+3. **Limpeza e Rollback Higienizado:**
+   * Execução do bloco transacional de exclusão.
+   * **Tempo:** `0.094 seconds`.
+   * **Resultado:** `LIMPEZA CONCLUÍDA: Registros da nota 663338 removidos com sucesso das TIs.`
+   * Banco `.61` mantido 100% higienizado e íntegro.
+
+### 25.5. Qualidade e Cobertura
+* **Testes Automatizados:** Expandido para **88 testes (100% verde)**, com inclusão do teste `T16.5` (Validação de geração de script PL/SQL para Quesalon Extrema com Filial `004`).
+* **Compilação de Produção:** Vite/TypeScript concluído com sucesso (`2.93s`).
+
+---
+
+## 🐳 26. CONTAINER DOCKER UNIFICADO FULL-STACK NA VM DEBIAN (NGINX + NODE.JS API) & BLINDAGEM DO AMBIENTE DE TESTES .61
+> **Data:** 2026-10-13 | **Status:** 88/88 Testes Aprovados (100% Verde) | Build de Produção Limpo | Arquitetura Homologada
+
+### 26.1. Diagnóstico e Causa-Raiz do Fallback no Docker
+* **Problema:** Na VM Debian Hebron (`192.168.97.10:5002`), o container Docker anterior executava estritamente o Nginx servindo o bundle estático do frontend. Ao clicar em *"Testar Conexão Oracle"* ou *"Lançar no Pirâmide"*, a requisição `POST /api/piramide/integrate` caía na diretiva `try_files $uri $uri/ /index.html;`, retornando HTML e gerando a falha `SyntaxError: Unexpected token '<'`.
+* **Causa:** Ausência de processo Node.js rodando em background na VM para interpretar o conector `node-oracledb` e comunicar-se com o listener Oracle na porta 1521.
+
+### 26.2. Arquitetura Full-Stack Implementada em Container Único
+Para manter a simplicidade operacional na VM (onde basta executar `docker compose up -d --build`), foi criada uma arquitetura híbrida de processo duplo em um único container:
+1. **API Node.js Autônoma (`src/server/standaloneServer.ts`):**
+   * Servidor HTTP nativo Node.js escutando internamente em `0.0.0.0:3001`.
+   * Monta o middleware canônico `createPiramideApiMiddleware()`.
+   * Fornece endpoints REST: `GET /api/piramide/health`, `POST /api/piramide/integrate`, `GET /api/piramide/status/:notaFiscal`, `DELETE /api/piramide/rollback/:notaFiscal`.
+   * Inclui encerramento gracioso via `closeOraclePool()` nos sinais `SIGINT` e `SIGTERM`.
+2. **Proxy Reverso no Nginx (`nginx.conf`):**
+   * O Nginx escuta na porta `80` (mapeada para `5002` no host).
+   * Bloco `location /api/piramide/` configurado com `proxy_pass http://127.0.0.1:3001` com timeouts de 60s.
+   * Mantém todo o cache de assets e MIME types de Web Workers e scripts `.mjs`.
+3. **Orquestrador de Processos (`entrypoint.sh`):**
+   * Dispara a API Node.js em background e o Nginx em foreground, capturando sinais de encerramento (`trap`).
+4. **Imagem Multi-Stage (`Dockerfile`):**
+   * Stage 1 (`node:20-alpine`): Compilação TypeScript estrita e bundle Vite (`npm run build`).
+   * Stage 2 (`node:20-alpine` + `apk add nginx`): Runtime leve com dependências de produção, `tsx` e Nginx.
+
+### 26.3. Blindagem Absoluta do Ambiente de Testes (`192.169.97.61:1521/TESTE`)
+* `docker-compose.yml` parametrizado com `ORACLE_CONNECT_STRING=192.169.97.61:1521/TESTE`.
+* `src/server/oracleDbPool.ts` com fallback estrito para `.61` (TESTE).
+* Servidor de produção oficial (`192.169.97.60:1521/PROD`) mantido intocado em **STANDBY total**.
+
+### 26.4. Consolidação da Documentação e Acervo Técnico
+1. **`README.md`:** Criado na raiz do projeto como guia de entrada principal.
+2. **`docs/GUIA_MESTRE_DE_CONHECIMENTOS_DO_PROJETO.md`:** Documento canônico com visão 360° do sistema, dicionário corporativo das 4 empresas Hebron + HebronVet, tabelas staging do Procenge e catálogo de constraints.
+3. **`.gitignore`:** Ajustado com a regra `!docs/*.md` para versionar toda a documentação markdown preservando o sigilo de XMLs e PDFs de clientes.
+
+### 26.5. Qualidade Assegurada
+* **`88/88 testes aprovados (100% VERDE)`**.
+* **Build Vite de produção compilado com sucesso**.
+* **Boot do `standaloneServer.ts` validado localmente na porta 3001**.
 

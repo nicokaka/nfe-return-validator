@@ -6,4 +6,10 @@ services:
     container_name: validador-fiscal-app
     ports:
       - "5002:80"
+    environment:
+      - ORACLE_CONNECT_STRING=192.169.97.61:1521/TESTE
+      - ORACLE_USER=PIRAMIDE
+      - ORACLE_PASSWORD=${ORACLE_PASSWORD:-}
+      - ORACLE_SISTEMA_ORIGEM=VAL
+      - PORT=3001
     restart: always

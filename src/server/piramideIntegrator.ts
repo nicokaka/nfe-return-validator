@@ -64,13 +64,31 @@ export async function integrateReturnNoteToPiramide(
 
   const nfd = result.nfd;
   const nfo = result.nfo;
-  const cnpjClean = nfd.emit.cnpj.replace(/\D/g, '');
-  const isQuesalon = cnpjClean.startsWith('04443354') || nfd.dest.cnpj.replace(/\D/g, '').startsWith('04443354');
+  const companyKey = result.companyProfile?.key;
+  const destCnpjClean = (nfd.dest?.cnpj || '').replace(/\D/g, '');
+  const emitCnpjClean = (nfd.emit?.cnpj || '').replace(/\D/g, '');
+  const nfoEmitCnpjClean = (nfo.emit?.cnpj || '').replace(/\D/g, '');
+
+  const isExtrema = companyKey === 'QUESALON_EXTREMA' || destCnpjClean === '04792134000496' || nfoEmitCnpjClean === '04792134000496';
+  const isQuesalonMatriz = companyKey === 'QUESALON_PB' || (!isExtrema && (destCnpjClean.startsWith('04792134') || nfoEmitCnpjClean.startsWith('04792134')));
+  const isQuedes = companyKey === 'QUEDES' || destCnpjClean.startsWith('10565860') || nfoEmitCnpjClean.startsWith('10565860');
+
+  let defaultFilial = '001';
+  if (companyKey === 'INFAN' || destCnpjClean.startsWith('08939548') || nfoEmitCnpjClean.startsWith('08939548')) {
+    defaultFilial = '003';
+  } else if (isExtrema) {
+    defaultFilial = '004';
+  } else if (isQuedes) {
+    defaultFilial = '005';
+  } else {
+    defaultFilial = '001';
+  }
   
-  const filial = options?.filialOverride || (isQuesalon ? '001' : '003');
+  const filial = options?.filialOverride || defaultFilial;
   const empresa = filial;
-  const warehouse = options?.warehouseOverride || 'GQ';
-  const ndo = options?.ndoOverride || (isQuesalon ? 'COM032' : 'COM206');
+  const rawWarehouse = (options?.warehouseOverride || 'GQ').trim().toUpperCase();
+  const warehouse = rawWarehouse === 'AVARIA' ? 'AVCD' : (rawWarehouse.length > 5 ? rawWarehouse.substring(0, 5) : rawWarehouse);
+  const ndo = options?.ndoOverride || ((isQuesalonMatriz || isExtrema) ? 'COM032' : 'COM206');
   const sistema = config.sistemaOrigem;
 
   const cleanNumNF = nfd.nNF.replace(/\D/g, '');
@@ -175,7 +193,7 @@ export async function integrateReturnNoteToPiramide(
       serie: nfd.serie,
       notaFiscal: nfd.nNF,
       fatura: nfd.nNF,
-      clienteCnpj: cnpjClean,
+      clienteCnpj: emitCnpjClean,
       valTotal: vNF,
       valDesconto: vDesc,
       dEmi,

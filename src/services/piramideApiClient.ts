@@ -48,6 +48,20 @@ export interface RollbackResult {
   nNF: string;
 }
 
+async function safeParseJson(res: Response, endpointDesc: string): Promise<any> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    if (text.includes('<!DOCTYPE') || text.includes('<html') || text.includes('id="root"')) {
+      throw new Error(
+        `O serviço backend Node.js (conector Oracle) não está em execução neste host. A rota "${endpointDesc}" retornou a página HTML da SPA em vez da API.`
+      );
+    }
+    throw new Error(`Resposta inesperada do servidor (Content-Type: ${contentType || 'desconhecido'}).`);
+  }
+  return await res.json();
+}
+
 /**
  * Testa a conexão com o banco de dados Oracle do ERP Pirâmide.
  */
@@ -58,9 +72,10 @@ export async function testOracleConnection(): Promise<OracleConnectionStatus> {
       headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const errJson = await safeParseJson(res, '/api/piramide/health').catch(() => ({}));
+      throw new Error(errJson.message || `HTTP ${res.status}: ${res.statusText}`);
     }
-    return await res.json();
+    return await safeParseJson(res, '/api/piramide/health');
   } catch (err: any) {
     return {
       success: false,
@@ -92,10 +107,10 @@ export async function sendReturnNoteToPiramide(
       body: JSON.stringify({ result, options }),
     });
     if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
+      const errJson = await safeParseJson(res, '/api/piramide/integrate').catch(() => ({}));
       throw new Error(errJson.message || `HTTP ${res.status}: ${res.statusText}`);
     }
-    return await res.json();
+    return await safeParseJson(res, '/api/piramide/integrate');
   } catch (err: any) {
     return {
       success: false,
@@ -119,7 +134,7 @@ export async function fetchReturnNoteStatus(notaFiscal: string): Promise<ReturnN
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
-    return await res.json();
+    return await safeParseJson(res, `/api/piramide/status/${cleanNNF}`);
   } catch (err: any) {
     return {
       success: false,
@@ -141,10 +156,10 @@ export async function rollbackTestNote(notaFiscal: string): Promise<RollbackResu
       headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
+      const errJson = await safeParseJson(res, `/api/piramide/rollback/${cleanNNF}`).catch(() => ({}));
       throw new Error(errJson.message || `HTTP ${res.status}: ${res.statusText}`);
     }
-    return await res.json();
+    return await safeParseJson(res, `/api/piramide/rollback/${cleanNNF}`);
   } catch (err: any) {
     return {
       success: false,

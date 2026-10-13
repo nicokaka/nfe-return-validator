@@ -15,7 +15,8 @@ build/
 *.crt
 
 # Internal test documents and real customer XML/PDFs
-docs/
+docs/*
+!docs/*.md
 *.xml
 *.pdf
 

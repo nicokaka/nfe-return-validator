@@ -57,8 +57,21 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
   ];
   const isFiscalCompliant = criticalIssues.length === 0;
 
-  const cnpjClean = (nfd.emit?.cnpj || '').replace(/\D/g, '');
-  const isQuesalon = cnpjClean.startsWith('04443354') || (nfd.dest?.cnpj || '').replace(/\D/g, '').startsWith('04443354');
+  const companyKey = result.companyProfile?.key;
+  const destCnpjClean = (nfd.dest?.cnpj || '').replace(/\D/g, '');
+  const nfoEmitCnpjClean = (nfo.emit?.cnpj || '').replace(/\D/g, '');
+
+  const isQuesalonExtrema = companyKey === 'QUESALON_EXTREMA' || destCnpjClean === '04792134000496' || nfoEmitCnpjClean === '04792134000496';
+  const isQuesalonMatriz = companyKey === 'QUESALON_PB' || (!isQuesalonExtrema && (destCnpjClean.startsWith('04792134') || nfoEmitCnpjClean.startsWith('04792134')));
+  const isQuedes = companyKey === 'QUEDES' || destCnpjClean.startsWith('10565860') || nfoEmitCnpjClean.startsWith('10565860');
+
+  const filialDisplay = isQuesalonExtrema
+    ? '004 • QUESALON EXTREMA (MG)'
+    : isQuesalonMatriz
+    ? '001 • QUESALON MATRIZ (PB)'
+    : isQuedes
+    ? '005 • QUEDES DISTRIBUIDORA (AL)'
+    : '003 • INFAN QUÍMICA (PB)';
 
   const currentMotivo = PIRAMIDE_MOTIVOS.find(m => m.code === selectedMotivoCode);
 
@@ -329,7 +342,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                     </div>
                     <div className="elite-param-content">
                       <span className="elite-param-value">
-                        {isQuesalon ? '001 • QUESALON MATRIZ (PB)' : '003 • INFAN QUÍMICA (PB)'}
+                        {filialDisplay}
                       </span>
                       <span className="elite-param-hint">Unidade Fiscal do Faturamento</span>
                     </div>
