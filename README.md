@@ -37,8 +37,9 @@ O sistema elimina 100% da digitação manual de notas fiscais, protege o departa
 
 | Ambiente | Host / IP | Porta | Serviço / SID | Schema | Função |
 | :--- | :--- | :---: | :--- | :--- | :--- |
-| **🧪 Homologação Oracle (TESTE)** | **`192.169.97.61`** | `1521` | **`TESTE`** | **`PIRAMIDE`** | **Alvo exclusivo de testes, cargas e simulações.** |
-| **🏭 Produção Oracle (OFICIAL)** | `192.169.97.60` | `1521` | `PROD` | `PIRAMIDE` | **Produção Hebron**. Em Standby até homologação com gerência. |
+| **🧪 Homologação Oracle (TESTE)** | **`192.168.97.58`** | `1521` | **`TESTE`** | **`PIRAMIDE`** | **Banco Oracle Oficial de Testes Hebron.** Alvo exclusivo de cargas e simulações. |
+| **🖥️ Servidor App Pirâmide (TESTE)** | `192.168.97.61` | `3389 / 8080` | `Windows/Tomcat` | N/A | Servidor de aplicação Pirâmide (Scriba/Fiscal/Estoque). |
+| **🏭 Produção Oracle (OFICIAL)** | `192.168.97.60` | `1521` | `PROD` | `PIRAMIDE` | **Produção Hebron**. Em Standby total até homologação. |
 | **🖥️ Servidor Web (VM Debian)** | `192.168.97.10` | `5002` | `HTTP` | N/A | Host da aplicação Docker na rede corporativa. |
 
 ---
