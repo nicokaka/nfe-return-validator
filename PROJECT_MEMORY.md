@@ -845,3 +845,40 @@ Para manter a simplicidade operacional na VM (onde basta executar `docker compos
 * **Build Vite de produção compilado com sucesso**.
 * **Boot do `standaloneServer.ts` validado localmente na porta 3001**.
 
+---
+
+## 🏆 27. CHECKPOINT 24: HOMOLOGAÇÃO COMPLETA ORACLE 11g, THICK MODE E DEPLOY LIVE (192.168.97.58 / 192.168.97.10:5002)
+
+### 27.1. Descoberta e Mapeamento da Infraestrutura Real Hebron
+* **Topologia Física Identificada:**
+  * **Banco Oracle Homologação (TESTE):** **`192.168.97.58:1521/TESTE`** (Oracle Database 11g Release 11.2.0.4.0 - 64bit Production rodando em Linux `/u01/app/oracle/...`).
+  * **Servidor de Aplicação Pirâmide (TESTE):** `192.168.97.61` (Windows Server com Tomcat 7 na porta 8080 e atalhos do ERP).
+  * **Servidor Web do Validador:** `192.168.97.10:5002` (Debian VM executando container Docker unificado Nginx + Node.js).
+* **Correção Crucial de Sub-rede:** Eliminação do equívoco `192.169.x.x` (faixa pública roteada para a internet) e fixação na sub-rede privada corporativa `192.168.97.x`.
+
+### 27.2. Implementação do Oracle Instant Client 19 (Thick Mode)
+* **Resolução do erro `NJS-138`:** O driver `node-oracledb` em *Thin Mode* suporta apenas Oracle 12c+. Para falar com o Oracle 11g (11.2.0.4.0), foi ativado o **Thick Mode**.
+* **Docker Multi-Stage com Base Debian (`node:20-slim`):**
+  * Download e configuração automática do **Oracle Instant Client 19.21 Basic Light** (37MB).
+  * Inclusão do pacote `libaio1` e registro no `ldconfig` (`/opt/oracle/instantclient`).
+  * Atualização do `src/server/oracleDbPool.ts` com a função canônica `ensureOracleClient()` invocando `oracledb.initOracleClient({ libDir })`.
+* **Compatibilidade do Shell em Debian (`entrypoint.sh`):**
+  * Migrado de `/bin/sh` (`dash`) para `#!/bin/bash` com captura de sinais `trap ... INT TERM`.
+
+### 27.3. Homologação Live da Telemetria (Resultado Oficial)
+* Requisição HTTP executada com sucesso absoluto na VM Debian:
+  ```http
+  HTTP/1.1 200 OK
+  Server: nginx/1.22.1
+  Content-Type: application/json
+  
+  {
+    "success": true,
+    "message": "Conexão estabelecida com sucesso com o oracle no host [192.168.97.58:1521/TESTE]",
+    "serverVersion": "11.2.0.4.0",
+    "banner": "Oracle Database 11g Release 11.2.0.4.0 - 64bit Production"
+  }
+  ```
+* **Estado:** 100% Homologado e Operacional.
+
+
