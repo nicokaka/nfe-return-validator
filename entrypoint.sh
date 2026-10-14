@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 echo "========================================================"
@@ -27,7 +27,7 @@ nginx -t
 nginx -g "daemon off;" &
 NGINX_PID=$!
 
-# Captura sinais de encerramento para parar ambos os processos
-trap "kill -TERM $API_PID $NGINX_PID 2>/dev/null; exit 0" SIGINT SIGTERM
+# Captura sinais de encerramento para parar ambos os processos (sintaxe POSIX / Bash)
+trap "kill -TERM $API_PID $NGINX_PID 2>/dev/null; exit 0" INT TERM
 
 wait $NGINX_PID
