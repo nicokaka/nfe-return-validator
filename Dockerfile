@@ -24,7 +24,7 @@ COPY --from=builder /app/dist-server /app/dist-server
 
 # Substitui diretamente o nginx.conf mestre e remove diretórios de configs residuais
 COPY nginx.conf /etc/nginx/nginx.conf
-RUN rm -rf /etc/nginx/http.d /etc/nginx/conf.d
+RUN rm -rf /etc/nginx/http.d /etc/nginx/conf.d && mkdir -p /var/log/nginx /run/nginx
 
 # Copia o script de inicialização garantindo formato de fim de linha Unix (LF)
 COPY entrypoint.sh ./entrypoint.sh
