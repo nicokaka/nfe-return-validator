@@ -116,6 +116,84 @@ function buildResolution(m: PiramideMotivo): PiramideResolution {
 }
 
 /**
+ * Normaliza o código NDO para a restrição rigorosa VARCHAR2(6) da coluna
+ * TI_ITEM_NOTA_FISCAL_ENTRADA.COD_NDO_ORIGEM no Oracle ERP Pirâmide.
+ * Mapeia códigos semânticos descritivos (ex: DEV-VDA-REV-INTER) para os
+ * mnemônicos oficiais homologados da Hebron:
+ * - COM032: Revenda / Devolução Comercial Quesalon Matriz (001), Extrema (004) e Quedes (005)
+ * - COM206: Retorno de Produto Acabado de Produção Própria INFAN (003)
+ * - COM200: Retorno / Devolução de Bonificação
+ * - CFOP numérico: 4 dígitos (ex: 2202, 1202, 2201, 1201, 2949, 1949)
+ */
+export function normalizePiramideNdo(rawNdo?: string, isIndustry: boolean = false): string {
+  if (!rawNdo || typeof rawNdo !== 'string') {
+    return isIndustry ? 'COM206' : 'COM032';
+  }
+
+  const clean = rawNdo.trim().toUpperCase();
+
+  // 1. Se já for código canônico do catálogo Pirâmide (3 letras + 3 números, ex: COM032, COM206, COM200, DEV008)
+  if (/^[A-Z]{3}\d{3}$/.test(clean)) {
+    return clean;
+  }
+
+  // 2. Se for código numérico limpo de 4 dígitos de CFOP (ex: '2202', '1202')
+  if (/^\d{4}$/.test(clean)) {
+    return clean;
+  }
+
+  // 3. Mapeamento semântico dos códigos descritivos do validador (ex: 'DEV-VDA-REV-INTER' -> 'COM032')
+  if (clean.includes('BONIF')) {
+    return 'COM200';
+  }
+  if (clean.includes('PROD')) {
+    return 'COM206';
+  }
+  if (clean.includes('REV') || clean.includes('COM') || clean.includes('VDA')) {
+    return isIndustry ? 'COM206' : 'COM032';
+  }
+  if (clean.includes('SUFRAMA')) {
+    return isIndustry ? 'COM206' : 'COM032';
+  }
+  if (clean.includes('ST')) {
+    return isIndustry ? 'COM206' : 'COM032';
+  }
+
+  // Se extraiu 4 dígitos numéricos de CFOP (ex: '2.202' -> '2202')
+  const digitsOnly = clean.replace(/\D/g, '');
+  if (digitsOnly.length === 4) {
+    return digitsOnly;
+  }
+
+  // Se já possui até 6 caracteres alfanuméricos sem espaços
+  if (clean.length <= 6 && !clean.includes(' ') && !clean.includes('-')) {
+    return clean;
+  }
+
+  // Fallback seguro corporativo (garante rigorosamente <= 6 caracteres)
+  return isIndustry ? 'COM206' : 'COM032';
+}
+
+/**
+ * Normaliza o código de Almoxarifado / Depósito para a restrição VARCHAR2(5)
+ * da coluna TI_ITEM_NOTA_FISCAL_ENTRADA.COD_DEPOSITO no Oracle ERP Pirâmide.
+ * Mapeia 'AVARIA' para 'AVCD' e trunca qualquer código acima de 5 caracteres.
+ */
+export function normalizePiramideWarehouse(rawWarehouse?: string): string {
+  if (!rawWarehouse || typeof rawWarehouse !== 'string') {
+    return 'GQ';
+  }
+  const clean = rawWarehouse.trim().toUpperCase();
+  if (clean === 'AVARIA' || clean.startsWith('AVARIA')) {
+    return 'AVCD';
+  }
+  if (clean === 'AVALIAÇÃO FÍSICA' || clean === 'AVALIACAO FISICA') {
+    return 'ALMOX';
+  }
+  return clean.length > 5 ? clean.substring(0, 5) : clean;
+}
+
+/**
  * Gera o Script PL/SQL completo e transacional para carga direta nas
  * Tabelas de Integração (TI) do Oracle do ERP Pirâmide (Procenge).
  */
@@ -137,10 +215,10 @@ export function generatePiramideOracleTiInsertScript(
   const empresa = options?.empresa || defaultEmpresa;
   const filial = options?.filial || defaultEmpresa;
   const sistema = options?.sistemaOrigem || 'VAL';
-  const defaultNdo = result.companyProfile?.isIndustry ? 'COM206' : 'COM032';
-  const ndo = (options?.customNDO && options.customNDO.length <= 6) ? options.customNDO : defaultNdo;
-  const rawWarehouse = (options?.selectedWarehouse || result.piramideResolution?.almoxarifado || 'GQ').trim().toUpperCase();
-  const warehouse = rawWarehouse === 'AVARIA' ? 'AVCD' : (rawWarehouse.length > 5 ? rawWarehouse.substring(0, 5) : rawWarehouse);
+  const isIndustry = Boolean(result.companyProfile?.isIndustry || filial === '003');
+  const ndo = normalizePiramideNdo(options?.customNDO, isIndustry);
+  const rawWarehouse = options?.selectedWarehouse || result.piramideResolution?.almoxarifado || 'GQ';
+  const warehouse = normalizePiramideWarehouse(rawWarehouse);
 
   const dEmi = nfd.dhEmi ? nfd.dhEmi.substring(0, 10) : new Date().toISOString().substring(0, 10);
   const vNF = nfd.totals.vNF.toFixed(2);
@@ -221,7 +299,8 @@ export function generatePiramideOracleTiInsertScript(
     const vProd = (item.qCom * parseFloat(vUn)).toFixed(2);
     const vDescItem = (item.vDesc || 0).toFixed(2);
     const uCom = normalizeUnit(item.uCom);
-    const cfopEntrada = result.ndoSuggestion?.cfop ? result.ndoSuggestion.cfop.replace(/\D/g, '') : (c.expectedClientCfop || item.cfop);
+    const rawCfop = result.ndoSuggestion?.cfop || c.expectedClientCfop || item.cfop || '2202';
+    const cfopEntrada = rawCfop.replace(/\D/g, '').slice(0, 4) || '2202';
     const lote = item.batches[0]?.nLote || c.nfoItem?.batches[0]?.nLote || '';
     const dVal = item.batches[0]?.dVal || c.nfoItem?.batches[0]?.dVal || '';
     const dFab = item.batches[0]?.dFab || c.nfoItem?.batches[0]?.dFab || '';

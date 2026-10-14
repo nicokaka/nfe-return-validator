@@ -8,7 +8,10 @@ import {
 } from './Icons';
 import { PIRAMIDE_MOTIVOS, PIRAMIDE_WAREHOUSES } from '../data/piramideData';
 import { formatFiscalDate, formatCNPJ } from '../utils/dateUtils';
-import { generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript } from '../services/piramideService';
+import { 
+  generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript,
+  normalizePiramideNdo, normalizePiramideWarehouse 
+} from '../services/piramideService';
 import { 
   sendReturnNoteToPiramide, fetchReturnNoteStatus, rollbackTestNote, testOracleConnection,
   DirectIntegrationResult, ReturnNoteStatusResult, OracleConnectionStatus 
@@ -73,6 +76,10 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     ? '005 • QUEDES DISTRIBUIDORA (AL)'
     : '003 • INFAN QUÍMICA (PB)';
 
+  const isIndustry = !isQuesalonExtrema && !isQuesalonMatriz && !isQuedes;
+  const canonicalNdo = normalizePiramideNdo(ndoSuggestion?.ndoCode, isIndustry);
+  const canonicalWarehouse = normalizePiramideWarehouse(selectedWarehouse);
+
   const currentMotivo = PIRAMIDE_MOTIVOS.find(m => m.code === selectedMotivoCode);
 
   const handleMotivoChange = (code: string) => {
@@ -97,8 +104,8 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
     setActionFeedback(null);
     try {
       const res = await sendReturnNoteToPiramide(result, {
-        warehouseOverride: selectedWarehouse,
-        ndoOverride: ndoSuggestion?.ndoCode,
+        warehouseOverride: canonicalWarehouse,
+        ndoOverride: canonicalNdo,
         overrideData,
       });
       setIntegrationResult(res);
@@ -358,7 +365,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                     </div>
                     <div className="elite-param-content">
                       <span className="elite-param-value">
-                        {ndoSuggestion?.cfop || '2.202'} • {ndoSuggestion?.ndoCode || 'COM032'}
+                        {ndoSuggestion?.cfop || '2.202'} • {canonicalNdo}
                       </span>
                       <span className="elite-param-hint">{ndoSuggestion?.ndoDescription || 'Devolução de Compra'}</span>
                     </div>
@@ -526,7 +533,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                 )}
 
                 {/* 5. Card de Telemetria e Status ao Vivo da TI */}
-                {(integrationResult || liveStatus?.found) && (
+                {(Boolean(integrationResult?.success) || Boolean(liveStatus?.found)) && (
                   <div className="ti-live-tracker-card mt-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -577,7 +584,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                       </div>
                       <div>
                         <span className="text-muted text-xs block">Almoxarifado / NDO:</span>
-                        <strong className="font-mono text-xs">{selectedWarehouse} / {ndoSuggestion?.ndoCode || 'COM032'}</strong>
+                        <strong className="font-mono text-xs">{canonicalWarehouse} / {canonicalNdo}</strong>
                       </div>
                     </div>
 

@@ -13,7 +13,10 @@ import { findProductByEan, findProductByCode } from '../data/productCatalog';
 import { auditIcmsStProportionality } from './pharmaFiscalEngine';
 import { validateCnpjChecksum } from './cnpjValidator';
 import { validateNFeKey } from './sefazStatusService';
-import { generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript } from './piramideService';
+import { 
+  generatePiramideOracleTiInsertScript, generatePiramideOracleTiDeleteScript,
+  normalizePiramideNdo, normalizePiramideWarehouse 
+} from './piramideService';
 import { suggestNDO } from './ndoTaxEngine';
 
 export function runExhaustiveTestSuite(): { total: number; passed: number; failed: number; log: string[] } {
@@ -652,6 +655,46 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
     assert(
       tiScriptQExt.includes("'004'") && tiScriptQExt.includes('COD_FILIAL_ORIGEM'),
       "T16.5: Geração de script PL/SQL para Quesalon Extrema com Filial '004' nas TIs do Pirâmide"
+    );
+
+    // =========================================================================
+    // SUÍTE 17: NORMALIZAÇÃO RIGOROSA DO CATÁLOGO ORACLE PIRÂMIDE (ORA-12899)
+    // =========================================================================
+    // T17.1: Mapeamento de descritivo de Revenda ('DEV-VDA-REV-INTER') para 'COM032' (Quesalon)
+    assert(
+      normalizePiramideNdo('DEV-VDA-REV-INTER', false) === 'COM032' &&
+      normalizePiramideNdo('DEV-VDA-REV-ESTADUAL', false) === 'COM032',
+      "T17.1: Mapeamento de NDO de Revenda ('DEV-VDA-REV-INTER') para 'COM032' no catálogo Hebron"
+    );
+
+    // T17.2: Mapeamento de Produção ('DEV-VDA-PROD-INTER') para 'COM206' (INFAN)
+    assert(
+      normalizePiramideNdo('DEV-VDA-PROD-INTER', true) === 'COM206' &&
+      normalizePiramideNdo('DEV-VDA-PROD-ESTADUAL', true) === 'COM206',
+      "T17.2: Mapeamento de NDO de Produção ('DEV-VDA-PROD-INTER') para 'COM206' (INFAN Indústria)"
+    );
+
+    // T17.3: Mapeamento de Bonificação ('DEV-BONIF-INTER') para 'COM200'
+    assert(
+      normalizePiramideNdo('DEV-BONIF-INTER', false) === 'COM200' &&
+      normalizePiramideNdo('DEV-BONIF-ESTADUAL', true) === 'COM200',
+      "T17.3: Mapeamento de NDO de Bonificação para 'COM200'"
+    );
+
+    // T17.4: Garantia de Tamanho Máximo de 6 Caracteres (VARCHAR2(6)) para COD_NDO_ORIGEM
+    const testCasesNdo = ['DEV-VDA-REV-INTER', 'DEV-VDA-PROD-ESTADUAL', 'DEV-BONIF-INTER', '2.202', 'COM032', 'COM206', 'EXTREMELY_LONG_STRING_OVER_6_CHARS'];
+    const allNdosValidLength = testCasesNdo.every(ndo => normalizePiramideNdo(ndo, false).length <= 6);
+    assert(
+      allNdosValidLength,
+      "T17.4: NDO normalizada nunca excede 6 caracteres (VARCHAR2(6)), prevenindo ORA-12899"
+    );
+
+    // T17.5: Normalização de Almoxarifado 'AVARIA' para 'AVCD' com limite de 5 Caracteres (VARCHAR2(5))
+    assert(
+      normalizePiramideWarehouse('AVARIA') === 'AVCD' &&
+      normalizePiramideWarehouse('AVARIA CENTRAL').length <= 5 &&
+      normalizePiramideWarehouse('GQ') === 'GQ',
+      "T17.5: Almoxarifado 'AVARIA' mapeado para 'AVCD' e limitado a 5 caracteres (VARCHAR2(5))"
     );
 
   } catch (err: any) {

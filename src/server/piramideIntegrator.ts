@@ -1,6 +1,7 @@
 import oracledb from 'oracledb';
 import { getOraclePool, getOracleConfig } from './oracleDbPool';
 import { ReconciliationResult } from '../types/nfe';
+import { normalizePiramideNdo, normalizePiramideWarehouse } from '../services/piramideService';
 
 export interface IntegrationResponse {
   success: boolean;
@@ -72,9 +73,10 @@ export async function integrateReturnNoteToPiramide(
   const isExtrema = companyKey === 'QUESALON_EXTREMA' || destCnpjClean === '04792134000496' || nfoEmitCnpjClean === '04792134000496';
   const isQuesalonMatriz = companyKey === 'QUESALON_PB' || (!isExtrema && (destCnpjClean.startsWith('04792134') || nfoEmitCnpjClean.startsWith('04792134')));
   const isQuedes = companyKey === 'QUEDES' || destCnpjClean.startsWith('10565860') || nfoEmitCnpjClean.startsWith('10565860');
+  const isIndustry = companyKey === 'INFAN' || destCnpjClean.startsWith('08939548') || nfoEmitCnpjClean.startsWith('08939548') || (!isExtrema && !isQuesalonMatriz && !isQuedes);
 
   let defaultFilial = '001';
-  if (companyKey === 'INFAN' || destCnpjClean.startsWith('08939548') || nfoEmitCnpjClean.startsWith('08939548')) {
+  if (isIndustry) {
     defaultFilial = '003';
   } else if (isExtrema) {
     defaultFilial = '004';
@@ -86,9 +88,8 @@ export async function integrateReturnNoteToPiramide(
   
   const filial = options?.filialOverride || defaultFilial;
   const empresa = filial;
-  const rawWarehouse = (options?.warehouseOverride || 'GQ').trim().toUpperCase();
-  const warehouse = rawWarehouse === 'AVARIA' ? 'AVCD' : (rawWarehouse.length > 5 ? rawWarehouse.substring(0, 5) : rawWarehouse);
-  const ndo = options?.ndoOverride || ((isQuesalonMatriz || isExtrema) ? 'COM032' : 'COM206');
+  const warehouse = normalizePiramideWarehouse(options?.warehouseOverride);
+  const ndo = normalizePiramideNdo(options?.ndoOverride, isIndustry);
   const sistema = config.sistemaOrigem;
 
   const cleanNumNF = nfd.nNF.replace(/\D/g, '');
@@ -216,7 +217,8 @@ export async function integrateReturnNoteToPiramide(
       const vProdNum = item.qCom * vUnNum;
       const vDescItemNum = item.vDesc || 0;
       const uCom = normalizeUnit(item.uCom);
-      const cfopEntrada = result.ndoSuggestion?.cfop ? result.ndoSuggestion.cfop.replace(/\D/g, '') : (c.expectedClientCfop || item.cfop);
+      const rawCfop = result.ndoSuggestion?.cfop || c.expectedClientCfop || item.cfop || '2202';
+      const cfopEntrada = rawCfop.replace(/\D/g, '').slice(0, 4) || '2202';
 
       const lote = item.batches[0]?.nLote || c.nfoItem?.batches[0]?.nLote || null;
       const dValRaw = item.batches[0]?.dVal || c.nfoItem?.batches[0]?.dVal || null;
