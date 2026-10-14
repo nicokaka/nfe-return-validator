@@ -11,6 +11,32 @@ export interface OracleConfig {
 }
 
 let pool: any = null;
+let clientModeAttempted = false;
+
+export function ensureOracleClient(): void {
+  if (clientModeAttempted) return;
+  clientModeAttempted = true;
+
+  const libDir =
+    process.env.ORACLE_CLIENT_LIB_DIR ||
+    (process.platform === 'linux' ? '/opt/oracle/instantclient' : undefined);
+
+  try {
+    if (libDir) {
+      oracledb.initOracleClient({ libDir });
+      console.log(`[ORACLE] Thick Mode ativado com sucesso usando Instant Client: ${libDir}`);
+    } else {
+      oracledb.initOracleClient();
+      console.log(`[ORACLE] Thick Mode ativado com bibliotecas padrão do sistema.`);
+    }
+  } catch (err: any) {
+    if (err.message && err.message.includes('already been initialized')) {
+      // Já inicializado
+    } else {
+      // Continua em Thin Mode se não houver Instant Client local
+    }
+  }
+}
 
 export function getOracleConfig(): OracleConfig {
   return {
@@ -25,6 +51,8 @@ export function getOracleConfig(): OracleConfig {
 }
 
 export async function getOraclePool(): Promise<any> {
+  ensureOracleClient();
+
   if (pool) {
     return pool;
   }
