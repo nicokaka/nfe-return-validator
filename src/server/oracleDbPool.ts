@@ -41,7 +41,7 @@ export function ensureOracleClient(): void {
 export function getOracleConfig(): OracleConfig {
   return {
     user: process.env.ORACLE_USER || 'PIRAMIDE',
-    password: process.env.ORACLE_PASSWORD || '',
+    password: process.env.ORACLE_PASSWORD || 'PIRAMIDE',
     connectString: process.env.ORACLE_CONNECT_STRING || '192.168.97.58:1521/TESTE',
     poolMin: parseInt(process.env.ORACLE_POOL_MIN || '1', 10),
     poolMax: parseInt(process.env.ORACLE_POOL_MAX || '4', 10),
