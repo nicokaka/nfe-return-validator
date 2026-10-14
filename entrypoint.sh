@@ -13,8 +13,17 @@ API_PID=$!
 # Aguarda 2 segundos para inicialização do listener HTTP
 sleep 2
 
-# Inicia o Nginx em foreground na porta 80
-echo "[2/2] Iniciando Nginx Web Server (porta 80)..."
+# Testa se o processo Node continua vivo
+if kill -0 $API_PID 2>/dev/null; then
+    echo "✅ API Node.js iniciada com sucesso (PID: $API_PID)!"
+else
+    echo "❌ ERRO FATAL: API Node.js encerrou inesperadamente!"
+fi
+
+# Testa a sintaxe do Nginx antes de subir
+echo "[2/2] Testando configuração e iniciando Nginx Web Server (porta 80)..."
+nginx -t
+
 nginx -g "daemon off;" &
 NGINX_PID=$!
 

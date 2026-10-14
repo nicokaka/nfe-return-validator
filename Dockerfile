@@ -22,9 +22,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copia o bundle compilado da API Node.js (apenas 22KB!)
 COPY --from=builder /app/dist-server /app/dist-server
 
-# Configura o Nginx com proxy reverso apontando para a API local (porta 3001)
-COPY nginx.conf /etc/nginx/http.d/default.conf
-RUN mkdir -p /etc/nginx/conf.d && cp /etc/nginx/http.d/default.conf /etc/nginx/conf.d/default.conf
+# Substitui diretamente o nginx.conf mestre e remove diretórios de configs residuais
+COPY nginx.conf /etc/nginx/nginx.conf
+RUN rm -rf /etc/nginx/http.d /etc/nginx/conf.d
 
 # Copia o script de inicialização garantindo formato de fim de linha Unix (LF)
 COPY entrypoint.sh ./entrypoint.sh
