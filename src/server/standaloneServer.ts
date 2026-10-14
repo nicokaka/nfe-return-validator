@@ -16,8 +16,8 @@ const server = http.createServer((req, res) => {
 
   // O middleware trata rotas /api/piramide/*
   apiMiddleware(req, res, () => {
-    // Rota raiz ou health check da API
-    if (url === '/' || url === '/health' || url === '/api') {
+    // Rota raiz ou health check instantâneo da API
+    if (url === '/' || url === '/health' || url === '/api' || url === '/api/piramide' || url === '/api/piramide/') {
       res.writeHead(200, {
         'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
