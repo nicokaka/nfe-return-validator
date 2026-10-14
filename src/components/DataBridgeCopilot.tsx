@@ -600,7 +600,7 @@ export const DataBridgeCopilot: React.FC<DataBridgeCopilotProps> = ({ result }) 
                       </span>
                     )}
                     <span className="elite-meta-muted">
-                      Servidor: <strong>.61 (Homologação TESTE)</strong> • Standby: <strong>.60 (Produção)</strong>
+                      Servidor: <strong>.58 (Homologação TESTE)</strong> • Standby: <strong>.60 (Produção)</strong>
                     </span>
                   </div>
 
