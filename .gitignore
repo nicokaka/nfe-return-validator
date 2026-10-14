@@ -4,6 +4,7 @@ node_modules/
 
 # Production builds
 dist/
+dist-server/
 build/
 
 # Environment and sensitive data

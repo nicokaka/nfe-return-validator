@@ -22,7 +22,7 @@ const server = http.createServer((req, res) => {
         'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
       });
-      return res.end(
+      res.end(
         JSON.stringify(
           {
             status: 'online',
@@ -36,6 +36,7 @@ const server = http.createServer((req, res) => {
           2
         )
       );
+      return;
     }
 
     // 404 para rotas não reconhecidas

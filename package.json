@@ -6,9 +6,9 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && esbuild src/server/standaloneServer.ts --bundle --platform=node --target=node20 --outfile=dist-server/server.cjs --external:oracledb",
     "test": "tsx src/testRunner.ts",
-    "start:api": "tsx src/server/standaloneServer.ts",
+    "start:api": "node dist-server/server.cjs",
     "preview": "vite preview",
     "electron": "electron .",
     "electron:dev": "electron electron/main.cjs --dev"

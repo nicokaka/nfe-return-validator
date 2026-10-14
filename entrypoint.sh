@@ -5,9 +5,9 @@ echo "========================================================"
 echo "🚀 INICIANDO VALIDADOR FISCAL HEBRON & PIRAMIDE API"
 echo "========================================================"
 
-# Inicia o servidor Node.js em background na porta 3001
+# Inicia o servidor Node.js em background na porta 3001 usando o bundle compilado
 echo "[1/2] Iniciando API Integradora Node.js (porta 3001)..."
-npx tsx src/server/standaloneServer.ts &
+node /app/dist-server/server.cjs &
 API_PID=$!
 
 # Aguarda 2 segundos para inicialização do listener HTTP
