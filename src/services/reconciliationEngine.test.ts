@@ -689,12 +689,16 @@ export function runExhaustiveTestSuite(): { total: number; passed: number; faile
       "T17.4: NDO normalizada nunca excede 6 caracteres (VARCHAR2(6)), prevenindo ORA-12899"
     );
 
-    // T17.5: Normalização de Almoxarifado 'AVARIA' para 'AVCD' com limite de 5 Caracteres (VARCHAR2(5))
+    // T17.5: Normalização de Almoxarifados ('AVARIA' -> 'AVCD', 'EXPEDI' -> 'EXPED', 'RECALL' -> 'RECAL') com limite de 5 Caracteres (VARCHAR2(5))
     assert(
       normalizePiramideWarehouse('AVARIA') === 'AVCD' &&
+      normalizePiramideWarehouse('EXPEDI') === 'EXPED' &&
+      normalizePiramideWarehouse('RECALL') === 'RECAL' &&
+      normalizePiramideWarehouse('PENHOR') === 'PENHO' &&
+      normalizePiramideWarehouse('QUARENTENA') === 'QRTN' &&
       normalizePiramideWarehouse('AVARIA CENTRAL').length <= 5 &&
       normalizePiramideWarehouse('GQ') === 'GQ',
-      "T17.5: Almoxarifado 'AVARIA' mapeado para 'AVCD' e limitado a 5 caracteres (VARCHAR2(5))"
+      "T17.5: Almoxarifados 'AVARIA', 'EXPEDI', 'RECALL' mapeados e limitados a 5 caracteres (VARCHAR2(5))"
     );
 
   } catch (err: any) {

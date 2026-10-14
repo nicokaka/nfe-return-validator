@@ -184,12 +184,12 @@ export function normalizePiramideWarehouse(rawWarehouse?: string): string {
     return 'GQ';
   }
   const clean = rawWarehouse.trim().toUpperCase();
-  if (clean === 'AVARIA' || clean.startsWith('AVARIA')) {
-    return 'AVCD';
-  }
-  if (clean === 'AVALIAÇÃO FÍSICA' || clean === 'AVALIACAO FISICA') {
-    return 'ALMOX';
-  }
+  if (clean === 'AVARIA' || clean.startsWith('AVARIA')) return 'AVCD';
+  if (clean === 'AVALIAÇÃO FÍSICA' || clean === 'AVALIACAO FISICA') return 'ALMOX';
+  if (clean === 'EXPEDI' || clean === 'EXPEDIÇÃO' || clean === 'EXPEDICAO') return 'EXPED';
+  if (clean === 'RECALL') return 'RECAL';
+  if (clean === 'PENHOR') return 'PENHO';
+  if (clean === 'QUARENTENA') return 'QRTN';
   return clean.length > 5 ? clean.substring(0, 5) : clean;
 }
 

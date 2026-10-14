@@ -38,13 +38,29 @@ export interface ReturnNoteStatusResponse {
   }>;
 }
 
+function isValidDateYMD(dStr?: string | null): boolean {
+  if (!dStr || typeof dStr !== 'string') return false;
+  const match = dStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const y = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const d = parseInt(match[3], 10);
+  if (y < 2000 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
+
 function normalizeUnit(unit: string): string {
   if (!unit) return 'UN';
-  const u = unit.toUpperCase().trim();
-  if (u === 'UNID' || u === 'UNIDADE' || u === 'UND') return 'UN';
-  if (u === 'FR' || u === 'FRASCO') return 'FR';
-  if (u === 'CX' || u === 'CAIXA') return 'CX';
-  return u.substring(0, 6);
+  const u = unit.toUpperCase().trim().replace(/[^A-Z0-9]/g, '');
+  if (['UN', 'UND', 'UNID', 'UNIDADE', 'UNI', 'U', 'PC', 'PCA', 'PECA'].includes(u)) return 'UN';
+  if (['CX', 'CXA', 'CAIXA', 'BOX'].includes(u)) return 'CX';
+  if (['FR', 'FRS', 'FRASCO', 'FRASC'].includes(u)) return 'FR';
+  if (['TB', 'TUBO', 'TUB'].includes(u)) return 'TB';
+  if (['BL', 'BLIST', 'BLISTER'].includes(u)) return 'BL';
+  if (['ENV', 'ENVELOPE', 'SACHE'].includes(u)) return 'ENV';
+  if (['AMP', 'AMPL', 'AMPOLA'].includes(u)) return 'AMP';
+  return u.substring(0, 3) || 'UN';
 }
 
 export async function integrateReturnNoteToPiramide(
@@ -67,7 +83,7 @@ export async function integrateReturnNoteToPiramide(
   const nfo = result.nfo;
   const companyKey = result.companyProfile?.key;
   const destCnpjClean = (nfd.dest?.cnpj || '').replace(/\D/g, '');
-  const emitCnpjClean = (nfd.emit?.cnpj || '').replace(/\D/g, '');
+  const emitCnpjClean = (nfd.emit?.cnpj || '').replace(/\D/g, '').slice(0, 14);
   const nfoEmitCnpjClean = (nfo.emit?.cnpj || '').replace(/\D/g, '');
 
   const isExtrema = companyKey === 'QUESALON_EXTREMA' || destCnpjClean === '04792134000496' || nfoEmitCnpjClean === '04792134000496';
@@ -86,22 +102,35 @@ export async function integrateReturnNoteToPiramide(
     defaultFilial = '001';
   }
   
-  const filial = options?.filialOverride || defaultFilial;
+  const rawFilial = (options?.filialOverride || defaultFilial).trim();
+  const filialDigits = rawFilial.replace(/\D/g, '');
+  const filial = (filialDigits ? filialDigits.slice(0, 3).padStart(3, '0') : defaultFilial);
   const empresa = filial;
   const warehouse = normalizePiramideWarehouse(options?.warehouseOverride);
   const ndo = normalizePiramideNdo(options?.ndoOverride, isIndustry);
-  const sistema = config.sistemaOrigem;
+  const sistema = (config.sistemaOrigem || 'VAL').slice(0, 3);
 
-  const cleanNumNF = nfd.nNF.replace(/\D/g, '');
+  const cleanNumNF = (nfd.nNF || '1').replace(/\D/g, '').slice(0, 9) || '1';
+  const cleanSerie = (nfd.serie || '1').replace(/\D/g, '').slice(0, 3) || '1';
   const seqSuffix = cleanNumNF.slice(-6).padStart(6, '0');
   const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const seqEntrada = parseInt(`${datePrefix}${seqSuffix}`, 10);
 
-  const vNF = nfd.totals.vNF;
-  const vDesc = nfd.totals.vDesc || 0;
-  const dEmi = nfd.dhEmi ? nfd.dhEmi.substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const chNFeClean = nfd.chNFe.replace(/\D/g, '');
-  const nProt = nfd.nProt || 'SEFAZ_AUT';
+  const vNFTotal = typeof nfd.totals?.vNF === 'number' ? nfd.totals.vNF : parseFloat(String(nfd.totals?.vNF || 0));
+  const vNF = isNaN(vNFTotal) ? 0 : parseFloat(vNFTotal.toFixed(2));
+  const vDescTotal = typeof nfd.totals?.vDesc === 'number' ? nfd.totals.vDesc : parseFloat(String(nfd.totals?.vDesc || 0));
+  const vDesc = isNaN(vDescTotal) ? 0 : parseFloat(vDescTotal.toFixed(2));
+
+  let dEmi = new Date().toISOString().substring(0, 10);
+  if (nfd.dhEmi && typeof nfd.dhEmi === 'string') {
+    const match = nfd.dhEmi.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match && isValidDateYMD(`${match[1]}-${match[2]}-${match[3]}`)) {
+      dEmi = `${match[1]}-${match[2]}-${match[3]}`;
+    }
+  }
+
+  const chNFeClean = (nfd.chNFe || '').replace(/\D/g, '').slice(0, 44);
+  const nProt = (nfd.nProt || 'SEFAZ_AUT').replace(/[^a-zA-Z0-9]/g, '').slice(0, 15) || 'SEFAZ_AUT';
 
   try {
     connection = await pool.getConnection();
@@ -112,19 +141,33 @@ export async function integrateReturnNoteToPiramide(
       // continua caso já esteja no schema PIRAMIDE
     }
 
-    // 1. Limpeza preventiva se a mesma nota já existir na TI como 'NP' ou 'ER'
+    // 1. Limpeza preventiva se a mesma nota já existir na TI como 'NP' ou 'ER' (proteção contra ORA-00001)
     try {
       await connection.execute(
-        `DELETE FROM TI_ITEM_ENTRADA_LOTE WHERE COD_ENTRADA_ORIGEM = :seqEntrada`,
-        { seqEntrada }
+        `DELETE FROM TI_ITEM_ENTRADA_LOTE 
+         WHERE COD_ENTRADA_ORIGEM = :seqEntrada 
+            OR COD_ENTRADA_ORIGEM IN (
+              SELECT NUM_SEQUENCIAL_ENTRADA_ORIGEM 
+              FROM TI_NOTA_FISCAL_ENTRADA 
+              WHERE COD_SISTEMA_ORIGEM = :sistema AND COD_NOTA_FISCAL = :cleanNumNF
+            )`,
+        { seqEntrada, sistema, cleanNumNF }
       );
       await connection.execute(
-        `DELETE FROM TI_ITEM_NOTA_FISCAL_ENTRADA WHERE NUM_SEQUENCIAL_ENTRADA_ORIGEM = :seqEntrada`,
-        { seqEntrada }
+        `DELETE FROM TI_ITEM_NOTA_FISCAL_ENTRADA 
+         WHERE NUM_SEQUENCIAL_ENTRADA_ORIGEM = :seqEntrada
+            OR NUM_SEQUENCIAL_ENTRADA_ORIGEM IN (
+              SELECT NUM_SEQUENCIAL_ENTRADA_ORIGEM 
+              FROM TI_NOTA_FISCAL_ENTRADA 
+              WHERE COD_SISTEMA_ORIGEM = :sistema AND COD_NOTA_FISCAL = :cleanNumNF
+            )`,
+        { seqEntrada, sistema, cleanNumNF }
       );
       await connection.execute(
-        `DELETE FROM TI_NOTA_FISCAL_ENTRADA WHERE NUM_SEQUENCIAL_ENTRADA_ORIGEM = :seqEntrada`,
-        { seqEntrada }
+        `DELETE FROM TI_NOTA_FISCAL_ENTRADA 
+         WHERE NUM_SEQUENCIAL_ENTRADA_ORIGEM = :seqEntrada
+            OR (COD_SISTEMA_ORIGEM = :sistema AND COD_NOTA_FISCAL = :cleanNumNF)`,
+        { seqEntrada, sistema, cleanNumNF }
       );
     } catch {
       // ignore deletion errors
@@ -191,9 +234,9 @@ export async function integrateReturnNoteToPiramide(
       seqEntrada,
       sistema,
       empresa,
-      serie: nfd.serie,
-      notaFiscal: nfd.nNF,
-      fatura: nfd.nNF,
+      serie: cleanSerie,
+      notaFiscal: cleanNumNF,
+      fatura: cleanNumNF,
       clienteCnpj: emitCnpjClean,
       valTotal: vNF,
       valDesconto: vDesc,
@@ -220,9 +263,27 @@ export async function integrateReturnNoteToPiramide(
       const rawCfop = result.ndoSuggestion?.cfop || c.expectedClientCfop || item.cfop || '2202';
       const cfopEntrada = rawCfop.replace(/\D/g, '').slice(0, 4) || '2202';
 
-      const lote = item.batches[0]?.nLote || c.nfoItem?.batches[0]?.nLote || null;
-      const dValRaw = item.batches[0]?.dVal || c.nfoItem?.batches[0]?.dVal || null;
-      const dVal = dValRaw ? dValRaw.substring(0, 10) : null;
+      const lote = item.batches && item.batches[0]?.nLote ? item.batches[0].nLote : (c.nfoItem?.batches && c.nfoItem.batches[0]?.nLote ? c.nfoItem.batches[0].nLote : null);
+      const cleanLote = lote ? String(lote).trim().slice(0, 20) : null;
+
+      const dValRaw = item.batches && item.batches[0]?.dVal ? item.batches[0].dVal : (c.nfoItem?.batches && c.nfoItem.batches[0]?.dVal ? c.nfoItem.batches[0].dVal : null);
+      let cleanDVal: string | null = null;
+      if (dValRaw) {
+        const match = String(dValRaw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match && isValidDateYMD(`${match[1]}-${match[2]}-${match[3]}`)) {
+          cleanDVal = `${match[1]}-${match[2]}-${match[3]}`;
+        }
+      }
+
+      const cleanCProd = String(item.cProd || '').trim().slice(0, 20);
+      const cleanNfoNum = (nfo.nNF || '1').replace(/\D/g, '').slice(0, 9);
+      const cleanNfoSerie = (nfo.serie || '1').replace(/\D/g, '').slice(0, 3) || '1';
+      const nfoItemNum = typeof (c.nfoItem ? c.nfoItem.nItem : itemNum) === 'number' ? (c.nfoItem ? c.nfoItem.nItem : itemNum) : itemNum;
+
+      const vProd = isNaN(vProdNum) ? 0 : parseFloat(vProdNum.toFixed(2));
+      const vUn = isNaN(vUnNum) ? 0 : parseFloat(vUnNum.toFixed(4));
+      const vDescItem = isNaN(vDescItemNum) ? 0 : parseFloat(vDescItemNum.toFixed(2));
+      const qCom = typeof item.qCom === 'number' && !isNaN(item.qCom) ? item.qCom : parseFloat(String(item.qCom || 1));
 
       const itemSql = `
         INSERT INTO TI_ITEM_NOTA_FISCAL_ENTRADA (
@@ -278,7 +339,7 @@ export async function integrateReturnNoteToPiramide(
           :nfoSerie,
           :nfoItemNum,
           :lote,
-          ${dVal ? `TO_DATE(:dVal, 'YYYY-MM-DD')` : 'NULL'},
+          ${cleanDVal ? `TO_DATE(:dVal, 'YYYY-MM-DD')` : 'NULL'},
           'N',
           'N',
           'V',
@@ -291,30 +352,30 @@ export async function integrateReturnNoteToPiramide(
         seqEntrada,
         itemNum,
         sistema,
-        cProd: item.cProd,
+        cProd: cleanCProd,
         uCom,
         ndo,
         cfop: cfopEntrada,
         deposito: warehouse,
-        qCom: item.qCom,
-        vProd: parseFloat(vProdNum.toFixed(2)),
-        vUn: parseFloat(vUnNum.toFixed(4)),
-        vDescItem: parseFloat(vDescItemNum.toFixed(2)),
-        nfoNum: nfo.nNF,
-        nfoSerie: nfo.serie,
-        nfoItemNum: c.nfoItem ? c.nfoItem.nItem : itemNum,
-        lote,
+        qCom,
+        vProd,
+        vUn,
+        vDescItem,
+        nfoNum: cleanNfoNum,
+        nfoSerie: cleanNfoSerie,
+        nfoItemNum,
+        lote: cleanLote,
       };
 
-      if (dVal) {
-        itemBinds.dVal = dVal;
+      if (cleanDVal) {
+        itemBinds.dVal = cleanDVal;
       }
 
       await connection.execute(itemSql, itemBinds);
       itemsCount++;
 
       // Inserção da Rastreabilidade de Lote
-      if (lote && dVal) {
+      if (cleanLote && cleanDVal) {
         const batchSql = `
           INSERT INTO TI_ITEM_ENTRADA_LOTE (
             COD_FILIAL_ORIGEM,
@@ -339,9 +400,9 @@ export async function integrateReturnNoteToPiramide(
           filial,
           seqEntrada,
           itemNum,
-          lote,
-          dVal,
-          qCom: item.qCom,
+          lote: cleanLote,
+          dVal: cleanDVal,
+          qCom,
         });
         batchesCount++;
       }
@@ -401,6 +462,8 @@ export async function getReturnNoteStatusFromPiramide(notaFiscal: string): Promi
       // continua caso já esteja no schema PIRAMIDE
     }
 
+    const cleanNNF = (notaFiscal || '').replace(/\D/g, '') || notaFiscal;
+
     const sql = `
       SELECT 
         COD_FILIAL_ORIGEM,
@@ -412,13 +475,13 @@ export async function getReturnNoteStatusFromPiramide(notaFiscal: string): Promi
         VAL_TOTAL_NOTA
       FROM TI_NOTA_FISCAL_ENTRADA
       WHERE COD_SISTEMA_ORIGEM = :sistema
-        AND COD_NOTA_FISCAL = :notaFiscal
+        AND (COD_NOTA_FISCAL = :notaFiscal OR COD_NOTA_FISCAL = :cleanNNF)
       ORDER BY NUM_SEQUENCIAL_ENTRADA_ORIGEM DESC
     `;
 
     const result = await connection.execute(
       sql,
-      { sistema: config.sistemaOrigem, notaFiscal },
+      { sistema: config.sistemaOrigem, notaFiscal, cleanNNF },
       { outFormat: oracledb.OUT_FORMAT_OBJECT }
     );
 
@@ -520,14 +583,17 @@ export async function rollbackReturnNoteFromPiramide(notaFiscal: string): Promis
       // continua caso já esteja no schema PIRAMIDE
     }
 
+    const cleanNNF = (notaFiscal || '').replace(/\D/g, '') || notaFiscal;
+
     await connection.execute(
       `DELETE FROM TI_ITEM_ENTRADA_LOTE 
        WHERE COD_ENTRADA_ORIGEM IN (
          SELECT NUM_SEQUENCIAL_ENTRADA_ORIGEM 
          FROM TI_NOTA_FISCAL_ENTRADA 
-         WHERE COD_SISTEMA_ORIGEM = :sistema AND COD_NOTA_FISCAL = :notaFiscal
+         WHERE COD_SISTEMA_ORIGEM = :sistema 
+           AND (COD_NOTA_FISCAL = :notaFiscal OR COD_NOTA_FISCAL = :cleanNNF)
        )`,
-      { sistema: config.sistemaOrigem, notaFiscal }
+      { sistema: config.sistemaOrigem, notaFiscal, cleanNNF }
     );
 
     await connection.execute(
@@ -535,15 +601,17 @@ export async function rollbackReturnNoteFromPiramide(notaFiscal: string): Promis
        WHERE NUM_SEQUENCIAL_ENTRADA_ORIGEM IN (
          SELECT NUM_SEQUENCIAL_ENTRADA_ORIGEM 
          FROM TI_NOTA_FISCAL_ENTRADA 
-         WHERE COD_SISTEMA_ORIGEM = :sistema AND COD_NOTA_FISCAL = :notaFiscal
+         WHERE COD_SISTEMA_ORIGEM = :sistema 
+           AND (COD_NOTA_FISCAL = :notaFiscal OR COD_NOTA_FISCAL = :cleanNNF)
        )`,
-      { sistema: config.sistemaOrigem, notaFiscal }
+      { sistema: config.sistemaOrigem, notaFiscal, cleanNNF }
     );
 
     await connection.execute(
       `DELETE FROM TI_NOTA_FISCAL_ENTRADA 
-       WHERE COD_SISTEMA_ORIGEM = :sistema AND COD_NOTA_FISCAL = :notaFiscal`,
-      { sistema: config.sistemaOrigem, notaFiscal }
+       WHERE COD_SISTEMA_ORIGEM = :sistema 
+         AND (COD_NOTA_FISCAL = :notaFiscal OR COD_NOTA_FISCAL = :cleanNNF)`,
+      { sistema: config.sistemaOrigem, notaFiscal, cleanNNF }
     );
 
     await connection.commit();
